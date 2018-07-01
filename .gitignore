@@ -1,0 +1,8 @@
+htmlcov/
+.coverage
+.project
+.pydevproject
+.vscode/
+__pycache__/
+.pytest_cache/
+.idea/
