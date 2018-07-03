@@ -15,9 +15,7 @@ def render_invocation(inv, id):
     argv = ' '.join(inv['argv'])
     version = inv['version']
     return flask.Markup(flask.render_template_string('''\
-    [<a href="{{ url_for('view_invocation', id=id) }}">
-        {{ url_for('view_invocation', id=id) -}}
-    </a>
+    [{{ url_for('view_invocation', id=id) | linkify }}
     <b>{{ argv }}</b>
     <a href="https://github.com/Vlad-Shcherbina/icfpc2018-tbd/commit/{{
         version['commit'] }}">
@@ -61,8 +59,14 @@ LIST_INVOCATIONS_TEMPLATE = '''\
 def view_invocation(id):
     conn = get_conn()
     cur = conn.cursor()
+
     cur.execute('SELECT data FROM invocations WHERE id=%s', [id])
     [inv] = cur.fetchone()
+
+    cur.execute(
+        'SELECT id, name FROM cars WHERE invocation_id=%s ORDER BY id DESC',
+        [id])
+    cars = cur.fetchall()
 
     return flask.render_template_string(VIEW_INVOCATION_TEMPLATE, **locals())
 
@@ -72,5 +76,17 @@ VIEW_INVOCATION_TEMPLATE = '''\
 <h3>Invocation info</h3>
 {{ inv | render_invocation(id) }}
 <pre>{{ inv | json_dump }}</pre>
+
+{% if cars %}
+<h4>Cars</h4>
+{% endif %}
+<table>
+{% for id, name in cars %}
+    <tr>
+        <td>{{ url_for('view_car', id=id) | linkify }}</td>
+        <td>{{ name }}</td>
+    </tr>
+{% endfor %}
+</table>
 {% endblock %}
 '''

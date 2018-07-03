@@ -10,8 +10,7 @@ app = flask.Flask(__name__)
 def init():
     import logging
     for logger in logging.getLogger('werkzeug'), app.logger:
-        hs = logger.handlers[:]
-        for h in hs:
+        for h in logger.handlers[:]:
             logger.removeHandler(h)
 
     logging.basicConfig(
@@ -28,6 +27,13 @@ def get_conn():
     return _conn
 
 
+@app.template_filter('linkify')
+def linkify(url):
+    return flask.Markup(flask.render_template_string(
+        '<a href="{{ url }}">{{ url }}</a>',
+        url=url))
+
+
 @app.route('/')
 def hello():
     return flask.render_template_string('''\
@@ -41,3 +47,4 @@ def hello():
 # circular imports in this package organization are justified by
 # http://flask.pocoo.org/docs/1.0/patterns/packages/
 import production.dashboard.invocation_views
+import production.dashboard.cars_and_fuels_views
