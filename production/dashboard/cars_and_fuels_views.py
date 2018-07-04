@@ -9,7 +9,10 @@ def list_cars():
     conn = get_conn()
     cur = conn.cursor()
     cur.execute('''
-        SELECT cars.id, cars.name, cars.data, invocations.id, invocations.data
+        SELECT
+            cars.id, cars.name, cars.data,
+            invocations.id, invocations.data,
+            timestamp
         FROM cars
         JOIN invocations ON cars.invocation_id = invocations.id
         ORDER BY cars.id DESC
@@ -24,12 +27,14 @@ LIST_CARS_TEMPLATE = '''\
 <tr>
     <th>car</th>
     <th>name</th>
+    <th>time</th>
     <th>invocation</th>
 </tr>
-{% for id, name, data, inv_id, inv_data in cur %}
+{% for id, name, data, inv_id, inv_data, timestamp in cur %}
     <tr>
         <td>{{ url_for('view_car', id=id) | linkify }}</td>
-        <td>{{ name }}</tb>
+        <td>{{ name }}</td>
+        <td>{{ timestamp | render_timestamp }}</td>
         <td>{{ inv_data | render_invocation(inv_id) }}</td>
     </tr>
 {% endfor %}
@@ -43,9 +48,9 @@ def view_car(id):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        'SELECT id, name, data, invocation_id FROM cars WHERE id = %s',
+        'SELECT id, name, data, invocation_id, timestamp FROM cars WHERE id = %s',
         [id])
-    [car_id, car_name, car_data, inv_id] = cur.fetchone()
+    [car_id, car_name, car_data, inv_id, timestamp] = cur.fetchone()
     cur.execute(
         'SELECT data FROM invocations WHERE id = %s',
         [inv_id])
@@ -59,6 +64,7 @@ VIEW_CAR_TEMPLATE = '''\
 <h3>Car info</h3>
 Produced by {{ inv_data | render_invocation(inv_id) }} <br><br>
 Name: {{ car_name }} <br>
+Time: {{ timestamp | render_timestamp }} <br>
 Data:
 <pre>{{ car_data | json_dump }}</pre>
 

@@ -42,11 +42,23 @@ LIST_INVOCATIONS_TEMPLATE = '''\
 {% block body %}
 <h3>All invocations</h3>
 <table>
+    <tr>
+        <th></th>
+        <th>start time</th>
+        <th>last update time</th>
+    </tr>
 {% for id, inv in cur %}
-    {% set version = inv['version'] %}
     <tr>
         <td>
             {{ inv | render_invocation(id) }}
+        </td>
+        <td>{{ inv['start_time'] | render_timestamp }}</td>
+        <td>
+            {% if inv['last_update_time'] > inv['start_time'] + 0.5  %}
+                {{ inv['last_update_time'] | render_timestamp }}
+            {% else %}
+                same
+            {% endif %}
         </td>
     </tr>
 {% endfor %}
@@ -64,7 +76,7 @@ def view_invocation(id):
     [inv] = cur.fetchone()
 
     cur.execute(
-        'SELECT id, name FROM cars WHERE invocation_id=%s ORDER BY id DESC',
+        'SELECT id, name, timestamp FROM cars WHERE invocation_id=%s ORDER BY id DESC',
         [id])
     cars = cur.fetchall()
 
@@ -74,17 +86,20 @@ VIEW_INVOCATION_TEMPLATE = '''\
 {% extends "base.html" %}
 {% block body %}
 <h3>Invocation info</h3>
-{{ inv | render_invocation(id) }}
+{{ inv | render_invocation(id) }} <br>
+Start time: {{ inv['start_time'] | render_timestamp }} <br>
+Last update time: {{ inv['last_update_time'] | render_timestamp }} <br>
 <pre>{{ inv | json_dump }}</pre>
 
 {% if cars %}
 <h4>Cars</h4>
 {% endif %}
 <table>
-{% for id, name in cars %}
+{% for id, name, timestamp in cars %}
     <tr>
         <td>{{ url_for('view_car', id=id) | linkify }}</td>
         <td>{{ name }}</td>
+        <td>{{ timestamp | render_timestamp }}</td>
     </tr>
 {% endfor %}
 </table>

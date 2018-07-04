@@ -1,3 +1,5 @@
+import datetime
+
 import flask
 
 from production import db
@@ -32,6 +34,12 @@ def linkify(url):
     return flask.Markup(flask.render_template_string(
         '<a href="{{ url }}">{{ url }}</a>',
         url=url))
+
+
+@app.template_filter('render_timestamp')
+def render_timestamp(ts, fmt='%m-%d %H:%M:%S'):
+    return flask.Markup(
+        datetime.datetime.fromtimestamp(ts).strftime(fmt))
 
 
 @app.route('/')
