@@ -87,6 +87,13 @@ def view_invocation(id):
         [id])
     fuels = cur.fetchall()
 
+    cur.execute(
+        'SELECT id, fuel_id, data IS NOT NULL, timestamp '
+        'FROM fuel_submissions WHERE invocation_id = %s '
+        'ORDER BY id DESC',
+        [id])
+    fuel_submissions = cur.fetchall()
+
     return flask.render_template_string(VIEW_INVOCATION_TEMPLATE, **locals())
 
 VIEW_INVOCATION_TEMPLATE = '''\
@@ -129,5 +136,19 @@ Last update time: {{ inv['last_update_time'] | render_timestamp }} <br>
 {% endfor %}
 {% endif %}
 </table>
+
+{% if fuel_submissions %}
+<h4>Fuel submissions</h4>
+<table>
+{% for id, fuel_id, successful, t in fuel_submissions %}
+    <tr>
+        <td>{{ url_for('view_fuel_submission', id=id) | linkify }}</td>
+        <td>{{ url_for('view_fuel', id=fuel_id) | linkify }}</td>
+        <td>{% if successful %}ok{% else %}failed{% endif %}</td>
+        <td>{{ t | render_timestamp }}</td>
+    </tr>
+{% endfor %}
+</table>
+{% endif %}
 {% endblock %}
 '''

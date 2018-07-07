@@ -39,7 +39,7 @@ def create_tables(conn):
     CREATE TABLE IF NOT EXISTS fuels(
         id SERIAL PRIMARY KEY,
 
-        -- may be NULL to indicate that solver failed
+        -- may be NULL to indicate that solver failed in a non-transient way
         -- (it could be used to avoid further reruns of the same solver)
         data JSON,
         score DOUBLE PRECISION,
@@ -48,6 +48,21 @@ def create_tables(conn):
         extra JSON NOT NULL,
 
         car_id INTEGER NOT NULL REFERENCES cars,
+        invocation_id INTEGER NOT NULL REFERENCES invocations,
+        timestamp DOUBLE PRECISION NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS fuel_submissions(
+        id SERIAL PRIMARY KEY,
+
+        -- may be NULL to indicate that the submission failed
+        -- in a non-transient way (say, was rejected as incorrect)
+        -- (it could be used to avoid resubmitting)
+        data JSON,
+
+        extra JSON NOT NULL,
+
+        fuel_id INTEGER NOT NULL REFERENCES fuels,
         invocation_id INTEGER NOT NULL REFERENCES invocations,
         timestamp DOUBLE PRECISION NOT NULL
     );

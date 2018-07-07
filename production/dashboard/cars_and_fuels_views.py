@@ -165,6 +165,14 @@ def view_fuel(id):
         [inv_id])
     [inv_data] = cur.fetchone()
 
+    cur.execute('''
+        SELECT id, data IS NOT NULL, timestamp
+        FROM fuel_submissions
+        WHERE fuel_id = %s
+        ''',
+        [id])
+    submissions = cur.fetchall()
+
     return flask.render_template_string(VIEW_FUEL_TEMPLATE, **locals())
 
 VIEW_FUEL_TEMPLATE = '''\
@@ -177,6 +185,97 @@ Score: {{ fuel_score }} <br>
 Time: {{ timestamp | render_timestamp }} <br>
 Data:
 <pre>{{ fuel_data | json_dump }}</pre>
+Extra:
+<pre>{{ extra | json_dump }}</pre>
+
+{% if submissions %}
+<h4>Submissions</h4>
+<table>
+{% for id, successful, t in submissions %}
+    <tr>
+        <td>{{ url_for('view_fuel_submission', id=id) | linkify}}</td>
+        <td>{% if successful %}ok{% else %}failed{% endif %}</td>
+        <td>{{ t | render_timestamp }}</td>
+    </tr>
+{% endfor %}
+</table>
+{% endif %}
+{% endblock %}
+'''
+
+
+@app.route('/fuel_subs')
+def list_fuel_submissions():
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute('''
+        SELECT
+            fuel_submissions.id,
+            fuel_submissions.fuel_id,
+            fuels.car_id,
+            fuel_submissions.data IS NOT NULL,
+            invocations.id,
+            invocations.data,
+            fuel_submissions.timestamp
+        FROM fuel_submissions
+        JOIN fuels ON fuel_submissions.fuel_id = fuels.id
+        JOIN invocations ON fuel_submissions.invocation_id = invocations.id
+        ORDER BY fuel_submissions.id DESC
+        ''')
+    return flask.render_template_string(LIST_FUEL_SUBMISSIONS_TEMPLATE, **locals())
+
+LIST_FUEL_SUBMISSIONS_TEMPLATE = '''\
+{% extends "base.html" %}
+{% block body %}
+<h3>All fuel submissions</h3>
+<table>
+{% for id, fuel_id, car_id, successful, inv_id, inv_data, timestamp in cur %}
+    <tr>
+        <td>{{ url_for('view_fuel_submission', id=id) | linkify }}</td>
+        <td>{{ url_for('view_fuel', id=fuel_id) | linkify }}</td>
+        <td>{{ url_for('view_car', id=car_id) | linkify }}</td>
+        <td>{% if successful %}failed{% else %}ok{% endif %}</td>
+        <td>{{ timestamp | render_timestamp }}</td>
+        <td>{{ inv_data | render_invocation(inv_id) }}</td>
+    </tr>
+{% endfor %}
+</table>
+{% endblock %}
+'''
+
+
+@app.route('/fuel_sub/<int:id>')
+def view_fuel_submission(id):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        'SELECT data, extra, fuel_id, invocation_id, timestamp '
+        'FROM fuel_submissions WHERE id = %s',
+        [id])
+    [data, extra, fuel_id, inv_id, timestamp] = cur.fetchone()
+    cur.execute(
+        'SELECT data FROM invocations WHERE id = %s',
+        [inv_id])
+    [inv_data] = cur.fetchone()
+    cur.execute(
+        'SELECT car_id FROM fuels WHERE id = %s',
+        [fuel_id])
+    [car_id] = cur.fetchone()
+    print(data, type(data))
+    print(extra, type(extra))
+
+    return flask.render_template_string(VIEW_FUEL_SUBMISSION_TEMPLATE, **locals())
+
+VIEW_FUEL_SUBMISSION_TEMPLATE = '''\
+{% extends "base.html" %}
+{% block body %}
+<h3>Fuel submission info</h3>
+Produced by {{ inv_data | render_invocation(inv_id) }} <br><br>
+Fuel: {{ url_for('view_fuel', id=fuel_id) | linkify }} <br>
+Car: {{ url_for('view_car', id=car_id) | linkify }} <br>
+Time: {{ timestamp | render_timestamp }} <br>
+Data:
+<pre>{{ data | json_dump }}</pre>
 Extra:
 <pre>{{ extra | json_dump }}</pre>
 
