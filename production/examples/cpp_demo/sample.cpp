@@ -64,8 +64,8 @@ struct Fail {
 };
 
 
-PYBIND11_PLUGIN(sample) {
-    py::module m("sample", "pybind11 example plugin");
+PYBIND11_MODULE(sample, m) {
+    m.doc() = "pybind11 example plugin";
 
     m.attr("N") = N;
     m.def("square", &square<int>);
@@ -86,6 +86,4 @@ PYBIND11_PLUGIN(sample) {
         .def_static("page_fault", &Fail::page_fault)
         .def_static("infinite_recursion", &Fail::infinite_recursion)
     ;
-
-    return m.ptr();
 }
