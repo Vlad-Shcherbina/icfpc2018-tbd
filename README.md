@@ -8,8 +8,6 @@ Virtualenv is optional.
 
 Copy `git_hooks/pre-push` to `.git/hooks/`.
 
-On Windows, you'll need C++ compiler. Install Visual Studio 2015 Community or Express edition _or_ Visual C++ Build Tools 2015. Visual Studio 2017 wouldn't suffice, you'd still need 2015 Build Tools.
-
 
 ## Running stuff
 
@@ -18,3 +16,29 @@ Root of this repository should be in `PYTHONPATH`, because we use absolute impor
   - create the file `<python installation or venv>/lib/python3.7/site-packages/tbd.pth` whose content is a single line `/path/to/icfpc2017-tbd`
   - configure your favorite IDE appropriately
   - use `python3 -m production.some_script` instead of `python3 production/some_script.py`
+
+
+## Testing stuff
+
+```
+cd icfpc2018-tbd/
+python3 -m production.test_all
+
+# or simply
+cd icfpc2018-tbd/
+pytest
+```
+
+
+## Random notes
+
+### Windows
+
+You'll need C++ compiler to build C++ extensions.
+Install Visual Studio 2015 Community or Express edition _or_ Visual C++ Build Tools 2015.
+Visual Studio 2017 wouldn't suffice, you'd still need 2015 Build Tools.
+
+Most Python packages could be installed simply with `pip3 install whatever_package` nowadays,
+but sometimes it does not work (e.g. for `psycopg2`).
+In such cases, download the package from https://www.lfd.uci.edu/~gohlke/pythonlibs/
+and install it manually (`pip install whatever_package.wheel`).
