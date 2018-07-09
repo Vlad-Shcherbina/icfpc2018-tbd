@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import random
 import json
 import time
+import signal
 import logging
 logger = logging.getLogger(__name__)
 
@@ -63,10 +64,19 @@ def main():
             id=fuel_id, score=fuel_score,
             has_successful_submission=bool(num_successful_submissions)))
 
-    import prettyprinter
-    prettyprinter.cpprint(fuels_by_car_name)
+    done = False
+    def signal_handler(sig, frame):
+        nonlocal done
+        done = True
+        logging.warning('Caught Ctrl-C, will finish current item and exit.')
+        logging.warning('To abort immediately, hit Ctrl-C again.')
+        signal.signal(signal.SIGINT, old_signal_handler)
+    old_signal_handler = signal.signal(signal.SIGINT, signal_handler)
 
     for car_name, fuels in fuels_by_car_name.items():
+        if done:
+            break
+
         fuel = max(fuels, key=lambda f: f.score)
         if fuel.has_successful_submission:
             logging.info(f'Best fuel for car {car_name!r} already submitted')
