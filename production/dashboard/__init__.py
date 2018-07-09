@@ -1,11 +1,13 @@
 import datetime
 
 import flask
+import jinja2
 
 from production import db
 
 
 app = flask.Flask(__name__)
+app.jinja_env.undefined = jinja2.StrictUndefined
 
 
 @app.before_first_request

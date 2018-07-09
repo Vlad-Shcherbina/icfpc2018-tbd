@@ -10,42 +10,46 @@ def list_cars():
     cur = conn.cursor()
     cur.execute('''
         SELECT
-            cars.id, cars.name, cars.data,
-            COUNT(fuels.id), COUNT(fuels.score),
-            invocations.id, invocations.data,
-            cars.timestamp
+            cars.id, cars.name, cars.invocation_id, cars.timestamp,
+            fuels.id, fuels.score,
+            fuel_submissions.id, fuel_submissions.data IS NOT NULL
         FROM cars
-        JOIN invocations ON cars.invocation_id = invocations.id
         LEFT OUTER JOIN fuels ON fuels.car_id = cars.id
-        GROUP BY cars.id, invocations.id
-        ORDER BY cars.id DESC
-        ''')
+        LEFT OUTER JOIN fuel_submissions ON fuel_submissions.fuel_id = fuels.id
+        ORDER BY cars.id DESC, fuels.id DESC, fuel_submissions.id DESC
+    ''')
     return flask.render_template_string(LIST_CARS_TEMPLATE, **locals())
 
 LIST_CARS_TEMPLATE = '''\
 {% extends "base.html" %}
 {% block body %}
 <h3>All cars</h3>
-<table>
-<tr>
-    <th>car</th>
-    <th>name</th>
-    <th>num. attempts</th>
-    <th>num. fuels</th>
-    <th>time</th>
-    <th>invocation</th>
-</tr>
-{% for id, name, data, num_attempts, num_solutions, inv_id, inv_data, timestamp in cur %}
+<table id='t'>
+{% for car_id, car_name, car_inv_id, car_t,
+       fuel_id, fuel_score,
+       sub_id, sub_ok in cur %}
     <tr>
-        <td>{{ url_for('view_car', id=id) | linkify }}</td>
-        <td>{{ name }}</td>
-        <td>{{ num_attempts }}</td>
-        <td>{{ num_solutions }}</td>
-        <td>{{ timestamp | render_timestamp }}</td>
-        <td>{{ inv_data | render_invocation(inv_id) }}</td>
+        <td>{{ url_for('view_invocation', id=car_inv_id) | linkify }}</td>
+        <td>{{ url_for('view_car', id=car_id) | linkify }}</td>
+        <td>{{ car_name }}</td>
+        <td>{{ car_t | render_timestamp }}</td>
+        {% if fuel_id is not none %}
+            <td>{{ url_for('view_fuel', id=fuel_id) | linkify }}</td>
+            <td>{% if fuel_score is not none %}{{ fuel_score }}
+                {% else %}fail{% endif %}</td>
+            {% if sub_id is not none %}
+                <td>{{ url_for('view_fuel_submission', id=sub_id) | linkify}}</td>
+                <td>{% if sub_ok %}ok{% else %}fail{% endif %}</td>
+            {% endif %}
+        {% endif %}
     </tr>
 {% endfor %}
 </table>
+
+<script src='/static/merge_equal_td.js'></script>
+<script>
+    mergeEqualTd(document.getElementById('t'), [[0], [1, 2, 3], [4, 5]]);
+</script>
 {% endblock %}
 '''
 
@@ -64,11 +68,14 @@ def view_car(id):
     [inv_data] = cur.fetchone()
 
     cur.execute('''
-        SELECT fuels.id, fuels.score, fuels.timestamp, invocations.id, invocations.data
+        SELECT
+            fuels.id, fuels.score, fuels.timestamp, fuels.invocation_id,
+            fuel_submissions.id, fuel_submissions.data IS NOT NULL
         FROM fuels
-        JOIN invocations ON fuels.invocation_id = invocations.id
+        LEFT OUTER JOIN fuel_submissions
+        ON fuels.id = fuel_submissions.fuel_id
         WHERE fuels.car_id = %s
-        ORDER BY fuels.id DESC
+        ORDER BY fuels.id DESC, fuel_submissions.id DESC
         ''',
         [id])
     fuels = cur.fetchall()
@@ -87,23 +94,27 @@ Data:
 
 {% if fuels %}
 <h4>Fuels</h4>
-<table>
-<tr>
-    <td></td>
-    <td>score</td>
-</tr>
-{% for fuel_id, score, t, inv_id, inv_data in fuels %}
+<table id='t'>
+{% for fuel_id, score, t, inv_id,
+       sub_id, sub_ok in fuels %}
     <tr>
+        <td>{{ url_for('view_invocation', id=inv_id) | linkify }}</td>
         <td>{{ url_for('view_fuel', id=fuel_id) | linkify }}</td>
-        <td>{{ score }}</td>
+        <td>{% if score is not none %}{{ score }}{% else %}fail{% endif %}</td>
         <td>{{ t | render_timestamp }}</td>
-        <td>{{ inv_data | render_invocation(inv_id) }}</td>
+        {% if sub_id is not none %}
+            <td>{{ url_for('view_fuel_submission', id=sub_id) | linkify }}</td>
+            <td>{% if sub_ok %}ok{% else %}fail{% endif %}</td>
+        {% endif %}
     </tr>
 {% endfor %}
 </table>
 {% endif %}
 
-</table>
+<script src='/static/merge_equal_td.js'></script>
+<script>
+    mergeEqualTd(document.getElementById('t'), [[0, 1, 2, 3]]);
+</script>
 {% endblock %}
 '''
 
@@ -114,14 +125,16 @@ def list_fuels():
     cur = conn.cursor()
     cur.execute('''
         SELECT
-            fuels.id, fuels.score,
-            cars.id,
-            invocations.id, invocations.data,
-            fuels.timestamp
+            fuels.id,
+            fuels.score,
+            fuels.car_id,
+            fuels.invocation_id,
+            fuels.timestamp,
+            fuel_submissions.id,
+            fuel_submissions.data IS NOT NULL
         FROM fuels
-        JOIN cars ON fuels.car_id = cars.id
-        JOIN invocations ON fuels.invocation_id = invocations.id
-        ORDER BY fuels.id DESC
+        LEFT OUTER JOIN fuel_submissions ON fuels.id = fuel_submissions.fuel_id
+        ORDER BY fuels.id DESC, fuel_submissions.id DESC
         ''')
     return flask.render_template_string(LIST_FUELS_TEMPLATE, **locals())
 
@@ -129,24 +142,27 @@ LIST_FUELS_TEMPLATE = '''\
 {% extends "base.html" %}
 {% block body %}
 <h3>All fuels</h3>
-<table>
-<tr>
-    <th>fuel</th>
-    <th>score</th>
-    <th>car</th>
-    <th>time</th>
-    <th>invocation</th>
-</tr>
-{% for fuel_id, score, car_id, inv_id, inv_data, timestamp in cur %}
+<table id='t'>
+{% for fuel_id, score, car_id, fuel_inv_id, fuel_t,
+       sub_id, sub_ok in cur %}
     <tr>
+        <td>{{ url_for('view_invocation', id=fuel_inv_id) | linkify }}</td>
         <td>{{ url_for('view_fuel', id=fuel_id) | linkify }}</td>
-        <td>{{ score }}</td>
+        <td>{% if score is not none %}{{ score }}{% else %}fail{% endif %}</td>
         <td>{{ url_for('view_car', id=car_id) | linkify }}</td>
-        <td>{{ timestamp | render_timestamp }}</td>
-        <td>{{ inv_data | render_invocation(inv_id) }}</td>
+        <td>{{ fuel_t | render_timestamp }}</td>
+        {% if sub_id is not none %}
+            <td>{{ url_for('view_fuel_submission', id=sub_id) | linkify }}</td>
+            <td>{% if sub_ok %}ok{% else %}fail{% endif %}</td>
+        {% endif %}
     </tr>
 {% endfor %}
 </table>
+
+<script src='/static/merge_equal_td.js'></script>
+<script>
+    mergeEqualTd(document.getElementById('t'), [[0], [1, 2, 3, 4]]);
+</script>
 {% endblock %}
 '''
 
@@ -169,6 +185,7 @@ def view_fuel(id):
         SELECT id, data IS NOT NULL, timestamp
         FROM fuel_submissions
         WHERE fuel_id = %s
+        ORDER BY id DESC
         ''',
         [id])
     submissions = cur.fetchall()
@@ -213,13 +230,12 @@ def list_fuel_submissions():
             fuel_submissions.id,
             fuel_submissions.fuel_id,
             fuels.car_id,
+            fuels.score,
             fuel_submissions.data IS NOT NULL,
-            invocations.id,
-            invocations.data,
+            fuel_submissions.invocation_id,
             fuel_submissions.timestamp
         FROM fuel_submissions
         JOIN fuels ON fuel_submissions.fuel_id = fuels.id
-        JOIN invocations ON fuel_submissions.invocation_id = invocations.id
         ORDER BY fuel_submissions.id DESC
         ''')
     return flask.render_template_string(LIST_FUEL_SUBMISSIONS_TEMPLATE, **locals())
@@ -228,18 +244,24 @@ LIST_FUEL_SUBMISSIONS_TEMPLATE = '''\
 {% extends "base.html" %}
 {% block body %}
 <h3>All fuel submissions</h3>
-<table>
-{% for id, fuel_id, car_id, successful, inv_id, inv_data, timestamp in cur %}
+<table id='t'>
+{% for id, fuel_id, car_id, score, is_ok, sub_inv_id, sub_t in cur %}
     <tr>
-        <td>{{ url_for('view_fuel_submission', id=id) | linkify }}</td>
-        <td>{{ url_for('view_fuel', id=fuel_id) | linkify }}</td>
+        <td>{{ url_for('view_invocation', id=sub_inv_id) | linkify }}</td>
         <td>{{ url_for('view_car', id=car_id) | linkify }}</td>
-        <td>{% if successful %}failed{% else %}ok{% endif %}</td>
-        <td>{{ timestamp | render_timestamp }}</td>
-        <td>{{ inv_data | render_invocation(inv_id) }}</td>
+        <td>{{ url_for('view_fuel', id=fuel_id) | linkify }}</td>
+        <td>{{ score }}</td>
+        <td>{{ url_for('view_fuel_submission', id=id) | linkify }}</td>
+        <td>{% if is_ok %}ok{% else %}failed{% endif %}</td>
+        <td>{{ sub_t | render_timestamp }}</td>
     </tr>
 {% endfor %}
 </table>
+
+<script src='/static/merge_equal_td.js'></script>
+<script>
+    mergeEqualTd(document.getElementById('t'), [[0]]);
+</script>
 {% endblock %}
 '''
 
@@ -261,8 +283,6 @@ def view_fuel_submission(id):
         'SELECT car_id FROM fuels WHERE id = %s',
         [fuel_id])
     [car_id] = cur.fetchone()
-    print(data, type(data))
-    print(extra, type(extra))
 
     return flask.render_template_string(VIEW_FUEL_SUBMISSION_TEMPLATE, **locals())
 
