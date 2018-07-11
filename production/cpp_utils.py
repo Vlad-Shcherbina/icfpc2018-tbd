@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import inspect
+import platform
 import contextlib
 import distutils.core
 import distutils.util
@@ -19,16 +20,22 @@ def magic_extension(*, name, sources, headers):
 
 def build_extension(caller_file, name, sources, headers):
     release = distutils.util.strtobool(os.getenv('TBD_RELEASE', '0'))
-    if release:
-        extra_compile_args = [
-            '-ggdb', '-std=c++11',
-            '-O2']
-        undef_macros = ['NDEBUG']  # want assertions even in the release build?
+    if platform.system() == 'Windows':
+        extra_compile_args = ['/std:c++latest']
+        if release:
+            extra_compile_args.append('/Ox')
+        else:
+            extra_compile_args.append('/Od')
     else:
-        extra_compile_args = [
-            '-ggdb', '-std=c++11',
-            '-O0', '-D_GLIBCXX_DEBUG', '-D_GLIBCXX_DEBUG_PEDANTIC']
-        undef_macros = ['NDEBUG']  # want assertions
+        extra_compile_args = ['-ggdb', '-std=c++17']
+        if release:
+            extra_compile_args.append('-O2')
+        else:
+            extra_compile_args += [
+                '-O0', '-D_GLIBCXX_DEBUG', '-D_GLIBCXX_DEBUG_PEDANTIC']
+
+    # want assertions, even in the release build
+    undef_macros = ['NDEBUG']
 
     caller_file = os.path.abspath(caller_file)
     this_module = os.path.abspath(__file__)

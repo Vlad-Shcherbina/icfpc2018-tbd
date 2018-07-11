@@ -13,7 +13,7 @@ Copy `git_hooks/pre-push` to `.git/hooks/`.
 
 Root of this repository should be in `PYTHONPATH`, because we use absolute imports (`from production import utils`). There are several ways to achieve that:
   - add project path to the environment variable `PYTHONPATH`
-  - create the file `<python installation or venv>/lib/python3.7/site-packages/tbd.pth` whose content is a single line `/path/to/icfpc2017-tbd`
+  - create the file `<python installation or venv>/lib/python3.7/site-packages/tbd.pth` whose content is a single line `/path/to/icfpc2018-tbd`
   - configure your favorite IDE appropriately
   - use `python3 -m production.some_script` instead of `python3 production/some_script.py`
 
@@ -42,3 +42,28 @@ Most Python packages could be installed simply with `pip3 install whatever_packa
 but sometimes it does not work (e.g. for `psycopg2`).
 In such cases, download the package from https://www.lfd.uci.edu/~gohlke/pythonlibs/
 and install it manually (`pip install whatever_package.wheel`).
+
+### WSL or Ubuntu 16.04 (Xenial)
+
+Python:
+
+```
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get update
+sudo apt-get install python3.7
+```
+
+Then use `python3.7` to invoke Python,
+`python3.7 -m pip` to invoke `pip`,
+`python3.7 -m pytest` to invoke `pytest`,
+you get the idea.
+
+GCC:
+
+```
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt-get update
+sudo apt-get install g++-8
+```
+
+Then set environment variable `CC` to `g++-8`.

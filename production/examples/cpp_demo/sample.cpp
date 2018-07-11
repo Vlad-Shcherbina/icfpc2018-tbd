@@ -7,6 +7,7 @@ namespace py = pybind11;
 #include <sstream>
 #include <vector>
 #include <iostream>
+#include <optional>
 #include <assert.h>
 
 const int N = 42;
@@ -17,10 +18,16 @@ T square(T x) {
 }
 
 std::vector<int> reverse(std::vector<int> xs) {
-    auto c_plus_plus = 11;
-
     std::reverse(xs.begin(), xs.end());
     return xs;
+}
+
+std::optional<int> flip_opt(std::optional<int> x) {
+    if (x.has_value()) {
+        return {};
+    } else {
+        return {42};
+    }
 }
 
 
@@ -71,6 +78,7 @@ PYBIND11_MODULE(sample, m) {
     m.def("square", &square<int>);
     m.def("square", &square<float>);
     m.def("reverse", &reverse);
+    m.def("flip_opt", &flip_opt);
 
     py::class_<Hz>(m, "Hz")
         .def(py::init<>())

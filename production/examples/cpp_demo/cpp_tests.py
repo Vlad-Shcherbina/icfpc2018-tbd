@@ -12,3 +12,6 @@ def test_stuff():
     hz = sample.Hz()
     with pytest.raises(AttributeError):
         hz.zzz = 0
+
+    assert sample.flip_opt(None) == 42
+    assert sample.flip_opt(1) == None
