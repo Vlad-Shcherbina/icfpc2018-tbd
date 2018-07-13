@@ -72,6 +72,7 @@ def create_tables(conn):
 _invocation = None
 _invocation_id = None
 
+
 def record_this_invocation(conn, **kwargs):
     '''
     Creates or updates entry for current invocation.
@@ -94,6 +95,7 @@ def record_this_invocation(conn, **kwargs):
         cur.execute(
             'UPDATE invocations SET data = %s WHERE id = %s',
             [psycopg2.extras.Json(_invocation), _invocation_id])
+
 
 def get_this_invocation_id(conn) -> int:
     if _invocation_id is None:

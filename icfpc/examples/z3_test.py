@@ -13,5 +13,6 @@ def test_smoke():
 
 
 if __name__ == '__main__':
-    import sys, pytest
+    import sys
+    import pytest
     pytest.main([__file__] + sys.argv[1:])

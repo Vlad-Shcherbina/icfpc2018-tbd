@@ -71,7 +71,7 @@ struct Fail {
 };
 
 
-PYBIND11_MODULE(sample, m) {
+PYBIND11_MODULE(extension, m) {
     m.doc() = "pybind11 example plugin";
 
     m.attr("N") = N;

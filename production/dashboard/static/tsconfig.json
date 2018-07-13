@@ -1,7 +1,0 @@
-{
-    "compilerOptions": {
-        "strictNullChecks": true,
-        "target": "ES6",
-        "watch": true
-    }
-}
