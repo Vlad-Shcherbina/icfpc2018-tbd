@@ -2,10 +2,10 @@ import faulthandler
 faulthandler.enable()
 
 import sys
-from production.examples.cpp_demo.sample import Fail
+from icfpc.examples.cpp.extension import Fail
 
 
-def main():  # pragma: no cover
+def main():
     assert len(sys.argv) == 2
     if sys.argv[1] == 'fail_assert':
         Fail.fail_assert()
