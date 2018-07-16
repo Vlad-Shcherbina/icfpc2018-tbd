@@ -3,3 +3,4 @@ pytest-cov
 coverage
 pybind11
 psycopg2
+flask
