@@ -1,5 +1,5 @@
 with import <nixpkgs> {};
-with python3Packages;
+with python37Packages;
 
 stdenv.mkDerivation {
   name = "icfpc2018-tbd";
