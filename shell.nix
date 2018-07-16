@@ -1,0 +1,21 @@
+with import <nixpkgs> {};
+with python3Packages;
+
+stdenv.mkDerivation {
+  name = "icfpc2018-tbd";
+
+  buildInputs = [
+    python
+    virtualenv
+    pip
+    postgresql
+  ];
+
+  shellHook = ''
+    export SOURCE_DATE_EPOCH=$(date +%s)
+    virtualenv --no-setuptools virtualenv
+
+    export PATH=$PWD/virtualenv/bin:$PATH
+    pip install -r requirements.txt
+  '';
+}
