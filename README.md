@@ -35,8 +35,7 @@ pytest
 ### Windows
 
 You'll need C++ compiler to build C++ extensions.
-Install Visual Studio 2015 Community or Express edition _or_ Visual C++ Build Tools 2015.
-Visual Studio 2017 wouldn't suffice, you'd still need 2015 Build Tools.
+Most likely Visual Studio 2017 would work.
 
 Most Python packages could be installed simply with `pip3 install whatever_package` nowadays,
 but sometimes it does not work (e.g. for `psycopg2`).
