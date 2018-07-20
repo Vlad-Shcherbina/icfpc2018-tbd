@@ -1,22 +1,17 @@
-/*
-cl /EHsc /LD /O2 emulator.cpp C:\Python37\libs\python37.lib /Feemulator.pyd /I C:\Python37\include
-cl emulator.cpp && emulator.exe
-*/
-
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <string>
 #include <cassert>
+#include <pybind11/stl.h>
+#include <pybind11/pybind11.h>
 
 using std::vector;
 using std::string;
 
 
 
-int abs(int x) {
-	return x >= 0 ? x : -x;
-}
+// int abs(int x) { return (x >= 0) ? x : -x; }
 
 
 class Diff {
@@ -83,15 +78,27 @@ public:
 };
 
 
-/*----------------------------------------------------------*/
+/*----------------------- BINDING --------------------------*/
 
 
-int main() {
-	// testing purposes only
-	Pos a(1, 2, 3);
-	Pos b(3, 2, 1);
-	Diff d = a - b;
-	b += d;
-	a = b + d;
-	std::cout << (int)a.x;
+namespace py = pybind11;
+PYBIND11_MODULE(cpp_emulator, m) {
+	m.doc() = "C++ Emulator";
+
+	py::class_<Diff> DiffClass(m, "Diff");
+	DiffClass
+		.def(py::init<int, int, int>())
+		.def("mlen", &Diff::mlen)
+		.def("clen", &Diff::clen)
+		.def("is_linear", &Diff::is_linear)
+		.def("is_short_linear", &Diff::is_short)
+		.def("is_long_linear", &Diff::is_long)
+		.def("is_near", &Diff::is_near)
+	;
+
+	py::class_<Pos> PosClass(m, "Pos");
+	PosClass
+		.def(py::init<int, int, int>())
+	;
+
 }
