@@ -42,3 +42,9 @@ def test_near():
                 if Diff(dx, dy, dz).is_near():
                     num_near += 1
     assert num_near == 18
+
+
+def test_dimension():
+    assert region_dimension(Pos(1, 2, 3), Pos(1, 2, 3)) == 0
+    assert region_dimension(Pos(1, 2, 3), Pos(1, 20, 3)) == 1
+    assert region_dimension(Pos(1, 2, 3), Pos(0, 0, 0)) == 3
