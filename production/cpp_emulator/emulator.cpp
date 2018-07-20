@@ -1,10 +1,11 @@
+#include <pybind11/stl.h>
+#include <pybind11/operators.h>
+#include <pybind11/pybind11.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <string>
 #include <cassert>
-#include <pybind11/stl.h>
-#include <pybind11/pybind11.h>
 
 using std::vector;
 using std::string;
@@ -40,6 +41,12 @@ public:
 	bool is_linear() const { return ((dx == 0) + (dy == 0) + (dz == 0)) == 2; }
 	bool is_short() const { return is_linear() && mlen() <= 5; }
 	bool is_long() const {return is_linear() && mlen() <= 15; }
+	bool operator==(const Diff& other) const { return dx == other.dx && dy == other.dy && dz == other.dz; }
+	bool operator!=(const Diff& other) const { return !(*this == other); }
+
+	string __str__() const {
+		return "[" + std::to_string(dx) + ", " + std::to_string(dy) + ", " + std::to_string(dz) + "]";
+	}
 
 };
 
@@ -57,9 +64,11 @@ public:
 		this->z = z;
 	}
 
-	Diff operator-(const Pos& other) { return Diff(x - other.x, y - other.y, z - other.z); }
+	Diff operator-(const Pos& other) const { return Diff(x - other.x, y - other.y, z - other.z); }
 	Pos operator+(const Diff& d) const { return Pos(x + d.dx, y + d.dy, z + d.dz); }
-	Pos operator-(const Diff& d) const { return Pos(x - d.dx, y - d.dy, z - d.dz); }
+	// Pos operator-(const Diff& d) const { return Pos(x - d.dx, y - d.dy, z - d.dz); }
+	bool operator==(const Pos& other) const { return x == other.x && y == other.y && z == other.z; }
+	bool operator!=(const Pos& other) const { return !(*this == other); }
 
 	Pos& operator+= (const Diff& d) {
 		x += d.dx;
@@ -68,11 +77,15 @@ public:
 		return *this;
 	}
 
-	Pos& operator-= (const Diff& d) {
-		x -= d.dx;
-		y -= d.dy;
-		x -= d.dz;
-		return *this;
+	// Pos& operator-= (const Diff& d) {
+	// 	x -= d.dx;
+	// 	y -= d.dy;
+	// 	x -= d.dz;
+	// 	return *this;
+	// }
+
+	string __str__() const {
+		return "[" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + "]";
 	}
 
 };
@@ -82,7 +95,7 @@ public:
 
 
 namespace py = pybind11;
-PYBIND11_MODULE(cpp_emulator, m) {
+PYBIND11_MODULE(emulator, m) {
 	m.doc() = "C++ Emulator";
 
 	py::class_<Diff> DiffClass(m, "Diff");
@@ -94,11 +107,22 @@ PYBIND11_MODULE(cpp_emulator, m) {
 		.def("is_short_linear", &Diff::is_short)
 		.def("is_long_linear", &Diff::is_long)
 		.def("is_near", &Diff::is_near)
+		.def(py::self == py::self)
+		.def(py::self != py::self)
+		.def("__str__", &Diff::__str__)
 	;
 
 	py::class_<Pos> PosClass(m, "Pos");
 	PosClass
 		.def(py::init<int, int, int>())
+		.def(py::self - py::self)
+		.def("__add__", &Pos::operator+, py::is_operator())
+		.def("__iadd__", &Pos::operator+=, py::is_operator())
+		// .def("__sub__", &Pos::operator-, py::is_operator())
+		// .def("__isub__", &Pos::operator-=, py::is_operator())
+		.def(py::self == py::self)
+		.def(py::self != py::self)
+		.def("__str__", &Pos::__str__)
 	;
 
 }
