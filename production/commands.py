@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from functools import update_wrapper
 from typing import Tuple, ClassVar, Dict
 
-from basics import Diff
+from production.basics import Diff
 
 
 def encode_sld(v : Diff):
