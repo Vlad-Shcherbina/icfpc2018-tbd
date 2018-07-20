@@ -7,6 +7,7 @@ Virtualenv is optional.
 `pip3 install -r requirements.txt`
 
 Copy `git_hooks/pre-push` to `.git/hooks/`.
+Edit it as neccessary to match how you invoke Python in your environment.
 
 
 ## Running stuff
