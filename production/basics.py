@@ -25,3 +25,12 @@ class Diff:
 
     def clen(self):
         return max(abs(self.dx), abs(self.dy), abs(self.dz))
+
+    def is_linear(self):
+        return sum(1 for d in (self.dx, self.dy, self.dz) if d != 0) == 1
+
+    def is_short_linear(self):
+        return self.is_linear() and self.mlen() <= 5
+
+    def is_long_linear(self):
+        return self.is_linear() and self.mlen() <= 15
