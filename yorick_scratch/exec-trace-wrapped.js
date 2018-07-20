@@ -1,7 +1,9 @@
 const config = {
     stepsPerFrame: 2000,
     stdout: function(ih) { console.log(ih) },
-    execTrace: null
+    execTrace: null,
+    running: false,
+    cb: function(){}
 }
 function e(obj) {
     return Object.freeze(Object.assign(obj, {
@@ -10,7 +12,13 @@ function e(obj) {
             else console.error("setattr", s)
         },
         removeAttribute(s) {
-            if (s == "disabled") return
+            if (s == "disabled") {
+                if (config.running) {
+                    config.running = false
+                    config.cb()
+                }
+                return
+            }
             else console.error("setattr", s)
         }
     }))
@@ -40,6 +48,7 @@ module.exports.execTrace = function(tgt, trace, extra = {}) {
     tgtModelBData = tgt
     traceBData = trace
     Object.assign(config, extra)
+    config.running = true
     config.execTrace()
 }
 
