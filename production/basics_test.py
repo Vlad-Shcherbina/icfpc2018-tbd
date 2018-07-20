@@ -9,6 +9,12 @@ def test_arith():
     assert p == q
 
 
+def test_inside_matrix():
+    assert Pos(1, 2, 3).is_inside_matrix(4)
+    assert not Pos(1, 2, 3).is_inside_matrix(3)
+    assert not Pos(-1, 2, 3).is_inside_matrix(4)
+
+
 def test_len():
     d = Diff(1, 2, -3)
     assert d.mlen() == 6

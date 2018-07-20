@@ -13,6 +13,9 @@ class Pos:
     def __sub__(self, other: 'Pos') -> 'Diff':
         return Diff(self.x - other.x, self.y - other.y, self.z - other.z)
 
+    def is_inside_matrix(self, R) -> bool:
+        return 0 <= self.x < R and 0 <= self.y < R and 0 <= self.z < R
+
 
 @dataclass(frozen=True)
 class Diff:
