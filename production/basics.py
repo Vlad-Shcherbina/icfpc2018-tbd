@@ -16,6 +16,20 @@ class Pos:
     def is_inside_matrix(self, R) -> bool:
         return 0 <= self.x < R and 0 <= self.y < R and 0 <= self.z < R
 
+    def enum_adjacent(self, R):
+        if self.x > 0:
+            yield Pos(self.x - 1, self.y, self.z)
+        if self.y > 0:
+            yield Pos(self.x, self.y - 1, self.z)
+        if self.z > 0:
+            yield Pos(self.x, self.y, self.z - 1)
+        if self.x + 1 < R:
+            yield Pos(self.x + 1, self.y, self.z)
+        if self.y + 1 < R:
+            yield Pos(self.x, self.y + 1, self.z)
+        if self.z + 1 < R:
+            yield Pos(self.x, self.y, self.z + 1)
+
 
 @dataclass(frozen=True)
 class Diff:
@@ -51,3 +65,10 @@ def region_dimension(c1: Pos, c2: Pos):
     if c1.z != c2.z:
         result += 1
     return result
+
+
+def enum_region_cells(c1: Pos, c2: Pos):
+    for x in range(min(c1.x, c2.x), max(c1.x, c2.x) + 1):
+        for y in range(min(c1.y, c2.y), max(c1.y, c2.y) + 1):
+            for z in range(min(c1.z, c2.z), max(c1.z, c2.z) + 1):
+                yield Pos(x, y, z)
