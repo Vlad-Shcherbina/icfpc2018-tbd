@@ -64,31 +64,38 @@ public:
 		this->z = z;
 	}
 
+	bool is_inside(int R) const { return x < R && y < R && z < R; }
 	Diff operator-(const Pos& other) const { return Diff(x - other.x, y - other.y, z - other.z); }
 	Pos operator+(const Diff& d) const { return Pos(x + d.dx, y + d.dy, z + d.dz); }
-	// Pos operator-(const Diff& d) const { return Pos(x - d.dx, y - d.dy, z - d.dz); }
+	Pos operator-(const Diff& d) const { return Pos(x - d.dx, y - d.dy, z - d.dz); }
 	bool operator==(const Pos& other) const { return x == other.x && y == other.y && z == other.z; }
 	bool operator!=(const Pos& other) const { return !(*this == other); }
-
+	
 	Pos& operator+= (const Diff& d) {
 		x += d.dx;
 		y += d.dy;
-		x += d.dz;
+		z += d.dz;
 		return *this;
 	}
 
-	// Pos& operator-= (const Diff& d) {
-	// 	x -= d.dx;
-	// 	y -= d.dy;
-	// 	x -= d.dz;
-	// 	return *this;
-	// }
+	Pos& operator-= (const Diff& d) {
+		x -= d.dx;
+		y -= d.dy;
+		x -= d.dz;
+		return *this;
+	}
 
 	string __str__() const {
 		return "[" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + "]";
 	}
 
 };
+
+
+int region_dimension(const Pos& a, const Pos& b) {
+	Diff d = b - a;
+	return (d.dx != 0) + (d.dy != 0) + (d.dz != 0);
+}
 
 
 /*----------------------- BINDING --------------------------*/
@@ -116,13 +123,16 @@ PYBIND11_MODULE(emulator, m) {
 	PosClass
 		.def(py::init<int, int, int>())
 		.def(py::self - py::self)
+		.def("is_inside_matrix", &Pos::is_inside)
 		.def("__add__", &Pos::operator+, py::is_operator())
 		.def("__iadd__", &Pos::operator+=, py::is_operator())
-		// .def("__sub__", &Pos::operator-, py::is_operator())
-		// .def("__isub__", &Pos::operator-=, py::is_operator())
+		// .def("__sub__", &Pos::operator-<DiffClass>, py::is_operator())
+		// .def("__isub__", &Pos::operator-=<Diff>, py::is_operator())
 		.def(py::self == py::self)
 		.def(py::self != py::self)
 		.def("__str__", &Pos::__str__)
 	;
+
+	m.def("region_dimension", &region_dimension);
 
 }
