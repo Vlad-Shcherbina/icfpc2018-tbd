@@ -16,6 +16,7 @@ class SimulatorException(Exception):
     pass
 
 def do_run(model, trace):
+    """run the emulator, return (success, desc, dict, log)"""
     fname = os.path.join(os.path.dirname(__file__), "trace.js")
     proc = subprocess.Popen(["node", fname, model, trace], stdout=subprocess.PIPE)
     stdout,stderr = proc.communicate()
@@ -31,5 +32,5 @@ def do_run(model, trace):
                 
 
 if __name__ == "__main__":
-    directory = os.path.join(os.path.dirname(__file__), "../../icfpcontest2018.github.io/assets/")
+    directory = os.path.join(os.path.dirname(__file__), "../../../icfpcontest2018.github.io/assets/")
     print(do_run(directory + "LA005_tgt.mdl", directory + "LA005.nbt"))
