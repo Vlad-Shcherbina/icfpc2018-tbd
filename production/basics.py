@@ -34,3 +34,6 @@ class Diff:
 
     def is_long_linear(self):
         return self.is_linear() and self.mlen() <= 15
+
+    def is_near(self):
+        return 0 < self.mlen() <= 2 and self.clen() == 1

@@ -32,3 +32,13 @@ def test_linear():
                     num_long += 1
     assert num_short == 30
     assert num_long == 90
+
+
+def test_near():
+    num_near = 0
+    for dx in range(-3, 3 + 1):
+        for dy in range(-3, 3 + 1):
+            for dz in range(-3, 3 + 1):
+                if Diff(dx, dy, dz).is_near():
+                    num_near += 1
+    assert num_near == 18
