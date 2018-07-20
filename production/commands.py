@@ -1,38 +1,58 @@
 from dataclasses import dataclass
 from functools import update_wrapper
 from typing import Tuple, ClassVar, Dict
+import itertools
 
 from production.basics import Diff
+
+__all__ = ['parse_command', 'Halt', 'Wait', 'Flip', 'SMove', 'LMove', 'FusionP', 'FusionS', 'Fission', 'Fill']
 
 
 def encode_sld(v : Diff):
     assert v.is_short_linear()
     if v.dx:
-        return 0x010000 | v.dx + 5
+        return 0b01_0000 | (v.dx + 5)
     if v.dy:
-        return 0x100000 | v.dy + 5
+        return 0b10_0000 | (v.dy + 5)
     if v.dz:
-        return 0x110000 | v.dz + 5
+        return 0b11_0000 | (v.dz + 5)
     assert False, f'Invalid sld: {v}'
 
 
 def encode_lld(v : Diff):
     assert v.is_long_linear()
     if v.dx:
-        return 0x0100000 | v.dx + 15
+        return 0b010_0000 | (v.dx + 15)
     if v.dy:
-        return 0x1000000 | v.dy + 15
+        return 0b100_0000 | (v.dy + 15)
     if v.dz:
-        return 0x1100000 | v.dz + 15
-    assert False, f'Invalid sld: {v}'
+        return 0b110_0000 | (v.dz + 15)
+    assert False, f'Invalid lld: {v}'
+
+
+def encode_lld(v : Diff):
+    assert v.is_long_linear()
+    if v.dx:
+        return 0b010_0000 | (v.dx + 15)
+    if v.dy:
+        return 0b100_0000 | (v.dy + 15)
+    if v.dz:
+        return 0b110_0000 | (v.dz + 15)
+    assert False, f'Invalid lld: {v}'
+
+
+def encode_nd(v : Diff):
+    assert v.is_near()
+    return (v.dx + 1) * 9 + (v.dy + 1) * 3 + v.dz + 1
 
 
 def generate_table(encoder):
+    'A decorator that generates reverse-lookup tables from encode_xxx functions'
     return lambda generator: { encoder(it) : it for it in generator() }
 
 
 @generate_table(encode_sld)
-def sld_map():
+def sld_table():
     for i in range(1, 6):
         yield Diff( i,  0,  0)
         yield Diff(-i,  0,  0)
@@ -40,11 +60,11 @@ def sld_map():
         yield Diff( 0, -i,  0)
         yield Diff( 0,  0,  i)
         yield Diff( 0,  0, -i)
-assert len(sld_map) == 30
+assert len(sld_table) == 30
 
 
 @generate_table(encode_lld)
-def lld_map():
+def lld_table():
     for i in range(1, 16):
         yield Diff( i,  0,  0)
         yield Diff(-i,  0,  0)
@@ -52,7 +72,16 @@ def lld_map():
         yield Diff( 0, -i,  0)
         yield Diff( 0,  0,  i)
         yield Diff( 0,  0, -i)
-assert len(lld_map) == 90
+assert len(lld_table) == 90
+
+
+@generate_table(encode_nd)
+def nd_table():
+    for xyz in itertools.product(* [[-1, 0, 1]] * 3):
+        d = Diff(*xyz)
+        if d.is_near():
+            yield d
+assert len(nd_table) == 18
 
 
 commands_by_id = {}
@@ -94,19 +123,19 @@ class Flip:
 
 @command
 class SMove:
-    bid : ClassVar = 0b0101
+    bid : ClassVar = 0b0100
     bsize : ClassVar = 2
 
     lld : Diff
 
     @classmethod
     def parse(cls, b, b2):
-        return cls(lld_map[((b & 0b00110000) << 1) + b2 & 0b11111])
+        return cls(lld_table[((b & 0b0011_0000) << 1) + (b2 & 0b11111)])
 
 
 @command
 class LMove:
-    bid : ClassVar = 0b1101
+    bid : ClassVar = 0b1100
     bsize : ClassVar = 2
 
     sld1 : Diff
@@ -115,7 +144,8 @@ class LMove:
     @classmethod
     def parse(cls, b, b2):
         return cls(
-            sld_map[((b & 0b11000000) >> 2) + b2 & 0b11111])
+            sld_table[((b & 0b0011_0000)     ) + ((b2     ) & 0b1111)],
+            sld_table[((b & 0b1100_0000) >> 2) + ((b2 >> 4) & 0b1111)])
 
 @command
 class Fission:
@@ -125,6 +155,10 @@ class Fission:
     nd : Diff
     m : int
 
+    @classmethod
+    def parse(cls, b, b2):
+        return cls(nd_table[b >> 3], b2)
+
 
 @command
 class Fill:
@@ -132,6 +166,10 @@ class Fill:
     bsize : ClassVar = 1
 
     nd : Diff
+
+    @classmethod
+    def parse(cls, b):
+        return cls(nd_table[b >> 3])
 
 
 @command
@@ -141,6 +179,10 @@ class FusionP:
 
     nd : Diff
 
+    @classmethod
+    def parse(cls, b):
+        return cls(nd_table[b >> 3])
+
 
 @command
 class FusionS:
@@ -148,6 +190,10 @@ class FusionS:
     bsize : ClassVar = 1
 
     nd : Diff
+
+    @classmethod
+    def parse(cls, b):
+        return cls(nd_table[b >> 3])
 
 
 def parse_command(it):
@@ -170,4 +216,3 @@ def parse_command(it):
         return cmd.parse(b, b2)
     else:
         return cmd.parse(b)
-
