@@ -1,6 +1,6 @@
 const config = {
     stepsPerFrame: 2000,
-    stdout: function(ih) { console.log(ih) },
+    stdout: function(ih) { console.log("===", ih) },
     execTrace: null,
     running: false,
     cb: function(){}
