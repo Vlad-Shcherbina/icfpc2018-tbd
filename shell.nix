@@ -9,6 +9,7 @@ stdenv.mkDerivation {
     virtualenv
     pip
     postgresql
+    nodejs
   ];
 
   shellHook = ''
