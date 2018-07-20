@@ -3,6 +3,7 @@ pytest-cov
 coverage
 psycopg2
 flask
+bitarray
 
 # pybind11 2.2.3 used to produce a lot of compiler warnings.
 # It was fixed (https://github.com/pybind/pybind11/issues/1444),
