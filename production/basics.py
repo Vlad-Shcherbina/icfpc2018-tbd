@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Pos:
     x: int
     y: int
@@ -14,7 +14,7 @@ class Pos:
         return Diff(self.x - other.x, self.y - other.y, self.z - other.z)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Diff:
     dx: int
     dy: int
