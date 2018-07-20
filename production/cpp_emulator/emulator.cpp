@@ -11,9 +11,7 @@ using std::vector;
 using std::string;
 
 
-
-// int abs(int x) { return (x >= 0) ? x : -x; }
-
+/*======================== DIFF =========================*/
 
 class Diff {
 
@@ -21,7 +19,6 @@ public:
 	int dx, dy, dz;
 
 	Diff(int dx, int dy, int dz) {
-		assert(dx > -250 && dy > -250 && dz > -250 && dx < 250 && dy < 250 && dz < 250);
 		this->dx = dx;
 		this->dy = dy;
 		this->dz = dz;
@@ -51,20 +48,19 @@ public:
 };
 
 
-/*----------------------------------------------------------*/
+/*========================= POS =========================*/
 
 class Pos {
 public:
 	int x, y, z;
 
 	Pos (int x, int y, int z) {
-		assert (x >= 0 && y >= 0 && z >= 0 && x < 250 && y < 250 && z < 250);
 		this->x = x;
 		this->y = y;
 		this->z = z;
 	}
 
-	bool is_inside(int R) const { return x < R && y < R && z < R; }
+	bool is_inside(int R) const { return x >= 0 && x < R && y >= 0 && y < R && z >= 0 && z < R; }
 	Diff operator-(const Pos& other) const { return Diff(x - other.x, y - other.y, z - other.z); }
 	Pos operator+(const Diff& d) const { return Pos(x + d.dx, y + d.dy, z + d.dz); }
 	Pos operator-(const Diff& d) const { return Pos(x - d.dx, y - d.dy, z - d.dz); }
@@ -98,8 +94,7 @@ int region_dimension(const Pos& a, const Pos& b) {
 }
 
 
-/*----------------------- BINDING --------------------------*/
-
+/*====================== BINDING ========================*/
 
 namespace py = pybind11;
 PYBIND11_MODULE(emulator, m) {
@@ -134,5 +129,4 @@ PYBIND11_MODULE(emulator, m) {
 	;
 
 	m.def("region_dimension", &region_dimension);
-
 }
