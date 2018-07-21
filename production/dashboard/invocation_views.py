@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 
 import flask
 
@@ -74,6 +75,25 @@ def view_invocation(id):
     cur.execute('SELECT data FROM invocations WHERE id=%s', [id])
     [inv] = cur.fetchone()
 
+    cur.execute('''
+        SELECT
+            problems.id, traces.energy
+        FROM problems
+        LEFT OUTER JOIN traces ON traces.problem_id = problems.id
+    ''')
+    best_by_problem = defaultdict(lambda: float('+inf'))
+    for [problem_id, energy] in cur:
+        if energy is not None:
+            best_by_problem[problem_id] = min(best_by_problem[problem_id], energy)
+
+    cur.execute('''
+        SELECT
+            id, status, energy, problem_id, scent, timestamp
+        FROM traces
+        WHERE invocation_id = %s
+    ''', [id])
+    traces = cur.fetchall()
+
     cur.execute(
         'SELECT id, name, timestamp FROM cars WHERE invocation_id=%s ORDER BY id DESC',
         [id])
@@ -106,6 +126,28 @@ Run by: <b>{{ inv['user'] }}</b> <br>
 Start time: {{ inv['start_time'] | render_timestamp }} <br>
 Last update time: {{ inv['last_update_time'] | render_timestamp }} <br>
 <pre>{{ inv | json_dump }}</pre>
+
+{% if traces %}
+<h4>Traces</h4>
+<table>
+{% for id, status, energy, problem_id, scent, timestamp in traces %}
+    <tr>
+        <td>{{ url_for('view_problem', id=problem_id) | linkify}}</td>
+        <td>{{ url_for('view_trace', id=id) | linkify}}</td>
+        <td>{{ status }}</td>
+        <td>
+            {% if energy == best_by_problem[problem_id] == energy %}
+                <b>{{ energy }}</b>
+            {% else %}
+                {{ energy }}
+            {% endif %}
+        </td>
+        <td>{{ scent }}</td>
+        <td>{{ timestamp | render_timestamp }}</td>
+    </tr>
+{% endfor %}
+</table>
+{% endif %}
 
 {% if cars %}
 <h4>Cars</h4>
