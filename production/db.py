@@ -43,6 +43,31 @@ def create_tables(conn):
         timestamp DOUBLE PRECISION NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS traces(
+        id SERIAL PRIMARY KEY,
+
+        status TEXT NOT NULL,
+        -- 'DONE' - solution passed the emulator check
+        -- 'CHECK_FAIL' - solution was rejected by the emulator
+        -- 'FAIL' - solver failed
+        -- 'PASS' - solver refused to try this problem
+        -- These states indicate that the solver failed in a deterministic way.
+        -- It will be used to avoid further reruns of the same solver.
+
+        data BYTEA,
+        -- NULL if status = 'FAIL' or 'PASS'
+
+        energy INTEGER,
+        -- NULL if status != 'DONE'
+
+        extra JSON NOT NULL,
+        -- anything that is not the solution: logs, statistics, error messages
+
+        model_id INTEGER NOT NULL REFERENCES models,
+        invocation_id INTEGER NOT NULL REFERENCES invocations,
+        timestamp DOUBLE PRECISION NOT NULL
+    );
+
     -----------------
     -- below are the tables for the cars&fuels example
 

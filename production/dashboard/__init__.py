@@ -58,3 +58,4 @@ def hello():
 # http://flask.pocoo.org/docs/1.0/patterns/packages/
 import production.dashboard.invocation_views
 import production.dashboard.cars_and_fuels_views
+import production.dashboard.models_and_traces_views
