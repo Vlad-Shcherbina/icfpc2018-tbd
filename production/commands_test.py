@@ -23,8 +23,9 @@ def test_command_examples():
 
 
 def test_command_exceptions():
-    with pytest.raises(ValueError, match=r"Unrecognized command byte 0b00000000 at 'testsource'\[0\]"):
-        p(0b00000000)
+    # No longer possible, all prefixes map to a command
+    # with pytest.raises(ValueError, match=r"Unrecognized command byte 0b00000000 at 'testsource'\[0\]"):
+    #     p(0b00000000)
     with pytest.raises(ValueError, match=r"Unexpected EOF after 0b00010100 at 'testsource'\[0\]"):
         p(0b00010100)
     with pytest.raises(ValueError, match=r"Invalid data for command LMove 0b11111100 0b11111100 at 'testsource'\[0\]: KeyError\(60\)"):
