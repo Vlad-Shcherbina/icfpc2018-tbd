@@ -94,6 +94,41 @@ def fission_fill_right(seeds, space_right):
     strips.append(space_right - strips_sum)
     return (steps, strips)
 
+def fusion(bids, positions):
+    '''Return a sequence of commands that merges the bot ids given in bids.
+    Assumes bids is in increasing order and their corresponding positions are in
+    an empty xz plane, have identical y and z coordinates and increasing x
+    coordinates. Assumes no other bots exist. Returns commands that end with all
+    bots merged into the first one.'''
+    commands = []
+    while len(positions) > 1:
+        newpositions = []
+        i = 0
+        while i < len(positions):
+            if i + 1 < len(positions):
+                if positions[i].x + 1 == positions[i + 1].x:
+                    # FUSE
+                    commands.append(FusionP(Diff(1, 0, 0)))
+                    commands.append(FusionS(Diff(-1, 0, 0)))
+                    newpositions.append(positions[i])
+                    i += 2
+                else:
+                    # MOVE CLOSER
+                    dist = Diff(max(-15, positions[i] + 1 - positions[i + 1]),
+                            0, 0)
+                    commands.append(Wait())
+                    commands.append(SMove(dist))
+                    newpositions.append(positions[i])
+                    newpositions.append(positions[i + 1] + dist)
+                    i += 2
+            else:
+                dist = Diff(max(-15, positions[i - 1] + 1 - positions[i]), 0, 0)
+                commands.append(SMove(dist))
+                newpositions.append(positions[i] + dist)
+                i += 1
+        positions = newpositions
+    return commands
+
 
 # Move current bot dx to the right (left)
 # Returns a list of moves for the current bot
