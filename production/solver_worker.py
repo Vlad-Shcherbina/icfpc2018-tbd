@@ -165,8 +165,8 @@ def main():
     logging.info(f'Models to solve: {model_ids}')
 
     # to reduce collisions when multiple solvers are working in parallel
-    #random.shuffle(model_ids) # TODO
-    model_ids.sort(reverse=True)
+    random.shuffle(model_ids)
+    #model_ids.sort(reverse=True)
 
     num_workers = multiprocessing.cpu_count()
     # num_workers = 1
