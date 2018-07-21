@@ -85,13 +85,13 @@ def main():
     if len(sys.argv) == 3:
         (_, solver_cmd, task_number_str) = sys.argv
     else:
-        solver_cmd = "../default_solver.py"
+        solver_cmd = "production.default_solver"
         (_, task_number_str) = sys.argv
 
     task_number = int(task_number_str)
 
     model_data = data_files.lightning_problem('LA{0:03d}_tgt.mdl'.format(task_number))
-    subprocess.call("python " + solver_cmd + " " + task_number_str, shell=True)
+    subprocess.call("python -m " + solver_cmd + " " + task_number_str, shell=True, cwd = os.path.join(os.path.dirname(__file__), "../../"))
     trace_data = read_trace_data(task_number)
 
     result = run(model_data, trace_data)
