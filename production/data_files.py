@@ -20,6 +20,8 @@ def lightning_problem(name: str) -> bytes:
     with _open_datazipfile('problemsL').open(name, 'r') as fin:
         return fin.read()
 
+def lightning_problem_by_id(id: int) -> bytes:
+    return lightning_problem(list(filter(lambda x: str(id) in x, lightning_problem_names()))[0])
 
 def lightning_default_trace_names() -> List[str]:
     return _open_datazipfile('dfltTracesL').namelist()

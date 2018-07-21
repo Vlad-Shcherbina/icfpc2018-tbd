@@ -10,6 +10,7 @@ from production.commands import *
 from production.basics import Pos, Diff
 from production.solver_utils import *
 from production.solver_interface import Solver, SolverResult, Fail
+from production.data_files import *
 
 def up_pass(model):
     steps = []
