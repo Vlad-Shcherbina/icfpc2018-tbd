@@ -38,16 +38,24 @@ def default_strategy(model): # -> [Commands]
             commands.append(SMove(Diff(1 if xup else -1,0,0)))
             x += (1 if xup else -1)
             zup = not zup
+        if y == pos_max.y+1:
+            break
         commands.append(SMove(Diff(0,1,0)))
         xup = not xup
         zup = not zup    
 
-    for i in reversed(range(z)):
-        commands.append(SMove(Diff(0,0,-1)))
-    for i in reversed(range(y+1)):
-        commands.append(SMove(Diff(0,-1,0)))
-    for i in reversed(range(x)):
-        commands.append(SMove(Diff(-1,0,0)))
+    while z > 0:
+        dz = 15 if z > 15 else z
+        commands.append(SMove(Diff(0,0,-dz)))
+        z -= dz
+    while y > 0:
+        dy = 15 if y > 15 else y
+        commands.append(SMove(Diff(0,-dy,0)))
+        y -= dy
+    while x > 0:
+        dx = 15 if x > 15 else x
+        commands.append(SMove(Diff(-dx,0,0)))
+        x -= dx
 
     commands.append(Flip())
     commands.append(Halt())
