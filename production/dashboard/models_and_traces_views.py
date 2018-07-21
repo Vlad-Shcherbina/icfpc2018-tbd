@@ -1,4 +1,5 @@
 import json
+import zlib
 
 import flask
 
@@ -78,6 +79,8 @@ Time: {{ timestamp | render_timestamp }} <br>
 Extra:
 <pre>{{ extra | json_dump }}</pre>
 
+<a href="{{ url_for('visualize_model', id=id) }}">visualize</a>
+
 {% if traces %}
 <h4>Traces</h4>
 <table>
@@ -94,6 +97,18 @@ Extra:
 {% endblock %}
 '''
 
+@app.route('/vis_model/<int:id>')
+def visualize_model(id):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        'SELECT data '
+        'FROM models WHERE id = %s',
+        [id])
+    [data] = cur.fetchone()
+    data = zlib.decompress(data)
+
+    return flask.render_template('visualize_model.html', data=list(map(int, data)))
 
 
 @app.route('/trace/<int:id>')
