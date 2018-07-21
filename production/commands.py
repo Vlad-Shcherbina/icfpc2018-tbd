@@ -5,7 +5,8 @@ import itertools
 
 from production.basics import Diff
 
-__all__ = ['parse_command', 'parse_1command', 'Halt', 'Wait', 'Flip', 'SMove', 'LMove', 'FusionP', 'FusionS', 'Fission', 'Fill']
+__all__ = ['parse_command', 'parse_1command', 'parse_commands', 'compose_commands',
+        'Halt', 'Wait', 'Flip', 'SMove', 'LMove', 'FusionP', 'FusionS', 'Fission', 'Fill']
 
 
 def encode_sld(v : Diff):
