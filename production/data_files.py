@@ -1,5 +1,6 @@
-from typing import List
+from typing import List, Tuple, Optional
 from zipfile import ZipFile
+import re
 
 from production import utils
 
@@ -8,6 +9,33 @@ def _open_datazipfile(name):
     if name not in _zipfiles:
         _zipfiles[name] = ZipFile(utils.project_root() / 'data' / f'{name}.zip')
     return _zipfiles[name]
+
+
+def full_names() -> List[str]:
+    '''Returns names like 'FR042'.'''
+    result = set()
+    for filename in _open_datazipfile('problemsF').namelist():
+        if filename == 'problemsF.txt':
+            continue
+        m = re.match(r'(F[ADR]\d+)_(src|tgt).mdl$', filename)
+        assert m is not None, filename
+        result.add(m.group(1))
+    return list(result)
+
+
+def full_problem(name: str) -> Tuple[Optional[bytes], Optional[bytes]]:
+    '''Takes name like 'FR042', returns (src_model, tgt_model).'''
+    src_model = tgt_model = None
+
+    if name.startswith('FD') or name.startswith('FR'):
+        with _open_datazipfile('problemsF').open(f'{name}_src.mdl', 'r') as fin:
+            src_model = fin.read()
+
+    if name.startswith('FA') or name.startswith('FR'):
+        with _open_datazipfile('problemsF').open(f'{name}_tgt.mdl', 'r') as fin:
+            tgt_model = fin.read()
+
+    return src_model, tgt_model
 
 
 def lightning_problem_names() -> List[str]:
