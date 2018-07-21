@@ -7,6 +7,12 @@ def bounding_box(model) -> Tuple[Pos, Pos]:
     return bounding_box_region(model)
 
 def bounding_box_region(model, fx : Optional[int] = None, fy : Optional[int] = None, fz : Optional[int] = None) -> Tuple[Pos, Pos]:
+    def rangify(R, fv = None):
+        if fv is None:
+            fv = range(R)
+        else:
+            fv = [fv]
+        return fv
     fx = rangify(model.R, fx)
     fy = rangify(model.R, fy)
     fz = rangify(model.R, fz)
@@ -26,9 +32,5 @@ def bounding_box_region(model, fx : Optional[int] = None, fy : Optional[int] = N
     assert filled_cell_visited
     return (pos0,pos1)
 
-def rangify(R, fv = None):
-    if fv is None:
-        fv = range(R)
-    else:
-        fv = [fv]
-    return fv
+def is_inside_region(pt : Pos, pt0 : Pos, pt1 : Pos) -> bool:
+    return pt0.x <= pt.x <= pt1.x and pt0.y <= pt.y <= pt1.y and pt0.z <= pt.z <= pt1.z

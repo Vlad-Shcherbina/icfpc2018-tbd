@@ -11,10 +11,14 @@ import sys
 def default_strategy(model): # -> [Commands]
     commands = []
 
+    x_speed = 3
+    y_speed = 1
+    z_speed = 1
+
     commands.append(Flip())
 
-    pos_min,pos_max = bounding_box(model)
-    
+    bbox_min,bbox_max = bounding_box(model)
+
     commands.append(SMove(Diff(0,0,1)))
     commands.append(SMove(Diff(0,1,0)))
     commands.append(SMove(Diff(1,0,0)))
@@ -24,25 +28,45 @@ def default_strategy(model): # -> [Commands]
     xup = True
     zup = True
 
-    for y in range(1,pos_max.y+2):
-        while (x >= pos_min.x and not xup) or (x <= pos_max.x and xup):
-            while (z >= pos_min.z and not zup) or (z <= pos_max.z and zup):
+    for y in range(1,bbox_max.y+2):
+        while (x >= bbox_min.x and not xup) or (x <= bbox_max.x and xup):
+            while (z >= bbox_min.z and not zup) or (z <= bbox_max.z and zup):
+                if x != bbox_min.x and model[Pos(x-1,y-1,z)]:
+                    commands.append(Fill(Diff(-1, -1, 0)))
                 if model[Pos(x,y-1,z)]:
                     commands.append(Fill(Diff(0, -1, 0)))
-                if (not zup and z == pos_min.z) or (z == pos_max.z and zup):
+                if x != bbox_max.x and model[Pos(x+1,y-1,z)]:
+                    commands.append(Fill(Diff(1, -1, 0)))
+                if (not zup and z == bbox_min.z) or (z == bbox_max.z and zup):
                     break
-                commands.append(SMove(Diff(0,0, 1 if zup else -1)))
-                z += (1 if zup else -1)
-            if (not xup and x == pos_min.x) or (xup and x == pos_max.x):
+                commands.append(SMove(Diff(0,0, z_speed if zup else -z_speed)))
+                z += (z_speed if zup else -z_speed)
+            if (not xup and x == bbox_min.x) or (xup and x == bbox_max.x):
                 break
-            commands.append(SMove(Diff(1 if xup else -1,0,0)))
-            x += (1 if xup else -1)
+
+            dx = x_speed
+            if not xup:
+                dx *= -1
+
+            if not is_inside_region(Pos(x,y-1,z)+Diff(dx,0,0),bbox_min,bbox_max):
+                bbox = bbox_max
+                if not xup:
+                    bbox = bbox_min
+
+                dx = bbox.x - x
+
+            commands.append(SMove(Diff(dx,0,0)))
+            x += dx
+
             zup = not zup
-        if y == pos_max.y+1:
+
+        if y == bbox_max.y+1:
             break
-        commands.append(SMove(Diff(0,1,0)))
+
+        commands.append(SMove(Diff(0,y_speed,0)))
         xup = not xup
-        zup = not zup    
+        zup = not zup
+
 
     while z > 0:
         dz = 15 if z > 15 else z
@@ -80,7 +104,7 @@ def main():
     name = 'LA{0:03d}_tgt.mdl'.format(task_number)
     data = data_files.lightning_problem(name)
     m = Model.parse(data)
-    
+
     solve(default_strategy, m, task_number)
 
 if __name__ == '__main__':
