@@ -150,7 +150,7 @@ def main():
     #solver = solver_interface.TheirDefaultSolver(sys.argv[1:])
     #solver = DefaultSolver(sys.argv[1:])
     #solver = BottomUpSolver(sys.argv[1:])
-    solver = pillar_solver.PillarSolver(sys.argv[1:])
+    solver = PillarSolver(sys.argv[1:])
 
     cur.execute('''
         SELECT models.id
