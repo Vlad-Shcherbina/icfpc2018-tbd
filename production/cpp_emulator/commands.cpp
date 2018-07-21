@@ -14,20 +14,20 @@ int min(int x, int y) { return x < y ? x : y; }
 int max(int x, int y) { return x > y ? x : y; }
 
 
-void set_volatile_voxel(Emulator* f, const Pos& p) {
-	if (f->getbit(p, f->volatiles)) {
+void set_volatile_voxel(State* S, const Pos& p) {
+	if (S->getbit(p, S->volatiles)) {
 		// TODO: report
-		f->volatile_violation = true;
+		S->volatile_violation = true;
 	}
-	else f->setbit(p, f->volatiles, true);
+	else S->setbit(p, true, S->volatiles);
 }
 
-void set_volatile_region(Emulator* f, const Pos& a, const Pos& b) {
+void set_volatile_region(State* S, const Pos& a, const Pos& b) {
 	Pos p (0, 0, 0);
 	for (p.x = min(a.x, b.x); p.x <= max(a.x, b.x); p.x++) 
 		for (p.y = min(a.y, b.y); p.y <= max(a.y, b.y); p.y++) 
 			for (p.z = min(a.z, b.z); p.z <= max(a.z, b.z); p.z++) 
-				set_volatile_voxel(f, p);
+				set_volatile_voxel(S, p);
 }
 
 /*======================= COMMAND =======================*/
@@ -60,8 +60,8 @@ Diff Command::get_sld(unsigned char a, unsigned char i) {
 	// TODO: report ill-formed model
 }
 
-unique_ptr<Command> Command::getnextcommand(Emulator* field) {
-	unsigned char byte = field->tracebyte();
+unique_ptr<Command> Command::getnextcommand(Emulator* em) {
+	unsigned char byte = em->getcommand();
 	if (byte == 255) return make_unique<Halt>();
 	if (byte == 254) return make_unique<Wait>();
 	if (byte == 253) return make_unique<Flip>();
@@ -70,7 +70,7 @@ unique_ptr<Command> Command::getnextcommand(Emulator* field) {
 	if (tail == 6) return make_unique<FusionS>(get_nd(byte));
 	if (tail == 7) return make_unique<FusionP>(get_nd(byte));
 
-	unsigned char byte2 = field->tracebyte();
+	unsigned char byte2 = em->getcommand();
 	if (tail == 5) return make_unique<Fission>(get_nd(byte), byte2);
 	if (tail == 4) {
 		if (byte & 8) return make_unique<LMove>(get_sld(byte>>6, byte2>>4),
@@ -85,17 +85,17 @@ unique_ptr<Command> Command::getnextcommand(Emulator* field) {
 /*==================== COMMAND LIST =====================*/
 
 
-void Halt::execute(Bot* b, Emulator* f) {
-	if (b->position != Pos(0, 0, 0) || f->high_harmonics || f->count_active() != 1) {
+void Halt::execute(Bot* b, State* S) {
+	if (b->position != Pos(0, 0, 0) || S->high_harmonics || S->count_active() != 1) {
 		// TODO: report
 		assert (false);
 	}
 	b->active = false;
-	f->halted = true;
+	S->halted = true;
 }
 
-void Halt::set_volatiles(Bot* b, Emulator* f) {
-	set_volatile_voxel(f, b->position);
+void Halt::set_volatiles(Bot* b, State* S) {
+	set_volatile_voxel(S, b->position);
 }
 
 string Halt::__str__() { return "halt"; }
@@ -103,10 +103,10 @@ string Halt::__str__() { return "halt"; }
 
 /*-------------------------------------------------------*/
 
-void Wait::execute(Bot* b, Emulator* f) {}
+void Wait::execute(Bot* b, State* S) {}
 
-void Wait::set_volatiles(Bot* b, Emulator* f) {
-	set_volatile_voxel(f, b->position);
+void Wait::set_volatiles(Bot* b, State* S) {
+	set_volatile_voxel(S, b->position);
 }
 
 string Wait::__str__() { return "wait"; }
@@ -114,12 +114,12 @@ string Wait::__str__() { return "wait"; }
 
 /*-------------------------------------------------------*/
 
-void Flip::execute(Bot* b, Emulator* f) {
-	f->high_harmonics = !(f->high_harmonics);
+void Flip::execute(Bot* b, State* S) {
+	S->high_harmonics = !(S->high_harmonics);
 }
 
-void Flip::set_volatiles(Bot* b, Emulator* f) {
-	set_volatile_voxel(f, b->position);
+void Flip::set_volatiles(Bot* b, State* S) {
+	set_volatile_voxel(S, b->position);
 }
 
 string Flip::__str__() { return "flip"; }
@@ -134,13 +134,13 @@ SMove::SMove(Diff d)
 	//assert (lld.is_long());
 }
 
-void SMove::execute(Bot* b, Emulator* f) {
+void SMove::execute(Bot* b, State* S) {
 	b->position += lld;
-	f->energy += 2 * lld.mlen();
+	S->energy += 2 * lld.mlen();
 }
 
-void SMove::set_volatiles(Bot* b, Emulator* f) {
-	set_volatile_region(f, b->position, b->position + lld);
+void SMove::set_volatiles(Bot* b, State* S) {
+	set_volatile_region(S, b->position, b->position + lld);
 }
 
 string SMove::__str__() { return "smove " + lld.__str__(); }
@@ -155,14 +155,14 @@ LMove::LMove(Diff d1, Diff d2)
 	// TODO: report
 }
 
-void LMove::execute(Bot* b, Emulator* f) {
+void LMove::execute(Bot* b, State* S) {
 	b->position = (b->position + sld1) + sld2;
-	f->energy += 2 * (sld1.mlen() + 2 + sld2.mlen());
+	S->energy += 2 * (sld1.mlen() + 2 + sld2.mlen());
 }
 
-void LMove::set_volatiles(Bot* b, Emulator* f) {
-	set_volatile_region(f, b->position, b->position + sld1);
-	set_volatile_region(f, b->position + sld1, (b->position + sld1) + sld2);
+void LMove::set_volatiles(Bot* b, State* S) {
+	set_volatile_region(S, b->position, b->position + sld1);
+	set_volatile_region(S, b->position + sld1, (b->position + sld1) + sld2);
 }
 
 string LMove::__str__() { return "lmove " + sld1.__str__() + " " + sld2.__str__(); }
@@ -177,24 +177,24 @@ FusionP::FusionP(Diff nd)
 	//assert(nd.is_near());
 }
 
-void FusionP::execute(Bot* b, Emulator* f) {
+void FusionP::execute(Bot* b, State* S) {
 	Pos p = b->position + nd;
 	unsigned index;
-	for (index = 0; index < f->bots.size(); index++) {
-		if (!(f->bots[index].active)) continue;
-		if (!(f->bots[index].position == p)) continue;
+	for (index = 0; index < S->bots.size(); index++) {
+		if (!(S->bots[index].active)) continue;
+		if (!(S->bots[index].position == p)) continue;
 	}
-	if (index == f->bots.size()) {
+	if (index == S->bots.size()) {
 		// TODO: report
 		assert (false);
 	}
-	Bot& b2 = f->bots[index];
+	Bot& b2 = S->bots[index];
 	b2.active = false;
 	// TODO!!!!
 }
 
-void FusionP::set_volatiles(Bot* b, Emulator* f) {
-	set_volatile_voxel(f, b->position);
+void FusionP::set_volatiles(Bot* b, State* S) {
+	set_volatile_voxel(S, b->position);
 }
 
 string FusionP::__str__() { return "fusionP " + nd.__str__(); }
@@ -209,10 +209,10 @@ FusionS::FusionS(Diff nd)
 	//assert(nd.is_near());
 }
 
-void FusionS::execute(Bot* b, Emulator* f) {}
+void FusionS::execute(Bot* b, State* S) {}
 
-void FusionS::set_volatiles(Bot* b, Emulator* f) {
-	set_volatile_voxel(f, b->position);
+void FusionS::set_volatiles(Bot* b, State* S) {
+	set_volatile_voxel(S, b->position);
 }
 
 string FusionS::__str__() { return "fusionS " + nd.__str__(); }
@@ -228,23 +228,23 @@ Fission::Fission(Diff nd, unsigned m)
 	//assert(nd.is_near());
 
 }
-void Fission::execute(Bot* b, Emulator* f) {
+void Fission::execute(Bot* b, State* S) {
 	assert (m + 1 <= b->seeds.size());
-	Bot* b2 = &(f->bots[b->seeds[0]]);
+	Bot* b2 = &(S->bots[b->seeds[0]]);
 	assert (!(b2->active));
 	b2->active = true;
 	b2->position = (b->position + nd);
 	b2->seeds = std::move(vector<unsigned char>(b->seeds.begin(), b->seeds.begin() + m + 1));
 	b->seeds = std::move(vector<unsigned char>(b->seeds.begin() + m + 1, b->seeds.end()));
-	f->energy += 24;
+	S->energy += 24;
 }
 
-void Fission::set_volatiles(Bot* b, Emulator* f) {
-	set_volatile_voxel(f, b->position);
-	set_volatile_voxel(f, b->position + nd);
+void Fission::set_volatiles(Bot* b, State* S) {
+	set_volatile_voxel(S, b->position);
+	set_volatile_voxel(S, b->position + nd);
 	if (m >= b->seeds.size()) {
 		// TODO: report
-		f->volatile_violation = true;
+		S->volatile_violation = true;
 	}
 }
 
@@ -260,18 +260,18 @@ Fill::Fill(Diff nd)
 	//assert(nd.is_near());
 }
 
-void Fill::execute(Bot* b, Emulator* f) {
-	f->energy += 6;
-	if (!(f->getbit(b->position + nd, f->matrix)))
+void Fill::execute(Bot* b, State* S) {
+	S->energy += 6;
+	if (!(S->getbit(b->position + nd, S->matrix)))
 	{
-		f->energy += 6;
+		S->energy += 6;
 	}
-	f->setbit(b->position + nd, f->matrix, true);
+	S->setbit(b->position + nd, true, S->matrix);
 }
 
-void Fill::set_volatiles(Bot* b, Emulator* f) {
-	set_volatile_voxel(f, b->position);
-	set_volatile_voxel(f, b->position + nd);
+void Fill::set_volatiles(Bot* b, State* S) {
+	set_volatile_voxel(S, b->position);
+	set_volatile_voxel(S, b->position + nd);
 }
 
 string Fill::__str__() { return "fill " + nd.__str__(); }

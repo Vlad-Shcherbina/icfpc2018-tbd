@@ -10,4 +10,4 @@ if __name__ == '__main__':
     em = Emulator()
     em.run(model, trace)
     # f = open(utils.project_root() / 'julie_scratch' / 'LA014_tgt.mdl', 'r')
-    print(em.energy)
+    print(em.energy())

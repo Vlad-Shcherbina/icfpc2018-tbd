@@ -17,17 +17,6 @@ using std::unique_ptr;
 using std::make_unique;
 
 
-// ENERGY CONSTANTS
-
-
-
-
-
-
-
-/*===================== FUNCTIONS =======================*/
-
-
 
 /*====================== BINDING ========================*/
 
@@ -63,12 +52,26 @@ PYBIND11_MODULE(emulator, m) {
 		.def("__str__", &Pos::__str__)
 	;
 
+	py::class_<State> StClass(m, "State");
+	StClass
+		.def(py::init<int>())
+		.def("__setitem__", &State::setmatrixbit)
+		.def("__getitem__", &State::getmatrixbit)
+		.def("assert_well_formed", &State::assert_well_formed)
+
+		.def_readonly("energy", &State::energy)
+	;
+
 	py::class_<Emulator> EmClass(m, "Emulator");
 	EmClass
 		.def(py::init<>())
-		.def("run", &Emulator::run)
-		.def_readonly("energy", &Emulator::energy)
+		.def("run_step", &Emulator::run_one_step)
+		.def("run", &Emulator::run_all)
+		.def("time_step", &Emulator::run_given_step)
+		.def("energy", &Emulator::energy)
 	;
 
 	m.def("region_dimension", &region_dimension);
 }
+
+
