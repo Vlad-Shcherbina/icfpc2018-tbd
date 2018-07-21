@@ -1,5 +1,6 @@
 import pytest
-from production.commands import parse_command, ParserState, Diff, \
+import production.commands as commands
+from production.commands import parse_command, parse_commands, compose_commands, ParserState, Diff, \
     Halt, Wait, Flip, SMove, LMove, FusionP, FusionS, Fission, Fill
 
 
@@ -33,7 +34,19 @@ def test_command_exceptions():
 
 
 def test_commands_roundtrip():
-    ''
+    cmds = []
+    cmds.extend([Halt(), Wait(), Flip()])
+    cmds.extend(SMove(v) for v in commands.lld_table.values())
+    cmds.extend(LMove(v1, v2) for v1 in commands.sld_table.values() for v2 in commands.sld_table.values())
+    cmds.extend(FusionP(n) for n in commands.nd_table.values())
+    cmds.extend(FusionS(n) for n in commands.nd_table.values())
+    cmds.extend(Fission(n, m) for n in commands.nd_table.values() for m in range(256))
+    cmds.extend(Fill(n) for n in commands.nd_table.values())
+    composed = compose_commands(cmds)
+    reparsed = parse_commands(composed, 'testinput')
+    assert len(cmds) == len(reparsed)
+    for i, [a, b] in enumerate(zip(cmds, reparsed)):
+        assert a == b, f'{a} != {b} at {i}'
 
 
 if __name__ == '__main__':

@@ -5,7 +5,7 @@ import itertools
 
 from production.basics import Diff
 
-__all__ = ['parse_command', 'Halt', 'Wait', 'Flip', 'SMove', 'LMove', 'FusionP', 'FusionS', 'Fission', 'Fill']
+__all__ = ['parse_command', 'parse_1command', 'Halt', 'Wait', 'Flip', 'SMove', 'LMove', 'FusionP', 'FusionS', 'Fission', 'Fill']
 
 
 def encode_sld(v : Diff):
@@ -101,7 +101,7 @@ class Halt:
         return cls()
 
     def compose(self):
-        return ''
+        return [self.bid]
 
 
 @command
@@ -113,6 +113,9 @@ class Wait:
     def parse(cls, b):
         return cls()
 
+    def compose(self):
+        return [self.bid]
+
 
 @command
 class Flip:
@@ -122,6 +125,9 @@ class Flip:
     @classmethod
     def parse(cls, b):
         return cls()
+
+    def compose(self):
+        return [self.bid]
 
 
 @command
@@ -135,6 +141,10 @@ class SMove:
     def parse(cls, b, b2):
         return cls(lld_table[((b & 0b0011_0000) << 1) + (b2 & 0b11111)])
 
+    def compose(self):
+        lld = encode_lld(self.lld)
+        return [self.bid | ((lld & 0b0110_0000) >> 1), lld & 0b11111]
+
 
 @command
 class LMove:
@@ -145,10 +155,17 @@ class LMove:
     sld2 : Diff
 
     @classmethod
-    def parse(cls, b, b2):
+    def parse(cls, b, b2) -> 'LMove':
         return cls(
             sld_table[((b & 0b0011_0000)     ) + ((b2     ) & 0b1111)],
             sld_table[((b & 0b1100_0000) >> 2) + ((b2 >> 4) & 0b1111)])
+
+    def compose(self):
+        sld1 = encode_sld(self.sld1)
+        sld2 = encode_sld(self.sld2)
+        return [self.bid | (sld1 & 0b0011_0000) | ((sld2 & 0b0011_0000) << 2),
+                (sld1 & 0b1111) | ((sld2 & 0b1111) << 4)]
+
 
 @command
 class Fission:
@@ -162,6 +179,10 @@ class Fission:
     def parse(cls, b, b2):
         return cls(nd_table[b >> 3], b2)
 
+    def compose(self):
+        nd = encode_nd(self.nd)
+        return [self.bid | nd << 3, self.m]
+
 
 @command
 class Fill:
@@ -173,6 +194,10 @@ class Fill:
     @classmethod
     def parse(cls, b):
         return cls(nd_table[b >> 3])
+
+    def compose(self):
+        nd = encode_nd(self.nd)
+        return [self.bid | nd << 3]
 
 
 @command
@@ -186,6 +211,10 @@ class FusionP:
     def parse(cls, b):
         return cls(nd_table[b >> 3])
 
+    def compose(self):
+        nd = encode_nd(self.nd)
+        return [self.bid | nd << 3]
+
 
 @command
 class FusionS:
@@ -197,6 +226,10 @@ class FusionS:
     @classmethod
     def parse(cls, b):
         return cls(nd_table[b >> 3])
+
+    def compose(self):
+        nd = encode_nd(self.nd)
+        return [self.bid | nd << 3]
 
 
 @dataclass
@@ -240,3 +273,26 @@ def parse_command(input: ParserState):
         except Exception as exc:
             raise ValueError(f'Invalid data for command {cmd.__name__} 0b{b:08b} at {input.source!r}[{pos}]: {repr(exc)}') \
                     from exc
+
+
+def parse_1command(input):
+    input = ParserState(bytes(input), 'zzzz')
+    return parse_command(input)
+
+
+def parse_commands(buf, source):
+    input = ParserState(buf, source)
+    r = []
+    while True:
+        cmd = parse_command(input)
+        if cmd is None:
+            return r
+        r.append(cmd)
+
+
+def compose_commands(commands):
+    'returns a bytearray'
+    res = bytearray()
+    for cmd in commands:
+        res.extend(cmd.compose())
+    return res
