@@ -1,5 +1,6 @@
 import json
 import zlib
+from collections import defaultdict
 
 import flask
 
@@ -19,6 +20,12 @@ def list_models():
         LEFT OUTER JOIN traces ON traces.model_id = models.id
         ORDER BY models.id DESC, traces.id DESC
     ''')
+    rows = cur.fetchall()
+    best_by_model = defaultdict(lambda: float('+inf'))
+    for [model_id, _, _, _, _, _, _,  energy, _, _] in rows:
+        if energy is not None:
+            best_by_model[model_id] = min(best_by_model[model_id], energy)
+
     return flask.render_template_string(LIST_MODELS_TEMPLATE, **locals())
 
 LIST_MODELS_TEMPLATE = '''\
@@ -28,7 +35,7 @@ LIST_MODELS_TEMPLATE = '''\
 <table id='t'>
 {% for model_id, model_name, model_stats, model_inv_id,
        trace_id, trace_scent, trace_status, trace_energy, trace_inv_id,
-       trace_has_data in cur %}
+       trace_has_data in rows %}
     <tr>
         <td>{{ url_for('view_invocation', id=model_inv_id) | linkify }}</td>
         <td>
@@ -45,9 +52,21 @@ LIST_MODELS_TEMPLATE = '''\
                 {% endif %}
             </td>
             <td>{{ trace_status }}</td>
-            <td>{{ trace_energy }}</td>
-            <td>{{ trace_scent }}</td>
-            {#<td>{{ url_for('view_invocation', id=trace_inv_id) | linkify }}</td>#}
+            <td>
+                {% if best_by_model[model_id] == trace_energy %}
+                    <b>{{ trace_energy }}</b>
+                {% else %}
+                    {{ trace_energy }}
+                {% endif %}
+            </td>
+            <td>
+                {% if best_by_model[model_id] == trace_energy %}
+                    <b>{{ trace_scent }}</b>
+                {% else %}
+                    {{ trace_scent }}
+                {% endif %}
+            </td>
+            <td>{{ url_for('view_invocation', id=trace_inv_id) | linkify }}</td>
         {% endif %}
     </tr>
 {% endfor %}
