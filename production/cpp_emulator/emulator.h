@@ -3,24 +3,30 @@
 
 #include <vector>
 #include <string>
+#include <bitset>
+
 #include "coordinates.h"
 
 struct Command;
+class Emulator;
 
 class Bot {
 public:
-	int pid;
+	unsigned char pid;
 	Pos position;
-	std::vector<int> seeds;
+	std::vector<unsigned char> seeds;
+	std::unique_ptr<Command> command;
+	bool active;
 
-	Bot(int pid, Pos position, std::vector<int> seeds);
-	Bot();
+	Bot(unsigned char pid, Pos position, std::vector<unsigned char> seeds, bool active);
+	void set_volatiles(Emulator* field);
+	void execute(Emulator* field);
 };
 
 
 class Emulator {
 public:
-	int energy;
+	int64_t energy;
 	bool high_harmonics;
 	std::vector<unsigned char> matrix;
 	int R;
@@ -29,6 +35,7 @@ public:
 	std::vector<unsigned char> trace;
 	int tracepointer;
 	int time_step;
+	bool halted;
 
 	std::vector<unsigned char> floating;
 	std::vector<unsigned char> model;
@@ -37,11 +44,14 @@ public:
 
 	Emulator();
 
+	bool getbit(const Pos& p, const std::vector<unsigned char>& v) const;
+	void setbit(const Pos& p, std::vector<unsigned char>& v, bool bit);
+	int count_active();
 	void read_model(std::string filename);
 	void read_trace(std::string filename);
 	unsigned char tracebyte();
-	bool getbit(const Pos& p, const std::vector<unsigned char>& v) const;
-	void setbit(const Pos& p, std::vector<unsigned char>& v, bool bit);
+	bool check_state();
+	void run_commands();
 
 	void run(std::string modelfile, std::string tracefile);
 };

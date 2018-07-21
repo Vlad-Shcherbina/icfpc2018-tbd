@@ -1,6 +1,7 @@
 #ifndef __COMMANDS_H_INCLUDED__
 #define __COMMANDS_H_INCLUDED__
 
+#include <string>
 #include "coordinates.h"
 
 class Bot;
@@ -11,6 +12,7 @@ struct Command {
 	virtual ~Command() = default;
 	virtual void execute(Bot*, Emulator*) = 0;
 	virtual void set_volatiles(Bot*, Emulator*) = 0;
+	virtual std::string __str__() = 0;
 
 	static Diff get_nd(unsigned char byte);
 	static Diff get_lld(unsigned char a, unsigned char i);
@@ -21,16 +23,19 @@ struct Command {
 struct Halt : Command {
 	void execute(Bot* b, Emulator* f) override;
 	void set_volatiles(Bot* b, Emulator* f) override;
+	std::string __str__() override;
 };
 
 struct Wait : Command {
 	void execute(Bot* b, Emulator* f) override;
 	void set_volatiles(Bot* b, Emulator* f) override;
+	std::string __str__() override;
 };
 
 struct Flip : Command {
 	void execute(Bot* b, Emulator* f) override;
 	void set_volatiles(Bot* b, Emulator* f) override;
+	std::string __str__() override;
 };
 
 struct SMove : Command {
@@ -38,6 +43,7 @@ struct SMove : Command {
 	SMove(Diff d);
 	void execute(Bot* b, Emulator* f) override;
 	void set_volatiles(Bot* b, Emulator* f) override;
+	std::string __str__() override;
 };
 
 struct LMove : Command {
@@ -46,6 +52,7 @@ struct LMove : Command {
 	void execute(Bot* b, Emulator* f) override;
 	void set_volatiles(Bot* b, Emulator* f) override;
 
+	std::string __str__() override;
 };
 
 struct FusionP : Command {
@@ -54,6 +61,7 @@ struct FusionP : Command {
 	FusionP(Diff nd);
 	void execute(Bot* b, Emulator* f) override;
 	void set_volatiles(Bot* b, Emulator* f) override;
+	std::string __str__() override;
 };
 
 struct FusionS : Command
@@ -62,15 +70,17 @@ struct FusionS : Command
 	FusionS(Diff nd);
 	void execute(Bot* b, Emulator* f) override;
 	void set_volatiles(Bot* b, Emulator* f) override;
+	std::string __str__() override;
 };
 
 struct Fission : Command
 {
 	Diff nd;
-	unsigned short m;
-	Fission(Diff nd, unsigned short m);
+	unsigned m;
+	Fission(Diff nd, unsigned m);
 	void execute(Bot* b, Emulator* f) override;
 	void set_volatiles(Bot* b, Emulator* f) override;
+	std::string __str__() override;
 };
 
 struct Fill : Command
@@ -79,6 +89,7 @@ struct Fill : Command
 	Fill(Diff nd);
 	void execute(Bot* b, Emulator* f) override;
 	void set_volatiles(Bot* b, Emulator* f) override;
+	std::string __str__() override;
 };
 
 #endif

@@ -67,6 +67,7 @@ PYBIND11_MODULE(emulator, m) {
 	EmClass
 		.def(py::init<>())
 		.def("run", &Emulator::run)
+		.def_readonly("energy", &Emulator::energy)
 	;
 
 	m.def("region_dimension", &region_dimension);
