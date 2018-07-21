@@ -63,6 +63,29 @@ class Diff:
         return 0 < self.clen() <= 30
 
 
+@dataclass()
+class Region:
+    pos_min: Pos
+    pos_max: Pos
+
+    def __init__(self, pos1: Pos, pos2: Pos):
+        self.pos_min = Pos(min(pos1.x, pos2.x), min(pos1.y, pos2.y),
+                min(pos1.z, pos2.z))
+        self.pos_max = Pos(max(pos1.x, pos2.x), max(pos1.y, pos2.y),
+                max(pos1.z, pos2.z))
+
+    def dimension(self):
+        return (self.pos_min.x != self.pos_max.x) + \
+                (self.pos_min.y != self.pos_max.y) + \
+                (self.pos_min.z != self.pos_max.z)
+
+    def __iter__(self):
+        for x in range(self.pos_min.x, self.pos_max.x + 1):
+            for y in range(self.pos_min.y, self.pos_max.y + 1):
+                for z in range(self.pos_min.z, self.pos_max.z + 1):
+                    yield Pos(x, y, z)
+
+
 def region_dimension(c1: Pos, c2: Pos):
     result = 0
     if c1.x != c2.x:

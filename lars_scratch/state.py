@@ -3,7 +3,7 @@ from typing import List
 from pprint import pprint
 from enum import Enum
 
-from production.basics import Pos, Diff
+from production.basics import Pos, Diff, Region
 from production.commands import *
 
 # TODO: Track volatility using a set
@@ -96,12 +96,30 @@ class State:
                 assert command.nd.is_near()
                 self._set(bot.pos + command.nd, Cell.FULL)
                 newbots.append(bot)
+            elif isinstance(command, Void):
+                assert command.nd.is_near()
+                self._set(bot.pos + command.nd, Cell.EMPTY)
+                newbots.append(bot)
             elif isinstance(command, FusionP):
                 assert self[(bot.pos + command.nd)] == Cell.BOT
                 self._set(bot.pos + command.nd, Cell.EMPTY)
                 newbots.append(bot)
             elif isinstance(command, FusionS):
                 assert self[(bot.pos + command.nd)] == Cell.BOT
+            elif isinstance(command, GFill):
+                assert command.nd.is_near()
+                assert command.fd.is_far()
+                for pos in Region(bot.pos + command.nd, bot.pos + command.nd +
+                        command.fd):
+                    self._set(pos, Cell.FULL)
+                newbots.append(bot)
+            elif isinstance(command, GVoid):
+                assert command.nd.is_near()
+                assert command.fd.is_far()
+                for pos in Region(bot.pos + command.nd, bot.pos + command.nd +
+                        command.fd):
+                    self._set(pos, Cell.EMPTY)
+                newbots.append(bot)
 
         self.bots = newbots
         self.bots.sort(key=lambda bot: bot.bid)
