@@ -1,6 +1,8 @@
 import subprocess
 import os.path
 import sys
+from dataclasses import dataclass
+from typing import Optional
 
 from production import utils
 from production import data_files
@@ -20,23 +22,41 @@ def dictify(result):
 class SimulatorException(Exception):
     pass
 
-def do_run(model, trace):
-    """run the emulator, return (success, desc, dict, log)"""
+
+@dataclass
+class EmulatorResult:
+    energy: Optional[int]  # None on failures
+    extra: dict  # some additional info, format might bu unstable
+
+
+def do_run(model, trace) -> EmulatorResult:
     fname = os.path.join(os.path.dirname(__file__), "trace.js")
-    proc = subprocess.Popen(["node", fname, model, trace], stdout=subprocess.PIPE)
-    stdout,stderr = proc.communicate()
-    result = stdout.decode('ascii').split('=== ')[-1].split('\n')
+    proc = subprocess.Popen(
+        ["node", fname, model, trace],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True)
+    stdout, stderr = proc.communicate()
+    if proc.returncode != 0:
+        return EmulatorResult(
+            energy=None,
+            extra=dict(returncode=proc.returncode, stdout=stdout, stderr=stderr))
+    result = stdout.split('=== ')[-1].split('\n')
     if result[0].startswith("Failure"):
         res, etc = dictify(result)
-        return (False, "Failure") + dictify(result)
+        return EmulatorResult(
+            energy=None,
+            extra=dict(res=res, etc=etc, stderr=stderr))
     elif result[0].startswith("Success"):
         res, etc = dictify(result)
-        return (True, "Success") + dictify(result)
+        return EmulatorResult(
+            energy=int(res['Energy']),
+            extra=dict(res=res, etc=etc, stderr=stderr))
     else:
         raise SimulatorException("simulation returned unknown result", result)
 
 
-def run(model_data: bytes, trace_data: bytes):
+def run(model_data: bytes, trace_data: bytes) -> EmulatorResult:
     model_name = utils.project_root() / '_tmp_model.mdl'
     with open(model_name, 'wb') as fout:
         fout.write(model_data)
@@ -68,8 +88,8 @@ def main():
     subprocess.call("python " + solver_cmd + " " + task_number_str, shell=True)
     trace_data = read_trace_data(task_number)
 
-    (b, _, _, _) = run(model_data, trace_data)
-    print(f"| {task_number} | {b}")
+    result = run(model_data, trace_data)
+    print(f"| {task_number} | {result.score}")
 
 if __name__ == "__main__":
     main()
