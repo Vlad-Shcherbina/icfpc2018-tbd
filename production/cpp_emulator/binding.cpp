@@ -81,7 +81,8 @@ PYBIND11_MODULE(emulator, m) {
 		.def("energy", &Emulator::energy)
 		.def("reconstruct", &Emulator::reconstruct_state)
 		.def("add_bot", &Emulator::add_bot)
-		.def("count_active", &Emulator::count_active)
+		.def("get_state", &Emulator::get_state)
+		.def("get_bots", &Emulator::get_bots)
 	;
 
 	m.def("region_dimension", &region_dimension);

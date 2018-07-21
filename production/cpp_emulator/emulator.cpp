@@ -194,7 +194,7 @@ void Emulator::run_one_step() {
 	for (Bot& b : S.bots) {
 		if (!b.active) continue;
 		b.command = Command::getnextcommand(this);
-		// std::cout << "loaded " << (*(b.command)).__str__() << "\n";
+		std::cout << "loaded " << (*(b.command)).__str__() << "\n";
 	}
 	S.validate_step();
 	S.run_commands();
@@ -245,5 +245,44 @@ void Emulator::add_bot(unsigned char pid,
 	b.position = Pos(x, y, z);
 	b.seeds = std::move(seeds);
 }
+
+
+
+vector<unsigned char> Emulator::get_state() {
+	// you'd better never know how it is achieved
+	vector<unsigned char> result;
+	result.push_back(S.R);
+	result.push_back(S.high_harmonics);
+	for (auto x : S.matrix) {result.push_back(x); std::cout << (unsigned) x << '\n';}
+	Pos p (0, 0, 0);
+	for (p.x = 0; p.x <= 2; p.x++) {
+		for (p.y = 0; p.y <=2; p.y++) {
+			for (p.z = 0; p.z <= 2; p.z++) {
+				std::cout << S.getmatrixbit(p) << " ";
+			}
+			std::cout << "\n";
+		}
+		std::cout << "\n";
+	}
+	return result;
+}
+
+
+vector<unsigned char> Emulator::get_bots() {
+	// same here
+	vector<unsigned char> result;
+	for (Bot& b : S.bots) {
+		if (!b.active) continue;
+		result.push_back(b.pid);
+		result.push_back(b.position.x);
+		result.push_back(b.position.y);
+		result.push_back(b.position.z);
+		result.push_back((unsigned char)b.seeds.size());
+		for (auto x : b.seeds) result.push_back(x);
+	}
+	return result;
+}
+
+
 
 int Emulator::count_active() { return S.count_active(); }

@@ -98,12 +98,12 @@ public:
 				 unsigned char z,
 				 std::vector<unsigned char> seeds);
 
+	std::vector<unsigned char> get_state();
+	std::vector<unsigned char> get_bots();
+
 
 	int64_t energy();
 	int count_active();
-
-private:
-	void reconstruct_bots();
 
 };
 
