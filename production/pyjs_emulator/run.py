@@ -1,5 +1,6 @@
 import subprocess
 import os.path
+import sys
 
 from production import utils
 from production import data_files
@@ -46,16 +47,29 @@ def run(model_data: bytes, trace_data: bytes):
 
     return do_run(str(model_name), str(trace_name))
 
+def read_trace_data(task_number):
+    fname = 'LA{0:03d}.nbt'.format(task_number)
+    with open(fname, 'rb') as f:
+        return f.read()
 
+# Usage:
+#   run.py <task_number>
+#   run.py <default_solver_cmd> <task_number>
 def main():
-    problem = 'LA005'
+    if len(sys.argv) == 3:
+        (_, solver_cmd, task_number_str) = sys.argv
+    else:
+        solver_cmd = "../default_solver.py"
+        (_, task_number_str) = sys.argv
 
-    model_data = data_files.lightning_problem(f'{problem}_tgt.mdl')
-    trace_data = data_files.lightning_default_trace(f'{problem}.nbt')
+    task_number = int(task_number_str)
 
-    result = run(model_data, trace_data)
-    print(result)
+    model_data = data_files.lightning_problem('LA{0:03d}_tgt.mdl'.format(task_number))
+    subprocess.call("python " + solver_cmd + " " + task_number_str, shell=True)
+    trace_data = read_trace_data(task_number)
 
+    (b, _, _, _) = run(model_data, trace_data)
+    print(f"| {task_number} | {b}")
 
 if __name__ == "__main__":
     main()
