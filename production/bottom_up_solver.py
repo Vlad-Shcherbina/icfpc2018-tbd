@@ -54,7 +54,7 @@ class BottomUpSolver(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Bottom Up 1.1'
+        return 'Bottom Up 1.2'
 
     def solve(self, name: str, model_data: bytes) -> SolverResult:
         m = Model.parse(model_data)
