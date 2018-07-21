@@ -1,11 +1,13 @@
 import sys
+from io import StringIO
 from typing import List
+import traceback
 
 from production.model import Model
 from production.commands import *
 from production.basics import Pos, Diff
 from production.solver_utils import *
-from production.solver_interface import Solver, SolverResult
+from production.solver_interface import Solver, SolverResult, Fail
 
 # Default solver: compute a bounding box, set harmonics to High, use a
 # single bot to sweep each xz-plane of the bounding box from bottom to top
@@ -103,13 +105,18 @@ class DefaultSolver(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Default 1.0'
+        return 'Default 1.1'
 
     def solve(self, name: str, model_data: bytes) -> SolverResult:
         m = Model.parse(model_data)
-        trace = default_strategy(m)
-        trace_data = compose_commands(trace)
-        return SolverResult(trace_data, extra={})
+        try:
+            trace = default_strategy(m)
+            trace_data = compose_commands(trace)
+            return SolverResult(trace_data, extra={})
+        except:
+            exc = StringIO()
+            traceback.print_exc(file=exc)
+            return SolverResult(Fail(), extra=dict(tb=exc.getvalue()))
 
 
 def write_solution(bytetrace, number): # -> IO ()

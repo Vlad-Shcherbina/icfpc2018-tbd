@@ -155,6 +155,10 @@ Produced by {{ url_for('view_invocation', id=inv_id) | linkify }} <br><br>
 Extra:
 <pre>{{ extra | json_dump }}</pre>
 
+{% if extra.get('solver', {}).get('tb') %}
+<pre>{{ extra.get('solver', {}).get('tb') }}</pre>
+{% endif %}
+
 <a href="{{ url_for('visualize_trace', id=id) }}">visualize</a>
 {% endblock %}
 '''
