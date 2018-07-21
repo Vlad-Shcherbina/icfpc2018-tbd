@@ -16,6 +16,8 @@ using std::string;
 using std::unique_ptr;
 using std::make_unique;
 
+int foo(Pos a) { return a.x + 1; }
+int foo() { return 0; }
 
 
 /*====================== BINDING ========================*/
@@ -65,8 +67,8 @@ PYBIND11_MODULE(emulator, m) {
 	py::class_<State> StClass(m, "State");
 	StClass
 		.def(py::init<int>())
-		.def("__setitem__", &State::setmatrixbit)
-		.def("__getitem__", &State::getmatrixbit)
+		//.def("__getitem__", (bool (*)(const Pos&)) &State::getbit)
+		//.def("__setitem__", (void (*)(const Pos&, bool)) &State::setbit)
 		.def("assert_well_formed", &State::assert_well_formed)
 
 		.def_readonly("energy", &State::energy)
@@ -75,9 +77,15 @@ PYBIND11_MODULE(emulator, m) {
 	py::class_<Emulator> EmClass(m, "Emulator");
 	EmClass
 		.def(py::init<>())
+		.def("load_model", &Emulator::load_model)
+		.def("set_model", &Emulator::set_model)
+		.def("load_trace", &Emulator::load_trace)
+		.def("set_trace", &Emulator::set_trace)
+
 		.def("run_step", &Emulator::run_one_step)
 		.def("run", &Emulator::run_all)
-		.def("run_commands", &Emulator::run_given_step)
+		.def("run_commands", &Emulator::run_given)
+
 		.def("energy", &Emulator::energy)
 		.def("reconstruct", &Emulator::reconstruct_state)
 		.def("add_bot", &Emulator::add_bot)
@@ -85,7 +93,5 @@ PYBIND11_MODULE(emulator, m) {
 		.def("get_bots", &Emulator::get_bots)
 	;
 
-	m.def("region_dimension", &region_dimension);
+	m.def("region_dimension", (int (*)(const Pos&, const Pos&)) &region_dimension);
 }
-
-

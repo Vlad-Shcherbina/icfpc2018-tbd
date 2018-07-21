@@ -273,8 +273,7 @@ Fill::Fill(Diff nd)
 
 void Fill::execute(Bot* b, State* S) {
 	S->energy += 6;
-	if (!(S->getbit(b->position + nd, S->matrix)))
-	{
+	if (!(S->getbit(b->position + nd, S->matrix))) {
 		S->energy += 6;
 	}
 	S->setbit(b->position + nd, true, S->matrix);
@@ -287,3 +286,70 @@ void Fill::set_volatiles(Bot* b, State* S) {
 
 string Fill::__str__() { return "fill " + nd.__str__(); }
 
+/*-------------------------------------------------------*/
+
+Void::Void(Diff nd)
+: nd(nd)
+{
+	// TODO: report wrong command
+	//assert(nd.is_near());
+}
+
+void Void::execute(Bot* b, State* S) {
+	if (S->getbit(b->position + nd, S->matrix)) {
+		S->energy -= 12;
+		S->setbit(b->position + nd, false, S->matrix);
+	}
+	else { S->energy += 3; }
+}
+
+void Void::set_volatiles(Bot* b, State* S) {
+	set_volatile_voxel(S, b->position);
+	set_volatile_voxel(S, b->position + nd);
+}
+
+std::string Void::__str__() { return "void " + nd.__str__(); }
+
+/*-------------------------------------------------------*/
+
+GFill::GFill(Diff nd, Diff fd)
+: nd(nd)
+, fd(fd)
+{
+	// TODO: report wrong command
+	//assert(nd.is_near());
+}
+
+void GFill::execute(Bot* b, State* S) {
+	// TODO
+	assert (false);
+}
+
+void GFill::set_volatiles(Bot* b, State* S) {
+	// TODO
+	assert (false);
+}
+
+std::string GFill::__str__() { return "gfill"; }
+
+/*-------------------------------------------------------*/
+
+GVoid::GVoid(Diff nd, Diff fd)
+: nd(nd)
+, fd(fd)
+{
+	// TODO: report wrong command
+	//assert(nd.is_near());
+}
+
+void GVoid::execute(Bot* b, State* S) {
+	// TODO
+	assert (false);
+}
+
+void GVoid::set_volatiles(Bot* b, State* S) {
+	// TODO
+	assert (false);
+}
+
+std::string GVoid::__str__() { return "gvoid"; }

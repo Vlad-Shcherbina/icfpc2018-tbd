@@ -92,4 +92,36 @@ struct Fill : Command
 	std::string __str__() override;
 };
 
+struct Void : Command
+{
+	Diff nd;
+	Void(Diff nd);
+	void execute(Bot* b, State* S) override;
+	void set_volatiles(Bot* b, State* S) override;
+	std::string __str__() override;
+};
+
+
+struct GFill : Command
+{
+	Diff nd;
+	Diff fd;
+	GFill(Diff nd, Diff fd);
+	void execute(Bot* b, State* S) override;
+	void set_volatiles(Bot* b, State* S) override;
+	std::string __str__() override;
+};
+
+
+struct GVoid : Command
+{
+	Diff nd;
+	Diff fd;
+	GVoid(Diff nd, Diff fd);
+	void execute(Bot* b, State* S) override;
+	void set_volatiles(Bot* b, State* S) override;
+	std::string __str__() override;
+};
+
+
 #endif

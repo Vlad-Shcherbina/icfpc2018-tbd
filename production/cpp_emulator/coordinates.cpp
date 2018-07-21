@@ -28,6 +28,7 @@ int Diff::clen() const {
 
 bool Diff::is_adjacent() const { return mlen() == 1; }
 bool Diff::is_near() const { return (clen() == 1) && (mlen() == 1 || mlen() == 2); }
+bool Diff::is_far() const { return (clen() > 0) && (clen() <= 30); }
 bool Diff::is_linear() const { return ((dx == 0) + (dy == 0) + (dz == 0)) == 2; }
 bool Diff::is_short() const { return is_linear() && mlen() <= 5; }
 bool Diff::is_long() const {return is_linear() && mlen() <= 15; }
@@ -81,7 +82,10 @@ string Pos::__str__() const {
 
 /*======================== OTHER ========================*/
 
-int region_dimension(const Pos& a, const Pos& b) {
-	Diff d = b - a;
+int region_dimension(const Diff& d) {
 	return (d.dx != 0) + (d.dy != 0) + (d.dz != 0);
+}
+
+int region_dimension(const Pos& a, const Pos& b) {
+	return region_dimension(b - a);
 }

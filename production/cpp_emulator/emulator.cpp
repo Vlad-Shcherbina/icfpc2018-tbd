@@ -9,7 +9,7 @@ using std::vector;
 using std::string;
 using std::unique_ptr;
 
-const int MAXBOTNUMBER = 20;
+const int MAXBOTNUMBER = 40;
 
 /*======================== BOT ==========================*/
 
@@ -48,9 +48,7 @@ void Bot::execute(State* S) {
 }
 
 
-
-/*====================== EMULATOR =======================*/
-
+/*======================== STATE ========================*/
 
 State::State() { 
 	set_initials();
@@ -58,7 +56,7 @@ State::State() {
 
 State::State(unsigned char R) {
 	set_initials();
-	set_matrices(R);
+	set_size(R);
 }
 
 void State::set_initials() {
@@ -80,38 +78,24 @@ void State::set_initials() {
 
 }
 
-void State::set_matrices(unsigned char R) {
+void State::set_size(unsigned char R) {
 	this->R = R;
 	int bytes = (R * R * R + 7) / 8;
 	matrix = vector<unsigned char>(bytes, 0);
-	floating = vector<unsigned char>(bytes, 0);
+	target = vector<unsigned char>(bytes, 0);
+	//floating = vector<unsigned char>(bytes, 0);
 	volatiles = vector<unsigned char>(bytes, 0);
 }
 
-void State::read_model(string filename) {
-	std::ifstream f(filename, std::ios::binary);
-	f >> std::noskipws;
-	unsigned char c;
-	f >> c;
-	R = (int)c;
-	model = vector<unsigned char>();
-	while (f >> c) model.push_back(c);
-	f.close();
-
-	set_matrices(R);
-	assert (model.size() == matrix.size());
-}
-
-
-bool State::getmatrixbit(const Pos& p) const {
+bool State::getbit(const Pos& p) const {
 	int w = p.x*R*R + p.y*R + p.z;
 	return matrix[w / 8] & (1 << (w % 8));
 }
 
 
-void State::setmatrixbit(const Pos& p, bool value) {
+void State::setbit(const Pos& p, bool value) {
 	int w = p.x*R*R + p.y*R + p.z;
-	matrix[w / 8] ^= (getmatrixbit(p) != value) << (w % 8);
+	matrix[w / 8] ^= (getbit(p) != value) << (w % 8);
 }
 
 
@@ -165,20 +149,61 @@ void State::add_passive_energy() {
 }
 
 
-Emulator::Emulator() {
-	tracepointer = 0;
-	time_step = 0;
-}
+/*====================== EMULATOR =======================*/
+
+Emulator::Emulator() 
+: time_step(0) 
+{ }
 
 
-void Emulator::read_trace(string filename) {
+void Emulator::load_trace(string filename) {
+	trace = vector<unsigned char>();
 	std::ifstream f(filename, std::ios::binary);
 	f >> std::noskipws;
 	unsigned char c;
-	while (f >> c) {
-		trace.push_back(c);
-	}
+	uint32_t i = 0;
+	while (f >> c) trace.push_back(c);
 	f.close();
+	tracepointer = 0;
+}
+
+
+void Emulator::set_trace(vector<unsigned char> bytes) {
+	trace = std::move(bytes);
+	tracepointer = 0;
+}
+
+
+vector<unsigned char>* Emulator::choose_matrix(char c) {
+	switch (c) {
+		case 's' : return &S.matrix;
+		case 't' : return &S.target;
+		case 'v' : return &S.volatiles;
+	}
+}
+
+
+void Emulator::load_model(string filename, char dest) {
+	std::ifstream f(filename, std::ios::binary);
+	f >> std::noskipws;
+	unsigned char c;
+
+	f >> c;
+	S.set_size((unsigned)c);
+
+	vector<unsigned char>* m = choose_matrix(dest);
+
+	uint32_t i = 0;
+	while (f >> c) (*m)[i++] = c;
+	f.close();
+
+	assert (S.target.size() == S.matrix.size());
+}
+
+
+void Emulator::set_model(vector<unsigned char> bytes, char dest) {
+	vector<unsigned char>* m = choose_matrix(dest);
+	*m = std::move(bytes);
 }
 
 
@@ -187,30 +212,32 @@ unsigned char Emulator::getcommand() {
 }
 
 
-
 void Emulator::run_one_step() {
 	time_step++;
-	S.add_passive_energy();
+
 	for (Bot& b : S.bots) {
 		if (!b.active) continue;
 		b.command = Command::getnextcommand(this);
-		std::cout << "loaded " << (*(b.command)).__str__() << "\n";
+		// std::cout << (*(b.command)).__str__() << "\n";
 	}
+
 	S.validate_step();
+	S.add_passive_energy();
 	S.run_commands();
 }
 
 
-void Emulator::run_all(string modelfile, string tracefile) {
-	S.read_model(modelfile);
-	read_trace(tracefile);
+void Emulator::run_all() {
 	while (!S.halted) run_one_step();
 }
 
-void Emulator::run_given_step(vector<unsigned char> newtrace) {
+
+void Emulator::run_given(vector<unsigned char> newtrace) {
 	trace = std::move(newtrace);
+	tracepointer = 0;
 	while (tracepointer < trace.size()) run_one_step();
 }
+
 
 int64_t Emulator::energy() {
 	return S.energy;
@@ -253,17 +280,7 @@ vector<unsigned char> Emulator::get_state() {
 	vector<unsigned char> result;
 	result.push_back(S.R);
 	result.push_back(S.high_harmonics);
-	for (auto x : S.matrix) {result.push_back(x); std::cout << (unsigned) x << '\n';}
-	Pos p (0, 0, 0);
-	for (p.x = 0; p.x <= 2; p.x++) {
-		for (p.y = 0; p.y <=2; p.y++) {
-			for (p.z = 0; p.z <= 2; p.z++) {
-				std::cout << S.getmatrixbit(p) << " ";
-			}
-			std::cout << "\n";
-		}
-		std::cout << "\n";
-	}
+	for (auto x : S.matrix)  result.push_back(x);
 	return result;
 }
 

@@ -14,6 +14,7 @@ public:
 	int clen() const;
 	bool is_adjacent() const;
 	bool is_near() const;
+	bool is_far() const;
 	bool is_linear() const;
 	bool is_short() const;
 	bool is_long() const;
@@ -44,5 +45,6 @@ public:
 
 
 int region_dimension(const Pos& a, const Pos& b);
+int region_dimension(const Diff& d);
 
 #endif

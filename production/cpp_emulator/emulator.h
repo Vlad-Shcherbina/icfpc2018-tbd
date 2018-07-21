@@ -19,14 +19,12 @@ public:
 	bool active;
 
 	Bot(unsigned char pid, Pos position, std::vector<unsigned char> seeds, bool active);
-	Bot(
-			unsigned char pid,
+	Bot(	unsigned char pid,
 			unsigned char x,
 			unsigned char y,
 			unsigned char z,
 			std::vector<unsigned char> seeds,
-			bool active
-		);
+			bool active);
 	void set_volatiles(State* field);
 	void execute(State* field);
 };
@@ -42,18 +40,17 @@ public:
 	bool halted;
 
 
-	std::vector<unsigned char> floating;
-	std::vector<unsigned char> model;
+	//std::vector<unsigned char> floating;
+	std::vector<unsigned char> target;
 	std::vector<unsigned char> volatiles;
 	bool volatile_violation;
 
 	State();
 	State(unsigned char R);
+	void set_size(unsigned char R);
 
-	void read_model(std::string filename);
-
-	bool getmatrixbit(const Pos& p) const;
-	void setmatrixbit(const Pos& p, bool value);
+	bool getbit(const Pos& p) const;
+	void setbit(const Pos& p, bool value);
 	bool getbit(const Pos& p, const std::vector<unsigned char>& v) const;
 	void setbit(const Pos& p, bool value, std::vector<unsigned char>& v);
 
@@ -66,7 +63,6 @@ public:
 
 private:
 	void set_initials();
-	void set_matrices(unsigned char R);
 };
 
 
@@ -76,14 +72,19 @@ public:
 	int time_step;
 	std::vector<unsigned char> trace;
 	unsigned tracepointer;
-	
+
 	Emulator();
 
-	void read_trace(std::string filename);
+	void load_model(std::string filename, char dest);
+	void set_model(std::vector<unsigned char> bytes, char dest);
+
+	void load_trace(std::string filename);
+	void set_trace(std::vector<unsigned char> bytes);
+
 	unsigned char getcommand();
 	void run_one_step();
-	void run_all(std::string modelfile, std::string tracefile);
-	void run_given_step(std::vector<unsigned char> newtrace);
+	void run_all();
+	void run_given(std::vector<unsigned char> newtrace);
 	void load(std::string modelfile, std::string tracefile);
 
 	void reconstruct_state(
@@ -105,6 +106,8 @@ public:
 	int64_t energy();
 	int count_active();
 
+private:
+	std::vector<unsigned char>* choose_matrix(char c);
 };
 
 

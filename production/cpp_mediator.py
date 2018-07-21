@@ -7,17 +7,16 @@ import production.commands as commands
 from bitarray import bitarray
 
 
-def set_state(um, state):
+def set_state(em, state):
     m = state.matrix._data.tobytes()
-    print(m)
     em.reconstruct(state.R, m, state.harmonics == HIGH, state.energy)
     for b in state.bots:
         em.add_bot(b.bid, b.pos.x, b.pos.y, b.pos.z, b.seeds)
     return em
 
 
-def get_bots(um):
-    a = um.get_bots()
+def get_bots(em):
+    a = em.get_bots()
     i = 0
     bots = []
     while i < len(a):
@@ -32,23 +31,21 @@ def get_bots(um):
     return bots
 
 
-def get_state(um):
-    a = um.get_state()
+def get_state(em):
+    a = em.get_state()
     s = State(a[0])
     s.harmonics = HIGH if a[1] else LOW
     b = bitarray(endian='little')
     b.frombytes(bytes(a[2:]))
     m = Model(s.R)
     m._data = b
-    s.bots = get_bots(um)
+    s.bots = get_bots(em)
     s.matrix = m
-    s.energy = um.energy()
+    s.energy = em.energy()
     return s
 
 
-
-
-if __name__ == '__main__':
+def main_run_interactive():
     import production.utils as utils
 
     em = CppEmulator()
@@ -70,6 +67,23 @@ if __name__ == '__main__':
     em.run_commands(cmdlist)
 
     s = get_state(em)
-    print(s.energy)
-    print(s.matrix[Pos(1, 1, 1)])
-    print(s.bots[0].pos)
+    print("\nEnergy: ", s.energy)
+    print("Central cell: ", s.matrix[Pos(1, 1, 1)])
+    print("Bot position: ", s.bots[0].pos)
+
+
+def main_run_file():
+    from production import utils
+    modelfile = str(utils.project_root() / 'julie_scratch' / 'LA014_tgt.mdl')
+    tracefile = str(utils.project_root() / 'julie_scratch' / 'LA014.nbt')
+
+    em = CppEmulator()
+    em.load_model(modelfile, 't')   # t - target model, s - source or current model
+    em.load_trace(tracefile)
+    em.run()
+
+    print("Energy: ", em.energy())
+
+if __name__ == '__main__':
+    main_run_file()
+    main_run_interactive()
