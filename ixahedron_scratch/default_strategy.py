@@ -32,10 +32,10 @@ def default_strategy(model): # -> [Commands]
                 z += (1 if zup else -1)
             commands.append(SMove(Diff(1 if xup else -1,0,0)))
             x += (1 if xup else -1)
-            zup = zup ^ True    
+            zup = not zup
         commands.append(SMove(Diff(0,1,0)))
-        xup = xup ^ True    
-        zup = zup ^ True    
+        xup = not xup
+        zup = not zup    
 
     for i in reversed(range(z)):
         commands.append(SMove(Diff(0,0,-1)))
