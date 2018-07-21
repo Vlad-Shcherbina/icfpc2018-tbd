@@ -17,6 +17,9 @@ class Pos:
     def __sub__(self, other: 'Pos') -> 'Diff':
         return Diff(self.x - other.x, self.y - other.y, self.z - other.z)
 
+    def __mul__(self, c: 'int') -> 'Pos':
+        return Diff(self.x*c, self.y*c, self.z*c)
+
     def is_inside_matrix(self, R) -> bool:
         return 0 <= self.x < R and 0 <= self.y < R and 0 <= self.z < R
 
@@ -40,6 +43,12 @@ class Diff:
     dx: int
     dy: int
     dz: int
+
+    def __add__(self, d: 'Diff') -> 'Pos':
+        return Diff(self.dx + d.dx, self.dy + d.dy, self.dz + d.dz)
+
+    def __mul__(self, c: 'int') -> 'Pos':
+        return Diff(self.dx*c, self.dy*c, self.dz*c)
 
     def mlen(self):
         return abs(self.dx) + abs(self.dy) + abs(self.dz)
