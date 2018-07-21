@@ -105,7 +105,7 @@ class DefaultSolver(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Default 1.1'
+        return 'Default 1.2'
 
     def solve(self, name: str, model_data: bytes) -> SolverResult:
         m = Model.parse(model_data)
