@@ -101,19 +101,6 @@ Extra:
 {% endblock %}
 '''
 
-@app.route('/vis_model/<int:id>')
-def visualize_model(id):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(
-        'SELECT data '
-        'FROM models WHERE id = %s',
-        [id])
-    [data] = cur.fetchone()
-    data = zlib.decompress(data)
-
-    return flask.render_template('visualize_model.html', data=list(map(int, data)))
-
 
 @app.route('/trace/<int:id>')
 def view_trace(id):
@@ -144,6 +131,40 @@ Extra:
 '''
 
 
+@app.route('/vis_model/<int:id>')
+def visualize_model(id):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        'SELECT data '
+        'FROM models WHERE id = %s',
+        [id])
+    [data] = cur.fetchone()
+    data = zlib.decompress(data)
+
+    return flask.render_template('visualize_model.html', data=list(map(int, data)))
+
+
 @app.route('/vis_trace/<int:id>')
 def visualize_trace(id):
-    assert False, 'TODO'
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        'SELECT model_id, data '
+        'FROM traces WHERE id = %s',
+        [id])
+    [model_id, trace_data] = cur.fetchone()
+    trace_data = zlib.decompress(trace_data)
+
+    cur.execute(
+        'SELECT data '
+        'FROM models WHERE id = %s',
+        [model_id])
+    [model_data] = cur.fetchone()
+    model_data = zlib.decompress(model_data)
+
+    return flask.render_template(
+        'visualize_trace.html',
+        model_data=list(map(int, model_data)),
+        trace_data=list(map(int, trace_data)))
+
