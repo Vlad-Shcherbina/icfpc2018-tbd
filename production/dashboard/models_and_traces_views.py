@@ -7,43 +7,52 @@ import flask
 from production.dashboard import app, get_conn
 
 
-@app.route('/models')
-def list_models():
+@app.route('/problems')
+def list_problems():
     conn = get_conn()
     cur = conn.cursor()
     cur.execute('''
         SELECT
-            models.id, models.name, models.stats, models.invocation_id,
+            problems.id, problems.name,
+            problems.src_data IS NOT NULL, problems.tgt_data IS NOT NULL,
+            problems.stats, problems.invocation_id,
             traces.id, traces.scent, traces.status, traces.energy, traces.invocation_id,
             traces.data IS NOT NULL
-        FROM models
-        LEFT OUTER JOIN traces ON traces.model_id = models.id
-        ORDER BY models.id DESC, traces.id DESC
+        FROM problems
+        LEFT OUTER JOIN traces ON traces.problem_id = problems.id
+        ORDER BY problems.id DESC, traces.id DESC
     ''')
     rows = cur.fetchall()
-    best_by_model = defaultdict(lambda: float('+inf'))
-    for [model_id, _, _, _, _, _, _,  energy, _, _] in rows:
+    best_by_problem = defaultdict(lambda: float('+inf'))
+    for [problem_id, _, _, _, _, _, _, _, _,  energy, _, _] in rows:
         if energy is not None:
-            best_by_model[model_id] = min(best_by_model[model_id], energy)
+            best_by_problem[problem_id] = min(best_by_problem[problem_id], energy)
 
-    return flask.render_template_string(LIST_MODELS_TEMPLATE, **locals())
+    return flask.render_template_string(LIST_PROBLEMS_TEMPLATE, **locals())
 
-LIST_MODELS_TEMPLATE = '''\
+LIST_PROBLEMS_TEMPLATE = '''\
 {% extends "base.html" %}
 {% block body %}
-<h3>All models</h3>
+<h3>All problems</h3>
 <table id='t'>
-{% for model_id, model_name, model_stats, model_inv_id,
+{% for problem_id, problem_name, has_src, has_tgt, problem_stats, problem_inv_id,
        trace_id, trace_scent, trace_status, trace_energy, trace_inv_id,
        trace_has_data in rows %}
     <tr>
-        <td>{{ url_for('view_invocation', id=model_inv_id) | linkify }}</td>
+        <td>{{ url_for('view_invocation', id=problem_inv_id) | linkify }}</td>
         <td>
-            {{ url_for('view_model', id=model_id) | linkify }}
-            (<a href="{{ url_for('visualize_model', id=model_id)}}">vis</a>)
+            {{ url_for('view_problem', id=problem_id) | linkify }}
+            {% if has_src %}
+                (<a href="{{ url_for('visualize_model', id=problem_id, which='src')}}"
+                 >vis src</a>)
+            {% endif %}
+            {% if has_tgt %}
+                (<a href="{{ url_for('visualize_model', id=problem_id, which='tgt')}}"
+                 >vis tgt</a>)
+            {% endif %}
         </td>
-        <td>{{ model_name }}</td>
-        <td>{{ model_stats }}</td>
+        <td>{{ problem_name }}</td>
+        <td>{{ problem_stats }}</td>
         {% if trace_id is not none %}
             <td>
                 {{ url_for('view_trace', id=trace_id) | linkify }}
@@ -53,14 +62,14 @@ LIST_MODELS_TEMPLATE = '''\
             </td>
             <td>{{ trace_status }}</td>
             <td>
-                {% if best_by_model[model_id] == trace_energy %}
+                {% if best_by_problem[problem_id] == trace_energy %}
                     <b>{{ trace_energy }}</b>
                 {% else %}
                     {{ trace_energy }}
                 {% endif %}
             </td>
             <td>
-                {% if best_by_model[model_id] == trace_energy %}
+                {% if best_by_problem[problem_id] == trace_energy %}
                     <b>{{ trace_scent }}</b>
                 {% else %}
                     {{ trace_scent }}
@@ -80,37 +89,47 @@ LIST_MODELS_TEMPLATE = '''\
 '''
 
 
-@app.route('/model/<int:id>')
-def view_model(id):
+@app.route('/problem/<int:id>')
+def view_problem(id):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        'SELECT stats, extra, invocation_id, timestamp '
-        'FROM models WHERE id = %s',
+    cur.execute('''
+        SELECT
+            name,
+            src_data IS NOT NULL,
+            tgt_data IS NOT NULL,
+            stats, extra, invocation_id, timestamp
+        FROM problems WHERE id = %s''',
         [id])
-    [stats, extra, inv_id, timestamp] = cur.fetchone()
+    [name, has_src, has_tgt, stats, extra, inv_id, timestamp] = cur.fetchone()
 
     cur.execute('''
         SELECT id, scent, status, energy, invocation_id, timestamp
         FROM traces
-        WHERE model_id = %s
+        WHERE problem_id = %s
         ORDER BY id DESC
         ''',
         [id])
     traces = cur.fetchall()
-    return flask.render_template_string(VIEW_MODEL_TEMPLATE, **locals())
+    return flask.render_template_string(VIEW_PROBLEM_TEMPLATE, **locals())
 
-VIEW_MODEL_TEMPLATE = '''\
+VIEW_PROBLEM_TEMPLATE = '''\
 {% extends "base.html" %}
 {% block body %}
-<h3>Model info</h3>
+<h3>Problem info</h3>
+Name: {{ name }} <br>
 Produced by {{ url_for('view_invocation', id=inv_id) | linkify }} <br><br>
 Stats: {{ stats }} <br>
 Time: {{ timestamp | render_timestamp }} <br>
 Extra:
 <pre>{{ extra | json_dump }}</pre>
 
-<a href="{{ url_for('visualize_model', id=id) }}">visualize</a>
+{% if has_src %}
+  (<a href="{{ url_for('visualize_model', id=id, which='src') }}">vis src</a>)
+{% endif %}
+{% if has_tgt %}
+  (<a href="{{ url_for('visualize_model', id=id, which='tgt') }}">vis tgt</a>)
+{% endif %}
 
 {% if traces %}
 <h4>Traces</h4>
@@ -136,10 +155,10 @@ def view_trace(id):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        'SELECT model_id, scent, status, energy, extra, invocation_id '
+        'SELECT problem_id, scent, status, energy, extra, invocation_id '
         'FROM traces WHERE id = %s',
         [id])
-    [model_id, scent, status, energy, extra, inv_id] = cur.fetchone()
+    [problem_id, scent, status, energy, extra, inv_id] = cur.fetchone()
 
     return flask.render_template_string(VIEW_TRACE_TEMPLATE, **locals())
 
@@ -150,7 +169,7 @@ VIEW_TRACE_TEMPLATE = '''\
 Status: {{ status }} <br>
 Scent: {{ scent }} <br>
 Energy: {{ energy }} <br>
-Model: {{ url_for('view_model', id=model_id) | linkify }} <br>
+Problem: {{ url_for('view_problem', id=problem_id) | linkify }} <br>
 Produced by {{ url_for('view_invocation', id=inv_id) | linkify }} <br><br>
 Extra:
 <pre>{{ extra | json_dump }}</pre>
@@ -166,12 +185,23 @@ Extra:
 
 @app.route('/vis_model/<int:id>')
 def visualize_model(id):
+    which = flask.request.args['which']
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        'SELECT data '
-        'FROM models WHERE id = %s',
-        [id])
+
+    if which == 'src':
+        cur.execute(
+            'SELECT src_data '
+            'FROM problems WHERE id = %s',
+            [id])
+    elif which == 'tgt':
+        cur.execute(
+            'SELECT tgt_data '
+            'FROM problems WHERE id = %s',
+            [id])
+    else:
+        assert False, which
+
     [data] = cur.fetchone()
     data = zlib.decompress(data)
 

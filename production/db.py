@@ -24,14 +24,17 @@ def create_tables(conn):
         data JSON NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS models(
+    CREATE TABLE IF NOT EXISTS problems(
         id SERIAL PRIMARY KEY,
 
         -- like 'LA001'
         name TEXT NOT NULL UNIQUE,
 
-        -- gzipped model data
-        data BYTEA NOT NULL,
+        -- gzipped model data or NULL for 'assemble' problems
+        src_data BYTEA,
+
+        -- gzipped model data or NULL for 'disassemble' problems
+        tgt_data BYTEA,
 
         -- {'R': 42, 'num_full_voxels': 42}
         stats JSON NOT NULL,
@@ -69,7 +72,7 @@ def create_tables(conn):
         extra JSON NOT NULL,
         -- anything that is not the solution: logs, statistics, error messages
 
-        model_id INTEGER NOT NULL REFERENCES models,
+        problem_id INTEGER NOT NULL REFERENCES problems,
         invocation_id INTEGER NOT NULL REFERENCES invocations,
         timestamp DOUBLE PRECISION NOT NULL
     );
