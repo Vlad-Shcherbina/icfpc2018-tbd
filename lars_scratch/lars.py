@@ -17,6 +17,8 @@ def solve(source, target):
     state.tick([FusionP(Diff(1, 1, 0)), FusionS(Diff(-1, -1, 0))])
     state.tick([Halt()])
 
+    print(state.correct())
+
     pprint(state.trace)
     pprint(state.bots)
     return state.dump_trace()

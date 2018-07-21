@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 from pprint import pprint
 from enum import Enum
 
@@ -62,6 +62,16 @@ class State:
         bots = [b for b in self.bots if b.pos == pos]
         return bots[0] if bots else None
 
+    def correct(self) -> bool:
+        for i in range(self.R ** 3):
+            if self.target._data[i]:
+                if self._data[i] != Cell.FULL:
+                    return False
+            else:
+                if self._data[i] != Cell.EMPTY:
+                    return False
+        return True
+
     def tick(self, commands: List[Command]):
         assert len(commands) == len(self.bots)
         newbots = []
@@ -70,6 +80,7 @@ class State:
             if isinstance(command, Halt):
                 assert len(self.bots) == 1
                 assert self.bots[0].pos == Pos(0, 0, 0)
+                self._set(Pos(0, 0, 0), Cell.EMPTY)
             elif isinstance(command, Wait):
                 newbots.append(bot)
             elif isinstance(command, Flip):
