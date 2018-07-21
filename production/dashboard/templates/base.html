@@ -8,7 +8,8 @@
 <body>
   <a href=" {{ url_for('hello') }}">hello</a> |
   <a href=" {{ url_for('list_invocations') }}">invocations</a> |
-  <a href=" {{ url_for('list_problems') }}">problems</a> |
+  <a href=" {{ url_for('list_problems', prefix='L') }}">lightning problems</a> |
+  <a href=" {{ url_for('list_problems', prefix='F') }}">full problems</a> |
   {#
   <a href=" {{ url_for('list_cars') }}">cars</a> (demo) |
   <a href=" {{ url_for('list_fuels') }}">fuels</a> (demo) |

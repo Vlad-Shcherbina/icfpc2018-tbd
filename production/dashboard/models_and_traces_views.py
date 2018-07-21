@@ -9,6 +9,8 @@ from production.dashboard import app, get_conn
 
 @app.route('/problems')
 def list_problems():
+    prefix = flask.request.args.get('prefix', '')
+
     conn = get_conn()
     cur = conn.cursor()
     cur.execute('''
@@ -20,8 +22,9 @@ def list_problems():
             traces.data IS NOT NULL
         FROM problems
         LEFT OUTER JOIN traces ON traces.problem_id = problems.id
+        WHERE problems.name LIKE %s
         ORDER BY problems.id DESC, traces.id DESC
-    ''')
+    ''', [prefix + '%'])
     rows = cur.fetchall()
     best_by_problem = defaultdict(lambda: float('+inf'))
     for [problem_id, _, _, _, _, _, _, _, _,  energy, _, _] in rows:
