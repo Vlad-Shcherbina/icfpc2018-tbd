@@ -63,7 +63,7 @@ def create_tables(conn):
         data BYTEA,
         -- NULL if status = 'FAIL' or 'PASS'
 
-        energy INTEGER,
+        energy BIGINT,
         -- NULL if status != 'DONE'
 
         extra JSON NOT NULL,
