@@ -13,8 +13,15 @@ class PillarSolver(Solver):
         # Iz govna i palok.
         return 'pillar 0.3'
 
-    def solve(self, name: str, model_data: bytes) -> SolverResult:
-        self.model = Model.parse(model_data)
+    def supports(self, problem_type: ProblemType) -> bool:
+        return problem_type == ProblemType.Assemble
+
+    def solve(
+            self, name: str,
+            src_model: Optional[bytes],
+            tgt_model: Optional[bytes]) -> SolverResult:
+        assert src_model is None
+        self.model = Model.parse(tgt_model)
         self.model_height = model_height(self.model)
 
         self.plots = create_plots(self.model)

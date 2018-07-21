@@ -10,7 +10,7 @@ from production.commands import *
 from production.basics import Pos, Diff
 from production.orchestrate import sequential
 from production.solver_utils import *
-from production.solver_interface import Solver, SolverResult, Fail
+from production.solver_interface import ProblemType, Solver, SolverResult, Fail
 
 from production.data_files import *
 from production.pyjs_emulator.run import run
@@ -56,8 +56,15 @@ class BottomUpSolver(Solver):
     def scent(self) -> str:
         return 'Bottom Up 1.2'
 
-    def solve(self, name: str, model_data: bytes) -> SolverResult:
-        m = Model.parse(model_data)
+    def supports(self, problem_type: ProblemType) -> bool:
+        return problem_type == ProblemType.Assemble
+
+    def solve(
+            self, name: str,
+            src_model: Optional[bytes],
+            tgt_model: Optional[bytes]) -> SolverResult:
+        assert src_model is None
+        m = Model.parse(tgt_model)
         try:
             trace = [cmd for step in up_pass(m) for cmd in step]
             trace_data = compose_commands(trace)

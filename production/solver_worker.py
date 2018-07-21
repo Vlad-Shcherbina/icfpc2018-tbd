@@ -60,7 +60,7 @@ def put_trace(conn, model_id: int, result: Result):
 def solve(solver: solver_interface.Solver, name: str, model_data: bytes) -> Result:
     logging.info('Solving...')
     start = time.time()
-    sr = solver.solve(name, model_data)
+    sr = solver.solve(name, src_model=None, tgt_model=model_data)  # TODO: src_model
     solver_time = time.time() - start
     logging.info(f'It took {solver_time}')
     if isinstance(sr.trace_data, solver_interface.Pass):
@@ -155,7 +155,7 @@ def main():
     logger.info(f'Solver scent: {solver.scent()!r}')
 
     cur.execute('''
-        SELECT models.id
+        SELECT models.id, models.name
         FROM models
         LEFT OUTER JOIN (
             SELECT model_id AS trace_model_id FROM traces WHERE scent = %s
@@ -164,7 +164,10 @@ def main():
         WHERE trace_model_id IS NULL
         ''', [solver.scent()])
 
-    model_ids = [id for [id] in cur]
+    model_ids = []
+    for id, name in cur:
+        if solver.supports(solver_interface.ProblemType.from_name(name)):
+            model_ids.append(id)
     logging.info(f'Models to solve: {model_ids}')
 
     # to reduce collisions when multiple solvers are working in parallel
