@@ -13,7 +13,7 @@ def list_models():
     cur.execute('''
         SELECT
             models.id, models.name, models.stats, models.invocation_id,
-            traces.id, traces.status, traces.energy, traces.invocation_id
+            traces.id, traces.scent, traces.status, traces.energy, traces.invocation_id
         FROM models
         LEFT OUTER JOIN traces ON traces.model_id = models.id
         ORDER BY models.id DESC, traces.id DESC
@@ -26,7 +26,7 @@ LIST_MODELS_TEMPLATE = '''\
 <h3>All models</h3>
 <table id='t'>
 {% for model_id, model_name, model_stats, model_inv_id,
-       trace_id, trace_status, trace_energy, trace_inv_id in cur %}
+       trace_id, trace_scent, trace_status, trace_energy, trace_inv_id in cur %}
     <tr>
         <td>{{ url_for('view_invocation', id=model_inv_id) | linkify }}</td>
         <td>{{ url_for('view_model', id=model_id) | linkify }}</td>
@@ -34,7 +34,9 @@ LIST_MODELS_TEMPLATE = '''\
         <td>{{ model_stats }}</td>
         {% if trace_id is not none %}
             <td>{{ url_for('view_trace', id=trace_id) | linkify }}</td>
+            <td>{{ trace_status }}</td>
             <td>{{ trace_energy }}</td>
+            <td>{{ trace_scent }}</td>
             {#<td>{{ url_for('view_invocation', id=trace_inv_id) | linkify }}</td>#}
         {% endif %}
     </tr>
@@ -60,7 +62,7 @@ def view_model(id):
     [stats, extra, inv_id, timestamp] = cur.fetchone()
 
     cur.execute('''
-        SELECT id, status, invocation_id, timestamp
+        SELECT id, scent, status, energy, invocation_id, timestamp
         FROM traces
         WHERE model_id = %s
         ORDER BY id DESC
@@ -84,12 +86,14 @@ Extra:
 {% if traces %}
 <h4>Traces</h4>
 <table>
-{% for trace_id, trace_status, trace_inv_id, trace_t in traces %}
+{% for trace_id, trace_scent, trace_status, trace_energy, trace_inv_id, trace_t in traces %}
     <tr>
         <td>{{ url_for('view_trace', id=trace_id) | linkify}}</td>
-        <td>{{ status }}</td>
+        <td>{{ trace_status }}</td>
+        <td>{{ trace_energy }}</td>
+        <td>{{ trace_t | render_timestamp }}</td>
+        <td>{{ trace_scent }}</td>
         <td>{{ url_for('view_invocation', id=trace_inv_id) | linkify }}</td>
-        <td>{{ t | render_timestamp }}</td>
     </tr>
 {% endfor %}
 </table>

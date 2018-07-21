@@ -54,6 +54,12 @@ def create_tables(conn):
         -- These states indicate that the solver failed in a deterministic way.
         -- It will be used to avoid further reruns of the same solver.
 
+        scent TEXT NOT NULL,
+        -- Solver will not attempt a problem if there was another attempt
+        -- with the same scent.
+        -- Use strings like 'My solver 1.0' and bump it when the solver changed
+        -- significantly and you want to rerun it on all problems.
+
         data BYTEA,
         -- NULL if status = 'FAIL' or 'PASS'
 
