@@ -2,10 +2,11 @@ import zipfile
 import hashlib
 import time
 import zlib
+import re
 
 from production import utils
 from production import db
-
+from production import data_files
 
 
 def main():
@@ -49,6 +50,16 @@ def main():
         [data] = cur.fetchone()
         data = zlib.decompress(data)
         z.writestr(zipfile.ZipInfo(f'{model_name}.nbt'), data)
+
+    for file_name in data_files.lightning_default_trace_names():
+        m = re.match(r'(LA\d+).nbt', file_name)
+        assert m is not None, file_name
+        name = m.group(1)
+        if name not in best_by_model:
+            print(name, 'from defaults')
+            z.writestr(
+                zipfile.ZipInfo(f'{name}.nbt'),
+                data_files.lightning_default_trace(file_name))
 
     z.close()
 
