@@ -4,7 +4,7 @@ from pprint import pprint
 from enum import Enum
 
 from production.basics import Pos, Diff
-from production.commands import Command
+from production.commands import *
 
 # Feel free not to use some values or to add more values
 class Cell(Enum):
@@ -20,9 +20,14 @@ class Cell(Enum):
 class Bot:
     bid: int
     pos: Pos
+    seeds: List[int]
+
+    def move(self, diff: Diff):
+        self.pos += diff
 
 @dataclass(frozen=True)
 class State:
+    antigrav: bool
     bots: List[Bot]
     trace: List[Command]
     R: int
@@ -35,9 +40,10 @@ class State:
         for i in range(R * R * R):
             _data[i] = Cell.FULL if source._data[i] else Cell.EMPTY
         self.target = target
-        self.bots = [Bot(1, Pos(0, 0, 0))]
+        self.bots = [Bot(1, Pos(0, 0, 0), list(range(2, 41)))]
         self._set(Pos(0, 0, 0), Cell.BOT)
         self.trace = []
+        self.antigrav = False
 
     def __getitem__(self, pos: Pos) -> Cell:
         R = self.R
@@ -51,6 +57,22 @@ class State:
 
     def tick(self, commands: List[Command]):
         assert len(commands) == len(self.bots)
+        newbots = []
 
         for bot, command in zip(self.bots, commands):
-            pass
+            if isinstance(command, Halt):
+                assert len(self.bots) == 1
+                assert self.bots[0].pos == Pos(0, 0, 0)
+            if isinstance(command, Wait):
+                newbots.append(bot)
+            if isinstance(command, Flip):
+                self.antigrav = not self.antigrav
+                newbots.append(bot)
+            if isinstance(command, SMove):
+                assert SMove.lld.is_long_linear()
+                bot.move(SMove.lld)
+                assert bot.pos.is_inside_matrix(self.R)
+                newbots.append(bot)
+
+        self.bots = newbots
+        self.trace.append(commands)
