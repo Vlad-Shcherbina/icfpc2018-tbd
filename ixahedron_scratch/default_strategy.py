@@ -24,8 +24,8 @@ def default_strategy(model): # -> [Commands]
     zup = True
 
     for y in range(1,pos_max.y+2):
-        while (x > pos_min.x and not xup) or (x < pos_max.x and xup):
-            while (z > pos_min.z and not zup) or (z < pos_max.z and zup):
+        while (x >= pos_min.x and not xup) or (x <= pos_max.x and xup):
+            while (z >= pos_min.z and not zup) or (z <= pos_max.z and zup):
                 if model[Pos(x,y-1,z)]:
                     commands.append(Fill(Diff(0, -1, 0)))
                 commands.append(SMove(Diff(0,0, 1 if zup else -1)))    
@@ -50,23 +50,25 @@ def default_strategy(model): # -> [Commands]
     return commands
 
 
-def write_solution(bytetrace): # -> IO ()
-    with open('LAXXX.nbt', 'wb') as f:
+def write_solution(bytetrace, number): # -> IO ()
+    with open('LA'+number+'.nbt', 'wb') as f:
         f.write(bytetrace)
 
-def solve(strategy, model): # -> IO ()
+def solve(strategy, model, number = 'XXX'): # -> IO ()
     commands = strategy(model)
     trace = compose_commands(commands)
-    write_solution(trace)
+    write_solution(trace, number)
 
 def main():
     from production import data_files
 
-    name = 'LA004_tgt.mdl'
+    task_number = '001'
+
+    name = 'LA'+task_number+'_tgt.mdl'
     data = data_files.lightning_problem(name)
     m = Model.parse(data)
     
-    solve(default_strategy, m)
+    solve(default_strategy, m, task_number)
 
 if __name__ == '__main__':
     main()
