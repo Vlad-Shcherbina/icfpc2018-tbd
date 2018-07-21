@@ -11,7 +11,7 @@ class PillarSolver(Solver):
 
     def scent(self) -> str:
         # Iz govna i palok.
-        return 'pillar 0.1'
+        return 'pillar 0.2'
 
     def solve(self, name: str, model_data: bytes) -> SolverResult:
         self.model = Model.parse(model_data)
