@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 from production import db
 from production import utils
 from production import solver_interface
-from production.pyjs_emulator.run import run as pyjs_run
+from production.pyjs_emulator.run import run_full as pyjs_run_full
 from production.all_solvers import ALL_SOLVERS
 
 Json = dict
@@ -34,7 +34,7 @@ class Result:
     extra: Json
 
 
-def put_trace(conn, model_id: int, result: Result):
+def put_trace(conn, problem_id: int, result: Result):
     assert result.status in ('DONE', 'PASS', 'FAIL', 'CHECK_FAIL'), result.status
 
     if result.trace is not None:
@@ -47,20 +47,22 @@ def put_trace(conn, model_id: int, result: Result):
     cur.execute('''
         INSERT INTO traces(
             scent, status, energy, data, extra,
-            model_id, invocation_id, timestamp)
+            problem_id, invocation_id, timestamp)
         VALUES(%s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
         ''',
         [result.scent, result.status, result.energy, trace_data, extra,
-         model_id, db.get_this_invocation_id(conn), time.time()])
+         problem_id, db.get_this_invocation_id(conn), time.time()])
     [trace_id] = cur.fetchone()
     logging.info(f'Recorded as trace/{trace_id}')
 
 
-def solve(solver: solver_interface.Solver, name: str, model_data: bytes) -> Result:
+def solve(
+        solver: solver_interface.Solver, name: str,
+        src_data: Optional[bytes], tgt_data: Optional[bytes]) -> Result:
     logging.info('Solving...')
     start = time.time()
-    sr = solver.solve(name, src_model=None, tgt_model=model_data)  # TODO: src_model
+    sr = solver.solve(name, src_model=src_data, tgt_model=tgt_data)
     solver_time = time.time() - start
     logging.info(f'It took {solver_time}')
     if isinstance(sr.trace_data, solver_interface.Pass):
@@ -76,7 +78,7 @@ def solve(solver: solver_interface.Solver, name: str, model_data: bytes) -> Resu
     elif isinstance(sr.trace_data, (bytes, bytearray)):
         logging.info('Checking with pyjs...')
         start = time.time()
-        er = pyjs_run(model_data, sr.trace_data)
+        er = pyjs_run_full(src_data, tgt_data, sr.trace_data)
         pyjs_time = time.time() - start
         logging.info(f'It took {pyjs_time}')
         if er.energy is None:
@@ -100,15 +102,16 @@ def solve(solver: solver_interface.Solver, name: str, model_data: bytes) -> Resu
 @dataclass
 class InputEntry:
     solver: solver_interface.Solver
-    model_id: int
-    model_name: str  # like 'LA042'
-    model_data: bytes
+    problem_id: int
+    problem_name: str  # like 'FR042'
+    src_data: Optional[bytes]
+    tgt_data: Optional[bytes]
 
 
 @dataclass
 class OutputEntry:
     worker_index: int
-    model_id: int
+    problem_id: int
     result: Result
 
 
@@ -127,19 +130,19 @@ def work(
         if input_entry is None:
             logging.info('No more tasks.')
             break
-        logging.info(f'Solving model/{input_entry.model_id}...')
-        result = solve(input_entry.solver, input_entry.model_name, input_entry.model_data)
+        logging.info(f'Solving problem/{input_entry.problem_id}...')
+        result = solve(
+            input_entry.solver, input_entry.problem_name,
+            input_entry.src_data, input_entry.tgt_data)
         logging.info(f'Done, energy={result.energy}')
         output_entry = OutputEntry(
             worker_index=index,
-            model_id=input_entry.model_id,
+            problem_id=input_entry.problem_id,
             result=result)
         output_queue.put(output_entry)
 
 
 def main():
-    assert False, 'not modernized yet'
-
     if len(sys.argv) < 2 :
         print('Usage:')
         print('    python -m production.solver_worker <solver> [<solver args>...]')
@@ -157,24 +160,24 @@ def main():
     logger.info(f'Solver scent: {solver.scent()!r}')
 
     cur.execute('''
-        SELECT models.id, models.name
-        FROM models
+        SELECT problems.id, problems.name
+        FROM problems
         LEFT OUTER JOIN (
-            SELECT model_id AS trace_model_id FROM traces WHERE scent = %s
+            SELECT problem_id AS trace_problem_id FROM traces WHERE scent = %s
         ) AS my_traces
-        ON trace_model_id = models.id
-        WHERE trace_model_id IS NULL
+        ON trace_problem_id = problems.id
+        WHERE problems.name LIKE 'F%%' AND trace_problem_id IS NULL
         ''', [solver.scent()])
 
-    model_ids = []
+    problem_ids = []
     for id, name in cur:
         if solver.supports(solver_interface.ProblemType.from_name(name)):
-            model_ids.append(id)
-    logging.info(f'Models to solve: {model_ids}')
+            problem_ids.append(id)
+    logging.info(f'Problems to solve: {problem_ids}')
 
     # to reduce collisions when multiple solvers are working in parallel
-    random.shuffle(model_ids)
-    #model_ids.sort(reverse=True)
+    random.shuffle(problem_ids)
+    #problem_ids.sort(reverse=True)
 
     num_workers = multiprocessing.cpu_count()
     # num_workers = 1
@@ -190,24 +193,31 @@ def main():
 
     cur = conn.cursor()
     while True:
-        if available_workers and model_ids:
-            model_id = model_ids.pop()
+        if available_workers and problem_ids:
+            problem_id = problem_ids.pop()
             cur.execute(
-                'SELECT COUNT(*) FROM traces WHERE model_id = %s AND scent = %s',
-                [model_id, solver.scent()])
+                'SELECT COUNT(*) FROM traces WHERE problem_id = %s AND scent = %s',
+                [problem_id, solver.scent()])
             [num_attempts] = cur.fetchone()
             if num_attempts == 0:
-                cur.execute('SELECT name, data FROM models WHERE id = %s', [model_id])
-                [model_name, model_data] = cur.fetchone()
+                cur.execute(
+                    'SELECT name, src_data, tgt_data FROM problems WHERE id = %s',
+                    [problem_id])
+                [problem_name, src_data, tgt_data] = cur.fetchone()
+                if src_data is not None:
+                    src_data = zlib.decompress(src_data)
+                if tgt_data is not None:
+                    tgt_data = zlib.decompress(tgt_data)
                 worker_index = available_workers.pop()
                 input_queues[worker_index].put(InputEntry(
                     solver=solver,
-                    model_id=model_id,
-                    model_name=model_name,
-                    model_data=zlib.decompress(model_data)))
-                logging.info(f'model/{model_id} goes to worker {worker_index}')
+                    problem_id=problem_id,
+                    problem_name=problem_name,
+                    src_data=src_data,
+                    tgt_data=tgt_data))
+                logging.info(f'problem/{problem_id} goes to worker {worker_index}')
             else:
-                logging.info(f'Skipping model/{model_id}')
+                logging.info(f'Skipping problem/{problem_id}')
         else:
             if len(available_workers) == num_workers:
                 break
@@ -215,10 +225,10 @@ def main():
             assert output_entry.worker_index not in available_workers
             available_workers.add(output_entry.worker_index)
             logging.info(
-                f'Got trace for model/{output_entry.model_id}, '
+                f'Got trace for problem/{output_entry.problem_id}, '
                 f'energy={output_entry.result.energy} '
                 f'from worker {output_entry.worker_index}')
-            put_trace(conn, output_entry.model_id, output_entry.result)
+            put_trace(conn, output_entry.problem_id, output_entry.result)
             conn.commit()
 
     logging.info('All done, joining workers...')
