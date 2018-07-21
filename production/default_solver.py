@@ -1,7 +1,7 @@
 from production.model import Model
 from production.commands import *
 from production.basics import Pos, Diff
-from ixahedron_scratch.solver_utils import *
+from production.solver_utils import *
 
 # Default solver: compute a bounding box, set harmonics to High, use a
 # single bot to sweep each xz-plane of the bounding box from bottom to top
