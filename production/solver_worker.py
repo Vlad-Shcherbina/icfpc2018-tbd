@@ -20,6 +20,7 @@ from production import utils
 from production import solver_interface
 from production.pyjs_emulator.run import run as pyjs_run
 from production.default_solver import DefaultSolver
+from production.bottom_up_solver import BottomUpSolver
 
 
 Json = dict
@@ -148,6 +149,7 @@ def main():
 
     #solver = solver_interface.TheirDefaultSolver(sys.argv[1:])
     solver = DefaultSolver(sys.argv[1:])
+    #solver = BottomUpSolver(sys.argv[1:])
 
     cur.execute('''
         SELECT models.id

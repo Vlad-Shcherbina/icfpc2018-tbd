@@ -1,11 +1,15 @@
 import logging
 logger = logging.getLogger(__name__)
+import sys
+from io import StringIO
+from typing import List
+import traceback
 
 from production.model import Model
 from production.commands import *
 from production.basics import Pos, Diff
 from production.solver_utils import *
-import sys
+from production.solver_interface import Solver, SolverResult, Fail
 
 def up_pass(model):
     steps = []
@@ -25,6 +29,25 @@ def up_pass(model):
         steps.extend([[SMove(Diff(0,1,0))]] * len(strips))
 
     return steps
+
+
+class BottomUpSolver(Solver):
+    def __init__(self, args):
+        assert not args
+
+    def scent(self) -> str:
+        return 'Bottom Up 1.1'
+
+    def solve(self, name: str, model_data: bytes) -> SolverResult:
+        m = Model.parse(model_data)
+        try:
+            trace = [cmd for step in up_pass(m) for cmd in step]
+            trace_data = compose_commands(trace)
+            return SolverResult(trace_data, extra={})
+        except:
+            exc = StringIO()
+            traceback.print_exc(file=exc)
+            return SolverResult(Fail(), extra=dict(tb=exc.getvalue()))
 
 
 def write_solution(bytetrace, number): # -> IO ()
