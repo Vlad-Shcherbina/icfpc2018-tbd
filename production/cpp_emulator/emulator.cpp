@@ -20,6 +20,18 @@ Bot::Bot(unsigned char pid, Pos position, vector<unsigned char> seeds, bool acti
 , active(active)
 { }
 
+Bot::Bot(
+	unsigned char pid,
+	unsigned char x,
+	unsigned char y,
+	unsigned char z,
+	std::vector<unsigned char> seeds,
+	bool active)
+: pid(pid)
+, seeds(seeds)
+, active(active)
+, position(Pos(x, y, z))
+{ }
 
 void Bot::set_volatiles(State* S) {
 	if (!command) {
@@ -55,6 +67,17 @@ void State::set_initials() {
 	high_harmonics = false;
 	volatile_violation = false;
 	halted = false;
+
+	Pos p(0, 0, 0);
+	bots.push_back(Bot(0, p, vector<unsigned char>(), false));  // zerober
+	bots.push_back(Bot(1, p, vector<unsigned char>(), true));
+	vector<unsigned char> seeds;
+	for (unsigned char i = 2; i <= MAXBOTNUMBER; i++) {
+		bots[0].seeds.push_back(i);
+		bots.push_back(Bot(i, p, vector<unsigned char>(), false));
+	}
+
+
 }
 
 void State::set_matrices(unsigned char R) {
@@ -74,14 +97,6 @@ void State::read_model(string filename) {
 	model = vector<unsigned char>();
 	while (f >> c) model.push_back(c);
 	f.close();
-
-	Pos p(0, 0, 0);
-	bots.push_back(Bot(1, p, vector<unsigned char>(), true));
-	vector<unsigned char> seeds;
-	for (unsigned char i = 2; i <= MAXBOTNUMBER; i++) {
-		bots[0].seeds.push_back(i);
-		bots.push_back(Bot(i, p, vector<unsigned char>(), false));
-	}
 
 	set_matrices(R);
 	assert (model.size() == matrix.size());
@@ -179,7 +194,7 @@ void Emulator::run_one_step() {
 	for (Bot& b : S.bots) {
 		if (!b.active) continue;
 		b.command = Command::getnextcommand(this);
-		//std::cout << (*(b.command)).__str__() << "\n";
+		// std::cout << "loaded " << (*(b.command)).__str__() << "\n";
 	}
 	S.validate_step();
 	S.run_commands();
@@ -193,9 +208,42 @@ void Emulator::run_all(string modelfile, string tracefile) {
 }
 
 void Emulator::run_given_step(vector<unsigned char> newtrace) {
-	// TODO
+	trace = std::move(newtrace);
+	while (tracepointer < trace.size()) run_one_step();
 }
 
 int64_t Emulator::energy() {
 	return S.energy;
 }
+
+
+void Emulator::reconstruct_state(
+			unsigned char R,
+			vector<unsigned char> matrix,
+			bool harmonics,
+			int64_t energy
+		)
+{
+	S = State(R);
+	S.matrix = std::move(matrix);
+	S.high_harmonics = harmonics;
+	S.energy = energy;
+
+	// while reconstructing all bots are halted
+	S.bots[1].active = false;
+	S.bots[1].seeds = vector<unsigned char>();
+}
+
+void Emulator::add_bot(unsigned char pid,
+		 unsigned char x,
+		 unsigned char y,
+		 unsigned char z,
+		 vector<unsigned char> seeds)
+{
+	Bot& b = S.bots[pid];
+	b.active = true;
+	b.position = Pos(x, y, z);
+	b.seeds = std::move(seeds);
+}
+
+int Emulator::count_active() { return S.count_active(); }

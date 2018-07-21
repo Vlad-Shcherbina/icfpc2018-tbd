@@ -19,6 +19,14 @@ public:
 	bool active;
 
 	Bot(unsigned char pid, Pos position, std::vector<unsigned char> seeds, bool active);
+	Bot(
+			unsigned char pid,
+			unsigned char x,
+			unsigned char y,
+			unsigned char z,
+			std::vector<unsigned char> seeds,
+			bool active
+		);
 	void set_volatiles(State* field);
 	void execute(State* field);
 };
@@ -67,7 +75,7 @@ public:
 	State S;
 	int time_step;
 	std::vector<unsigned char> trace;
-	int tracepointer;
+	unsigned tracepointer;
 	
 	Emulator();
 
@@ -78,7 +86,24 @@ public:
 	void run_given_step(std::vector<unsigned char> newtrace);
 	void load(std::string modelfile, std::string tracefile);
 
+	void reconstruct_state(
+			unsigned char R,
+			std::vector<unsigned char> matrix,
+			bool harmonics,
+			int64_t energy);
+
+	void add_bot(unsigned char pid,
+				 unsigned char x,
+				 unsigned char y,
+				 unsigned char z,
+				 std::vector<unsigned char> seeds);
+
+
 	int64_t energy();
+	int count_active();
+
+private:
+	void reconstruct_bots();
 
 };
 

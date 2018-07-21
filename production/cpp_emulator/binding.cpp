@@ -52,6 +52,16 @@ PYBIND11_MODULE(emulator, m) {
 		.def("__str__", &Pos::__str__)
 	;
 
+	py::class_<Bot> BotClass(m, "Bot");
+	BotClass
+		.def(py::init<unsigned char,
+			          unsigned char,
+			          unsigned char,
+			          unsigned char,
+			          std::vector<unsigned char>,
+			          bool>())
+	;
+
 	py::class_<State> StClass(m, "State");
 	StClass
 		.def(py::init<int>())
@@ -67,8 +77,11 @@ PYBIND11_MODULE(emulator, m) {
 		.def(py::init<>())
 		.def("run_step", &Emulator::run_one_step)
 		.def("run", &Emulator::run_all)
-		.def("time_step", &Emulator::run_given_step)
+		.def("run_commands", &Emulator::run_given_step)
 		.def("energy", &Emulator::energy)
+		.def("reconstruct", &Emulator::reconstruct_state)
+		.def("add_bot", &Emulator::add_bot)
+		.def("count_active", &Emulator::count_active)
 	;
 
 	m.def("region_dimension", &region_dimension);
