@@ -1,9 +1,13 @@
-from production.commands import parse_command, Diff, \
+import pytest
+from production.commands import parse_command, ParserState, Diff, \
     Halt, Wait, Flip, SMove, LMove, FusionP, FusionS, Fission, Fill
 
+
+def p(*args):
+    return parse_command(ParserState(bytes(args), 'testsource'))
+
+
 def test_command_examples():
-    def p(*args):
-        return parse_command(iter(args))
     assert p(0b11111111) == Halt()
     assert p(0b11111110) == Wait()
     assert p(0b11111101) == Flip()
@@ -17,7 +21,18 @@ def test_command_examples():
     assert p(0b01010011) == Fill(Diff(0, -1, 0))
 
 
-def test_commands_roundrip():
+def test_command_exceptions():
+    with pytest.raises(ValueError, match=r"Unrecognized command byte 0b00000000 at 'testsource'\[0\]"):
+        p(0b00000000)
+    with pytest.raises(ValueError, match=r"Unexpected EOF after 0b00010100 at 'testsource'\[0\]"):
+        p(0b00010100)
+    with pytest.raises(ValueError, match=r"Invalid data for command LMove 0b11111100 0b11111100 at 'testsource'\[0\]: KeyError\(60\)"):
+        p(0b11111100, 0b11111100)
+    with pytest.raises(ValueError, match=r"Invalid data for command FusionS 0b11110110 at 'testsource'\[0\]: KeyError\(30\)"):
+        p(0b11110110)
+
+
+def test_commands_roundtrip():
     ''
 
 

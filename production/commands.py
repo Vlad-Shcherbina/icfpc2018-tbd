@@ -100,6 +100,9 @@ class Halt:
     def parse(cls, b):
         return cls()
 
+    def compose(self):
+        return ''
+
 
 @command
 class Wait:
@@ -196,10 +199,23 @@ class FusionS:
         return cls(nd_table[b >> 3])
 
 
-def parse_command(it):
-    '`it` should be an iterator returning bytes'
-    #todo: buffer protocol(?), better error exceptions
-    b = next(it, None)
+@dataclass
+class ParserState:
+    'Reimplementing the wheel because io sucks'
+    buf: bytes
+    source: str
+    pos: int = 0
+
+    def readbyte(self):
+        if self.pos < len(self.buf):
+            r = self.buf[self.pos]
+            self.pos += 1
+            return r
+
+
+def parse_command(input: ParserState):
+    pos = input.pos
+    b = input.readbyte()
     if b is None:
         return None
     cmd = commands_by_id.get(b)
@@ -208,11 +224,19 @@ def parse_command(it):
     if cmd is None:
         cmd = commands_by_id.get(b & 0b111)
     if cmd is None:
-        assert False, f'Unrecognized command byte {b:01X}'
+        raise ValueError(f'Unrecognized command byte 0b{b:08b} at {input.source!r}[{pos}]')
     if cmd.bsize == 2:
-        b2 = next(it, None)
+        b2 = input.readbyte()
         if b2 is None:
-            assert False, f'Unexpected EOF after {b:01X}'
-        return cmd.parse(b, b2)
+            raise ValueError(f'Unexpected EOF after 0b{b:08b} at {input.source!r}[{pos}]')
+        try:
+            return cmd.parse(b, b2)
+        except Exception as exc:
+            raise ValueError(f'Invalid data for command {cmd.__name__} 0b{b:08b} 0b{b2:08b} at {input.source!r}[{pos}]: {repr(exc)}') \
+                    from exc
     else:
-        return cmd.parse(b)
+        try:
+            return cmd.parse(b)
+        except Exception as exc:
+            raise ValueError(f'Invalid data for command {cmd.__name__} 0b{b:08b} at {input.source!r}[{pos}]: {repr(exc)}') \
+                    from exc
