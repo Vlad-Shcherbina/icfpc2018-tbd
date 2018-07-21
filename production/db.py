@@ -13,7 +13,7 @@ def get_conn():
     return psycopg2.connect(
         dbname='arst',
         host='35.205.226.98',
-        user='postgres', password='kl3lzp9a83eeklxm9348lm')
+        user='postgres', password='getoutofhere')
 
 
 def create_tables(conn):

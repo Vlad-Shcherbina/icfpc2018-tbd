@@ -138,6 +138,8 @@ def work(
 
 
 def main():
+    assert False, 'not modernized yet'
+
     if len(sys.argv) < 2 :
         print('Usage:')
         print('    python -m production.solver_worker <solver> [<solver args>...]')
