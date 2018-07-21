@@ -6,13 +6,15 @@ from enum import Enum
 from production.basics import Pos, Diff
 from production.commands import *
 
+# TODO: Track volatility using a set
+# TODO: Track total energy used
+
 # Feel free not to use some values or to add more values
 class Cell(Enum):
     EMPTY = 1
     WILL_BE_FILLED = 3 # when a bot is scheduled to fill a cell
     FULL = 4
     WILL_BE_EMPTIED = 6 # when a bot is scheduled to empty a cell
-    VOLATILE = 7
     RESERVED = 8
     BOT = 9
 
@@ -63,16 +65,40 @@ class State:
             if isinstance(command, Halt):
                 assert len(self.bots) == 1
                 assert self.bots[0].pos == Pos(0, 0, 0)
-            if isinstance(command, Wait):
+            elif isinstance(command, Wait):
                 newbots.append(bot)
-            if isinstance(command, Flip):
+            elif isinstance(command, Flip):
                 self.antigrav = not self.antigrav
                 newbots.append(bot)
-            if isinstance(command, SMove):
-                assert SMove.lld.is_long_linear()
-                bot.move(SMove.lld)
+            elif isinstance(command, SMove):
+                assert command.lld.is_long_linear()
+                bot.move(command.lld)
                 assert bot.pos.is_inside_matrix(self.R)
                 newbots.append(bot)
+            elif isinstance(command, LMove):
+                assert command.sld1.is_short_linear()
+                assert command.sld2.is_short_linear()
+                bot.move(command.sld1)
+                assert bot.pos.is_inside_matrix(self.R)
+                bot.move(command.sld1)
+                assert bot.pos.is_inside_matrix(self.R)
+                newbots.append(bot)
+            elif isinstance(command, Fission):
+                newbot = Bot(bot.seeds[0], bot.pos + command.nd,
+                        bot.seeds[1:command.m + 1])
+                bot.seeds = bot.seeds[command.m + 1:]
+                newbots.append(bot)
+                newbots.append(newbot)
+            elif isinstance(command, Fill):
+                assert command.nd.is_near()
+                self._set(bot.pos + command.nd, Cell.FULL)
+                newbots.append(bot)
+            elif isinstance(command, FusionP):
+                assert self[(bot.pos + command.nd)] == Cell.BOT
+                newbots.append(bot)
+            elif isinstance(command, FusionS):
+                assert self[(bot.pos + command.nd)] == Cell.BOT
 
         self.bots = newbots
+        self.bots.sort(key=lambda bot: bot.bid)
         self.trace.append(commands)

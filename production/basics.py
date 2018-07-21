@@ -59,6 +59,9 @@ class Diff:
     def is_near(self):
         return 0 < self.mlen() <= 2 and self.clen() == 1
 
+    def is_far(self):
+        return 0 < self.clen() <= 30
+
 
 def region_dimension(c1: Pos, c2: Pos):
     result = 0
