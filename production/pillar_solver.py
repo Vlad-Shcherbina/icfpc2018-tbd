@@ -42,7 +42,7 @@ class PillarSolver(Solver):
     def fill_plot(self, pos):
       trace = []
       while pos.y <= self.model_height:
-        for diff in eight_around_and_maybe_one_below(pos):
+        for diff in eight_around_and_maybe_one_below(pos, self.model.R):
           if self.model[pos + diff]:
             trace.append(Fill(diff))
         shift = Diff(0, 1, 0)
@@ -51,11 +51,15 @@ class PillarSolver(Solver):
       return trace, pos
 
 
-def eight_around_and_maybe_one_below(pos):
+def eight_around_and_maybe_one_below(pos, R):
   if pos.y > 0:
     yield Diff(0, -1, 0)
-  for dx in range(-1, 2):
-    for dz in range(-1, 2):
+  dx_low = -1 if pos.x > 0 else 0
+  dx_high = 1 if pos.x < R - 1 else 0
+  dz_low = -1 if pos.z > 0 else 0
+  dz_high = 1 if pos.z < R - 1 else 0
+  for dx in range(dx_low, dx_high + 1):
+    for dz in range(dz_low, dz_high + 1):
       if (dx != 0) or (dz != 0):
         yield Diff(dx, 0, dz)
 
