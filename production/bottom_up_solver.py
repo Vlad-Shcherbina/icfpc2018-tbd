@@ -33,13 +33,12 @@ def up_pass(model):
 
     # Print layer by layer
     for layer in range(0, maxy + 1):
-        last = layer == pos_high.y
+        last = (layer == pos_high.y)
         steps.extend(print_layer_below(model, layer, strips, last))
-        if not last:
-            steps.extend([[SMove(Diff(0,1,0))]] * len(strips))
+        steps.extend([[SMove(Diff(0,1,0))]] * len(strips))
 
     steps.extend(fusion_unfill_right(strips))
-    steps.extend(sequential(move_y(-1 * (maxy + 1))))
+    steps.extend(sequential(move_y(-1 * (maxy + 2))))
 
     # TODO: REMOVE ME
     steps.append([Flip()])

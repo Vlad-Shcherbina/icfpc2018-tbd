@@ -136,7 +136,7 @@ def fusion(positions):
                     i += 2
                 else:
                     # MOVE CLOSER
-                    dist = Diff(max(-15, positions[i].x + 1 - positions[i + 1].x),
+                    dist = Diff(max(-15, positions[i] + 1 - positions[i + 1]),
                             0, 0)
                     commands.append(Wait())
                     commands.append(SMove(dist))
@@ -144,7 +144,7 @@ def fusion(positions):
                     newpositions.append(positions[i + 1] + dist)
                     i += 2
             else:
-                dist = Diff(max(-15, positions[i - 1].x + 1 - positions[i].x), 0, 0)
+                dist = Diff(max(-15, positions[i - 1] + 1 - positions[i]), 0, 0)
                 commands.append(SMove(dist))
                 newpositions.append(positions[i] + dist)
                 i += 1
@@ -204,10 +204,12 @@ def print_layer_below(model, i, strips, last):
 # lbound <= x < rbound
 def print_strip_below(model, i, lbound, rbound, last_layer):
     moves = []
-    for z in range(0, model.R - 2):
+    for z in range(1, model.R - 1):
         if model[Pos(lbound,i,z)]:
             moves.append(Fill(Diff(0,-1,0)))
+        logging.debug('xyz = %d %d %d', lbound, i, z)
         for x in range(lbound + 1, rbound):
+            logging.debug('xyz = %d %d %d', x, i, z)
             moves.append(SMove(Diff(1,0,0)))
             if model[Pos(x,i,z)]:
                 moves.append(Fill(Diff(0,-1,0)))
