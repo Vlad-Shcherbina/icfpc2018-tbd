@@ -28,8 +28,12 @@ def default_strategy(model): # -> [Commands]
             while (z >= pos_min.z and not zup) or (z <= pos_max.z and zup):
                 if model[Pos(x,y-1,z)]:
                     commands.append(Fill(Diff(0, -1, 0)))
-                commands.append(SMove(Diff(0,0, 1 if zup else -1)))    
+                if (not zup and z == pos_min.z) or (z == pos_max.z and zup):
+                    break
+                commands.append(SMove(Diff(0,0, 1 if zup else -1)))
                 z += (1 if zup else -1)
+            if (not xup and x == pos_min.x) or (xup and x == pos_max.x):
+                break
             commands.append(SMove(Diff(1 if xup else -1,0,0)))
             x += (1 if xup else -1)
             zup = not zup
