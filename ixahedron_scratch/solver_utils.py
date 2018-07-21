@@ -1,7 +1,9 @@
+from typing import Tuple
+
 from production.model import Model
 from production.basics import Pos
 
-def bounding_box(model) -> (Pos, Pos):
+def bounding_box(model) -> Tuple[Pos, Pos]:
     filled_cell_visited = False
     for x in range(model.R):
         for y in range(model.R):
