@@ -118,7 +118,7 @@ def main():
 
     (src, tgt) = data_files.full_problem('FR{0:03d}'.format(task_number))
     # subprocess.call("python -m " + solver_cmd + " " + task_number_str, shell=True, cwd = os.path.join(os.path.dirname(__file__), "../../"))
-    trace_data = data_files.full_default_trace("FR{0:03d}.nbt".format(task_number))
+    trace_data = data_files.full_default_trace("FR{0:03d}".format(task_number))
     #trace_data = read_trace_data(task_number)
 
     result = run_full(src, tgt, trace_data)

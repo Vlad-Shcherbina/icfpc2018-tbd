@@ -1,5 +1,6 @@
 from production.data_files import *
 from production.model import Model
+from production.commands import parse_commands
 
 
 def test_full():
@@ -16,3 +17,6 @@ def test_full():
     src_model, tgt_model = full_problem('FR001')
     Model.parse(src_model)
     Model.parse(tgt_model)
+
+    trace = full_default_trace('FR001')
+    parse_commands(trace, source='FR001.nbt')
