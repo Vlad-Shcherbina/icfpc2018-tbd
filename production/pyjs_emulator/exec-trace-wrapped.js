@@ -3,7 +3,8 @@ const config = {
     stdout: function(ih) { console.log("===", ih) },
     execTrace: null,
     running: false,
-    cb: function(){}
+    cb: function(){},
+    full: process.argv[2] == "full", // sad.
 }
 function e(obj) {
     return Object.freeze(Object.assign(obj, {
@@ -25,6 +26,9 @@ function e(obj) {
 }
 elems = {
     tgtModelFileIn: e({}),
+    srcModelFileIn: config.full ? e({}) : undefined,
+    srcModelEmpty: config.full ? e({get checked() { return !!config.srcEmpty }}) : undefined,
+    tgtModelEmpty: e({get checked() { return !!config.tgtEmpty }}),
     traceFileIn: e({}),
     stepsPerFrame: e({value: ""+config.stepsPerFrame}),
     execTrace: e({
@@ -32,23 +36,33 @@ elems = {
     }),
     stdout: e({
         set innerHTML(ih) { config.stdout(ih) }
-    })
+    }),
+    full: config.full ? e({}) : undefined
 }
 document = Object.freeze({
     getElementById(id) {
         if (elems[id]) return elems[id]
+        // else console.log(id)
     }
 })
 vis = false
-var tgtModelBData, tracnBData
+var srcModelBData, tgtModelBData, tracnBData
 function bdataLength(data) { return data.length }
 function bdataSub(data, i) { return data[i] }
 requestAnimationFrame = setImmediate
 module.exports.execTrace = function(tgt, trace, extra = {}) {
     tgtModelBData = tgt
     traceBData = trace
-    Object.assign(config, extra)
-    config.running = true
+    Object.assign(config, extra, {running: true})
+    config.execTrace()
+}
+module.exports.execTraceFull = function(src, tgt, trace, extra = {}) {
+    if (!tgt) extra.tgtEmpty = true
+    else tgtModelBData = tgt
+    if (!src) extra.srcEmpty = true
+    else srcModelBData = src
+    traceBData = trace
+    Object.assign(config, extra, {running: true})
     config.execTrace()
 }
 

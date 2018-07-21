@@ -37,6 +37,9 @@ def full_problem(name: str) -> Tuple[Optional[bytes], Optional[bytes]]:
 
     return src_model, tgt_model
 
+def full_default_trace(name: str) -> bytes:
+    with _open_datazipfile('dfltTracesF').open(name, 'r') as fin:
+        return fin.read()
 
 def lightning_problem_names() -> List[str]:
     result = _open_datazipfile('problemsL').namelist()
