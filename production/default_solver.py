@@ -2,6 +2,7 @@ from production.model import Model
 from production.commands import *
 from production.basics import Pos, Diff
 from production.solver_utils import *
+import sys
 
 # Default solver: compute a bounding box, set harmonics to High, use a
 # single bot to sweep each xz-plane of the bounding box from bottom to top
@@ -55,10 +56,10 @@ def default_strategy(model): # -> [Commands]
 
 
 def write_solution(bytetrace, number): # -> IO ()
-    with open('LA'+number+'.nbt', 'wb') as f:
+    with open('LA{0:03d}.nbt'.format(number), 'wb') as f:
         f.write(bytetrace)
 
-def solve(strategy, model, number = 'XXX'): # -> IO ()
+def solve(strategy, model, number = 0): # -> IO ()
     commands = strategy(model)
     trace = compose_commands(commands)
     write_solution(trace, number)
@@ -66,9 +67,9 @@ def solve(strategy, model, number = 'XXX'): # -> IO ()
 def main():
     from production import data_files
 
-    task_number = '001'
+    task_number = int(sys.argv[1]) if len(sys.argv) > 1 else 1
 
-    name = 'LA'+task_number+'_tgt.mdl'
+    name = 'LA{0:03d}_tgt.mdl'.format(task_number)
     data = data_files.lightning_problem(name)
     m = Model.parse(data)
     
