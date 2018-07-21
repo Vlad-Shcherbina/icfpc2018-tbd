@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from production.basics import Pos, Diff
 from production.commands import *
+from production.model import Model
 
 
 LOW = "LOW"
@@ -21,45 +22,18 @@ class State:
 
     def __init__(self, R):
         self.R = R
-        self.matrix = [[[0] * R for _ in range(R)] for _ in range(R)]
+        self.matrix = Model(R)
         self.harmonics = LOW
         self.energy = 0
         self.bots = []  # TODO
-
-    def __getitem__(self, pos: Pos):
-        return self.matrix[pos.x][pos.y][pos.z]
 
     def __setitem__(self, pos: Pos, value):
         assert value == 0 or value == 1
         self.matrix[pos.x][pos.y][pos.z] = value
 
-    def enum_voxels(self):
-        for x in range(R):
-            for y in range(R):
-                for z in range(R):
-                    yield Pos(x, y, z)
-
-    def grounded(self) -> Set[Pos]:
-        visited = set()
-
-        def visit(pos):
-            if pos in visited:
-                return
-            if self[pos] == 0:
-                return
-            visited.add(pos)
-            for p in pos.enum_adjacent(self.R):
-                visit(p)
-
-        for x in range(self.R):
-            for z in range(self.R):
-                visit(Pos(x, 0, z))
-
-        return visited
-
     def assert_well_formed(self):
         if self.harmonics == LOW:
-            grounded = self.grounded()
+            grounded = self.matrix.grounded_voxels()
             for p in self.enum_voxels():
                 if self[p] == 1:
                     assert p in grounded
@@ -92,9 +66,7 @@ class State:
         else:
             assert False, self.harmonics
 
-        s.energy += 20 * len(self.bots)
-
-        bc = list(zip)
+        self.energy += 20 * len(self.bots)
 
         # TODO: run commands
 
@@ -212,3 +184,22 @@ def process_command(state, bot, cmd) -> Tuple[Set[Pos], Callable[..., None]]:
 
     else:
         assert False, cmd
+
+
+def main():
+    from production import data_files
+
+    name = 'LA004'
+    m = Model.parse(data_files.lightning_problem(f'{name}_tgt.mdl'))
+
+    trace_name = f'{name}.nbt'
+    trace = parse_commands(
+        buf=data_files.lightning_default_trace(trace_name),
+        source=trace_name)
+
+    state = State(m.R)
+    state.time_step(trace)
+
+
+if __name__ == '__main__':
+    main()

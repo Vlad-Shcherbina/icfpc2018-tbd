@@ -1,10 +1,13 @@
+from typing import Optional, Set
 from bitarray import bitarray
 
 from production.basics import Pos
 
 
 class Model:
-    def __init__(self, R: int, data: bytes):
+    def __init__(self, R: int, data: Optional[bytes] = None):
+        if data is None:
+            data = b'\0' * ((R**3 - 1) // 8 + 1)
         self.R = R
         assert len(data) == (R**3 - 1) // 8 + 1
         self._data = bitarray(0, endian='little')
@@ -23,6 +26,30 @@ class Model:
     @staticmethod
     def parse(data: bytes) -> 'Model':
         return Model(R=data[0], data=data[1:])
+
+    def enum_voxels(self):
+        for x in range(R):
+            for y in range(R):
+                for z in range(R):
+                    yield Pos(x, y, z)
+
+    def grounded_voxels(self) -> Set[Pos]:
+        visited = set()
+
+        def visit(pos):
+            if pos in visited:
+                return
+            if self[pos] == 0:
+                return
+            visited.add(pos)
+            for p in pos.enum_adjacent(self.R):
+                visit(p)
+
+        for x in range(self.R):
+            for z in range(self.R):
+                visit(Pos(x, 0, z))
+
+        return visited
 
 
 def main():
