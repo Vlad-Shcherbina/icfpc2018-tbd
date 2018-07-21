@@ -94,7 +94,7 @@ def fission_fill_right(seeds, space_right):
     strips.append(space_right - strips_sum)
     return (steps, strips)
 
-def fusion(bids, positions):
+def fusion(positions):
     '''Return a sequence of commands that merges the bot ids given in bids.
     Assumes bids is in increasing order and their corresponding positions are in
     an empty xz plane, have identical y and z coordinates and increasing x
