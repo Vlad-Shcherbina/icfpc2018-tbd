@@ -1,14 +1,17 @@
+import sys
+from typing import List
+
 from production.model import Model
 from production.commands import *
 from production.basics import Pos, Diff
 from production.solver_utils import *
-import sys
+from production.solver_interface import Solver, SolverResult
 
 # Default solver: compute a bounding box, set harmonics to High, use a
 # single bot to sweep each xz-plane of the bounding box from bottom to top
 # filling the voxel below the bot if necessary, return to the origin,
 # set harmonics to Low, and halt
-def default_strategy(model): # -> [Commands]
+def default_strategy(model) -> List[Command]:
     commands = []
 
     x_speed = 3
@@ -93,6 +96,20 @@ def default_strategy(model): # -> [Commands]
     commands.append(Halt())
 
     return commands
+
+
+class DefaultSolver(Solver):
+    def __init__(self, args):
+        assert not args
+
+    def scent(self) -> str:
+        return 'Default 1.0'
+
+    def solve(self, name: str, model_data: bytes) -> SolverResult:
+        m = Model.parse(model_data)
+        trace = default_strategy(m)
+        trace_data = compose_commands(trace)
+        return SolverResult(trace_data, extra={})
 
 
 def write_solution(bytetrace, number): # -> IO ()

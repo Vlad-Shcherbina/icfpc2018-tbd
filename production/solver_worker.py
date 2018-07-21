@@ -19,6 +19,7 @@ from production import db
 from production import utils
 from production import solver_interface
 from production.pyjs_emulator.run import run as pyjs_run
+from production.default_solver import DefaultSolver
 
 
 Json = dict
@@ -145,7 +146,8 @@ def main():
     conn = db.get_conn()
     cur = conn.cursor()
 
-    solver = solver_interface.TheirDefaultSolver(sys.argv[1:])
+    #solver = solver_interface.TheirDefaultSolver(sys.argv[1:])
+    solver = DefaultSolver(sys.argv[1:])
 
     cur.execute('''
         SELECT models.id
@@ -165,7 +167,7 @@ def main():
     model_ids.sort(reverse=True)
 
     num_workers = multiprocessing.cpu_count()
-    num_workers = 1
+    # num_workers = 1
     output_queue = multiprocessing.SimpleQueue()
     input_queues = [multiprocessing.SimpleQueue() for _ in range(num_workers)]
     workers = []

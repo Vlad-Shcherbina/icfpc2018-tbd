@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from functools import update_wrapper
-from typing import Tuple, ClassVar, Dict
+from typing import Tuple, ClassVar, Dict, Union
 import itertools
 
 from production.basics import Diff
 
 __all__ = ['parse_command', 'parse_1command', 'parse_commands', 'compose_commands',
-        'Halt', 'Wait', 'Flip', 'SMove', 'LMove', 'FusionP', 'FusionS', 'Fission', 'Fill']
+        'Halt', 'Wait', 'Flip', 'SMove', 'LMove', 'FusionP', 'FusionS', 'Fission', 'Fill',
+        'Command']
 
 __doc__ = '''
 Python classes encapsulating commands, can be parsed and composed to and from binary representations.
@@ -250,6 +251,9 @@ class FusionS:
     def compose(self):
         nd = encode_nd(self.nd)
         return [self.bid | nd << 3]
+
+
+Command = Union[Halt, Wait, Flip, SMove, LMove, FusionP, FusionS, Fission, Fill]
 
 #endregion
 
