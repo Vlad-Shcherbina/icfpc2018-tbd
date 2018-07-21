@@ -10,13 +10,9 @@ def json_dump(value):
     return json.dumps(value, indent=2, ensure_ascii=False)
 
 
-@app.template_filter('render_invocation')
-def render_invocation(inv, id):
-    argv = ' '.join(inv['argv'])
-    version = inv['version']
+@app.template_filter('render_version')
+def render_version(version):
     return flask.Markup(flask.render_template_string('''\
-    [{{ url_for('view_invocation', id=id) | linkify }}
-    <b>{{ argv }}</b>
     <a href="https://github.com/Vlad-Shcherbina/icfpc2018-tbd/commit/{{
         version['commit'] }}">
         {{ version['commit'][:8] -}}
@@ -25,7 +21,6 @@ def render_invocation(inv, id):
     {% if version['diff_stat'] %}
         <u><span title="{{ version['diff_stat'] }}">dirty</span></u>
     {% endif %}
-    by <b>{{ inv['user'] }}</b>]
     ''', **locals()))
 
 
@@ -44,14 +39,18 @@ LIST_INVOCATIONS_TEMPLATE = '''\
 <table>
     <tr>
         <th></th>
-        <th>start time</th>
-        <th>last update time</th>
+        <th>Command</th>
+        <th>Version</th>
+        <th>User</th>
+        <th>Start time</th>
+        <th>Last update time</th>
     </tr>
 {% for id, inv in cur %}
     <tr>
-        <td>
-            {{ inv | render_invocation(id) }}
-        </td>
+        <td>{{ url_for('view_invocation', id=id) | linkify }}</td>
+        <td>{{ inv['argv'] | join(' ') }}</td>
+        <td>{{ inv['version'] | render_version }}</td>
+        <td>{{ inv['user'] }}</td>
         <td>{{ inv['start_time'] | render_timestamp }}</td>
         <td>
             {% if inv['last_update_time'] > inv['start_time'] + 0.5  %}
@@ -100,7 +99,10 @@ VIEW_INVOCATION_TEMPLATE = '''\
 {% extends "base.html" %}
 {% block body %}
 <h3>Invocation info</h3>
-{{ inv | render_invocation(id) }} <br>
+
+Command: <b>{{ inv['argv'] | join(' ') }}</b> <br>
+Version: {{ inv['version'] | render_version }} <br>
+Run by: <b>{{ inv['user'] }}</b> <br>
 Start time: {{ inv['start_time'] | render_timestamp }} <br>
 Last update time: {{ inv['last_update_time'] | render_timestamp }} <br>
 <pre>{{ inv | json_dump }}</pre>
