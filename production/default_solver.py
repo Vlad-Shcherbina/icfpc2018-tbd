@@ -19,12 +19,20 @@ def default_strategy(model): # -> [Commands]
 
     bbox_min,bbox_max = bounding_box(model)
 
-    commands.append(SMove(Diff(0,0,1)))
-    commands.append(SMove(Diff(0,1,0)))
-    commands.append(SMove(Diff(1,0,0)))
+    x = 0
+    y = 0
+    z = 0
 
-    x = 1
-    z = 1
+    commands.append(SMove(Diff(0,1,0)))
+    while z < bbox_min.z:
+        dz = 15 if bbox_min.z - z > 15 else bbox_min.z - z
+        commands.append(SMove(Diff(0,0,dz)))
+        z += dz
+    while x < bbox_min.x:
+        dx = 15 if bbox_min.x - x > 15 else bbox_min.x - x
+        commands.append(SMove(Diff(dx,0,0)))
+        x += dx
+
     xup = True
     zup = True
 
