@@ -19,9 +19,7 @@ from production import db
 from production import utils
 from production import solver_interface
 from production.pyjs_emulator.run import run as pyjs_run
-from production.default_solver import DefaultSolver
-from production.bottom_up_solver import BottomUpSolver
-from production.pillar_solver import PillarSolver
+from production.all_solvers import ALL_SOLVERS
 
 Json = dict
 
@@ -140,6 +138,12 @@ def work(
 
 
 def main():
+    if len(sys.argv) < 2 :
+        print('Usage:')
+        print('    python -m production.solver_worker <solver> [<solver args>...]')
+        print(f'where <solver> is one of {ALL_SOLVERS.keys()}')
+        sys.exit(1)
+
     logging.basicConfig(
         level=logging.INFO,
         format='%(levelname).1s %(module)10.10s:%(lineno)-4d %(message)s')
@@ -147,10 +151,8 @@ def main():
     conn = db.get_conn()
     cur = conn.cursor()
 
-    #solver = solver_interface.TheirDefaultSolver(sys.argv[1:])
-    #solver = DefaultSolver(sys.argv[1:])
-    #solver = BottomUpSolver(sys.argv[1:])
-    solver = PillarSolver(sys.argv[1:])
+    solver = ALL_SOLVERS[sys.argv[1]](sys.argv[2:])
+    logger.info(f'Solver scent: {solver.scent()!r}')
 
     cur.execute('''
         SELECT models.id
