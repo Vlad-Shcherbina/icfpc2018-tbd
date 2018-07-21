@@ -7,7 +7,7 @@ from production.basics import Diff
 
 __all__ = ['parse_command', 'parse_1command', 'parse_commands', 'compose_commands',
         'Halt', 'Wait', 'Flip', 'SMove', 'LMove', 'FusionP', 'FusionS', 'Fission', 'Fill',
-        'Command']
+        'Void', 'GFill', 'GVoid', 'Command']
 
 __doc__ = '''
 Python classes encapsulating commands, can be parsed and composed to and from binary representations.

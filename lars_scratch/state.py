@@ -3,6 +3,7 @@ from typing import List
 from pprint import pprint
 from enum import Enum
 
+from production.model import Model
 from production.basics import Pos, Diff, Region
 from production.commands import *
 
@@ -18,7 +19,7 @@ class Cell(Enum):
     RESERVED = 8
     BOT = 9
 
-@dataclass(frozen=True)
+@dataclass()
 class Bot:
     bid: int
     pos: Pos
@@ -27,7 +28,7 @@ class Bot:
     def move(self, diff: Diff):
         self.pos += diff
 
-@dataclass(frozen=True)
+@dataclass()
 class State:
     antigrav: bool
     bots: List[Bot]
@@ -39,8 +40,8 @@ class State:
     def __init__(self, source: Model, target: Model):
         assert source.R == target.R
         self.R = source.R
-        for i in range(R * R * R):
-            _data[i] = Cell.FULL if source._data[i] else Cell.EMPTY
+        self._data = [Cell.FULL if source._data[i] else Cell.EMPTY
+                for i in range(self.R ** 3)]
         self.target = target
         self.bots = [Bot(1, Pos(0, 0, 0), list(range(2, 41)))]
         self._set(Pos(0, 0, 0), Cell.BOT)
@@ -70,6 +71,7 @@ class State:
             elif isinstance(command, Flip):
                 self.antigrav = not self.antigrav
                 newbots.append(bot)
+
             elif isinstance(command, SMove):
                 assert command.lld.is_long_linear()
                 self._set(bot.pos, Cell.EMPTY)
@@ -85,6 +87,7 @@ class State:
                 bot.move(command.sld1)
                 self._set(bot.pos, Cell.BOT)
                 newbots.append(bot)
+
             elif isinstance(command, Fission):
                 newbot = Bot(bot.seeds[0], bot.pos + command.nd,
                         bot.seeds[1:command.m + 1])
@@ -92,6 +95,7 @@ class State:
                 bot.seeds = bot.seeds[command.m + 1:]
                 newbots.append(bot)
                 newbots.append(newbot)
+
             elif isinstance(command, Fill):
                 assert command.nd.is_near()
                 self._set(bot.pos + command.nd, Cell.FULL)
@@ -100,12 +104,14 @@ class State:
                 assert command.nd.is_near()
                 self._set(bot.pos + command.nd, Cell.EMPTY)
                 newbots.append(bot)
+
             elif isinstance(command, FusionP):
                 assert self[(bot.pos + command.nd)] == Cell.BOT
                 self._set(bot.pos + command.nd, Cell.EMPTY)
                 newbots.append(bot)
             elif isinstance(command, FusionS):
                 assert self[(bot.pos + command.nd)] == Cell.BOT
+
             elif isinstance(command, GFill):
                 assert command.nd.is_near()
                 assert command.fd.is_far()
