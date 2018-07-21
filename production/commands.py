@@ -222,6 +222,22 @@ class Fill:
 
 
 @command
+class Void:
+    bid : ClassVar = 0b010
+    bsize : ClassVar = 1
+
+    nd : Diff
+
+    @classmethod
+    def parse(cls, b):
+        return cls(nd_table[b >> 3])
+
+    def compose(self):
+        nd = encode_nd(self.nd)
+        return [self.bid | nd << 3]
+
+
+@command
 class FusionP:
     bid : ClassVar = 0b111
     bsize : ClassVar = 1
@@ -253,7 +269,44 @@ class FusionS:
         return [self.bid | nd << 3]
 
 
-Command = Union[Halt, Wait, Flip, SMove, LMove, FusionP, FusionS, Fission, Fill]
+@command
+class GFill:
+    bid : ClassVar = 0b001
+    bsize : ClassVar = 4
+
+    nd : Diff
+    fd : Diff
+
+    @classmethod
+    def parse(cls, b, x, y, z):
+        return cls(nd_table[b >> 3], Diff(x - 30, y - 30, z - 30))
+
+    def compose(self):
+        nd = encode_nd(self.nd)
+        fd = self.fd
+        return [self.bid | nd << 3, fd.dx + 30, fd.dy + 30, fd.dz + 30]
+
+
+@command
+class GVoid:
+    bid : ClassVar = 0b000
+    bsize : ClassVar = 4
+
+    nd : Diff
+    fd : Diff
+
+    @classmethod
+    def parse(cls, b, x, y, z):
+        return cls(nd_table[b >> 3], Diff(x - 30, y - 30, z - 30))
+
+    def compose(self):
+        nd = encode_nd(self.nd)
+        fd = self.fd
+        return [self.bid | nd << 3, fd.dx + 30, fd.dy + 30, fd.dz + 30]
+
+
+Command = Union[Halt, Wait, Flip, SMove, LMove, FusionP, FusionS, Fission, Fill,
+        Void, GFill, GVoid]
 
 #endregion
 
