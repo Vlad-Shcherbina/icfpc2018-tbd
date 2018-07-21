@@ -60,7 +60,7 @@ def encode_lld(v : Diff):
 
 
 def encode_nd(v : Diff):
-    assert v.is_near()
+    assert v.is_near(), v
     return (v.dx + 1) * 9 + (v.dy + 1) * 3 + v.dz + 1
 
 
