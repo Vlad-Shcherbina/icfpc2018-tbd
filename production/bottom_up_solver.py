@@ -10,7 +10,9 @@ from production.commands import *
 from production.basics import Pos, Diff
 from production.solver_utils import *
 from production.solver_interface import Solver, SolverResult, Fail
+
 from production.data_files import *
+from production.pyjs_emulator.run import run
 
 def up_pass(model):
     steps = []
@@ -59,12 +61,13 @@ class BottomUpSolver(Solver):
 
 
 def write_solution(bytetrace, number): # -> IO ()
-    with open('problemsL/LA{0:03d}.nbt'.format(number), 'wb') as f:
+    with open('./LA{0:03d}.nbt'.format(number), 'wb') as f:
         f.write(bytetrace)
 
-def solve(strategy, model, number = 0): # -> IO ()
+def solve(strategy, model, number): # -> IO ()
     commands = [cmd for step in strategy(model) for cmd in step]
     trace = compose_commands(commands)
+    logger.info(run(lightning_problem_by_id(number), trace))
     write_solution(trace, number)
 
 def main():
@@ -72,9 +75,7 @@ def main():
 
     task_number = int(sys.argv[1]) if len(sys.argv) > 1 else 1
 
-    name = 'LA{0:03d}_tgt.mdl'.format(task_number)
-    data = data_files.lightning_problem(name)
-    m = Model.parse(data)
+    m = Model.parse(lightning_problem_by_id(task_number))
 
     solve(up_pass, m, task_number)
 

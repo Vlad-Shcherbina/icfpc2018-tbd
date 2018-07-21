@@ -21,7 +21,7 @@ def lightning_problem(name: str) -> bytes:
         return fin.read()
 
 def lightning_problem_by_id(id: int) -> bytes:
-    return lightning_problem(list(filter(lambda x: str(id) in x, lightning_problem_names()))[0])
+    return lightning_problem('LA{0:03d}_tgt.mdl'.format(id))
 
 def lightning_default_trace_names() -> List[str]:
     return _open_datazipfile('dfltTracesL').namelist()
