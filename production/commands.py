@@ -253,7 +253,7 @@ class FusionS:
 
 #endregion
 
-#region low level interface
+#region Low level interface
 
 @dataclass
 class ParserState:
