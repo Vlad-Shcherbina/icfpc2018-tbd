@@ -69,6 +69,8 @@ class BottomUpSolver(Solver):
             trace = [cmd for step in up_pass(m) for cmd in step]
             trace_data = compose_commands(trace)
             return SolverResult(trace_data, extra={})
+        except KeyboardInterrupt:
+            raise
         except:
             exc = StringIO()
             traceback.print_exc(file=exc)

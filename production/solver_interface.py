@@ -102,5 +102,5 @@ class TheirDefaultSolver(Solver):
         if tgt_model is not None:
             Model.parse(tgt_model)  # as a sanity check
 
-        trace_data = data_files.lightning_default_trace(f'{name}.nbt')
+        trace_data = data_files.full_default_trace(name)
         return SolverResult(trace_data, extra={})
