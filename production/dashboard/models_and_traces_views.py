@@ -117,4 +117,33 @@ def visualize_model(id):
 
 @app.route('/trace/<int:id>')
 def view_trace(id):
-    assert False  # TODO
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        'SELECT model_id, scent, status, energy, extra, invocation_id '
+        'FROM traces WHERE id = %s',
+        [id])
+    [model_id, scent, status, energy, extra, inv_id] = cur.fetchone()
+
+    return flask.render_template_string(VIEW_MODEL_TEMPLATE, **locals())
+
+VIEW_MODEL_TEMPLATE = '''\
+{% extends "base.html" %}
+{% block body %}
+<h3>Trace info</h3>
+Status: {{ status }} <br>
+Scent: {{ scent }} <br>
+Energy: {{ energy }} <br>
+Model: {{ url_for('view_model', id=model_id) | linkify }} <br>
+Produced by {{ url_for('view_invocation', id=inv_id) | linkify }} <br><br>
+Extra:
+<pre>{{ extra | json_dump }}</pre>
+
+<a href="{{ url_for('visualize_trace', id=id) }}">visualize</a>
+{% endblock %}
+'''
+
+
+@app.route('/vis_trace/<int:id>')
+def visualize_trace(id):
+    assert False, 'TODO'
