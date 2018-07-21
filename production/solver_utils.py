@@ -98,6 +98,24 @@ def fission_fill_right(seeds, space_right):
     strips.append(space_right - strips_sum)
     return (steps, strips)
 
+def fusion_unfill_right(strips):
+    def move_and_unfork(strips):
+        if not strips: return []
+        ticks = []
+
+        # Wait for everyone on the right to finish
+        ticks.extend(wait_for(move_and_unfork(strips[1:])))
+
+        # Move our child bot to the left
+        ticks.extend(wait_for(sequential(move_x(-1 * (strips[0] - 1)))))
+
+        # Unfork the bot immediately to the right
+        ticks.append([FusionP(Diff(1,0,0)), FusionS(Diff(-1,0,0))])
+
+        return ticks
+    steps = move_and_unfork(strips[:-1])
+    return steps
+
 def fusion(positions):
     '''Return a sequence of commands that merges the bot ids given in bids.
     Assumes bids is in increasing order and their corresponding positions are in
@@ -137,6 +155,7 @@ def fusion(positions):
 # Move current bot dx to the right (left)
 # Returns a list of moves for the current bot
 def move_x(dx):
+    if dx == 0: return []
     c = 1 - 2 * (dx < 0)
     dx = abs(dx)
     full_steps = dx // JUMP_LONG
@@ -144,7 +163,17 @@ def move_x(dx):
     return [SMove(Diff(c * JUMP_LONG,0,0))] * full_steps + [SMove(Diff(c * last,0,0))] * (last > 0)
 
 # See ^
+def move_y(dy):
+    if dy == 0: return []
+    c = 1 - 2 * (dy < 0)
+    dy = abs(dy)
+    full_steps = dy // JUMP_LONG
+    last = dy - JUMP_LONG * full_steps
+    return [SMove(Diff(0,c * JUMP_LONG,0))] * full_steps + [SMove(Diff(0,c * last,0))] * (last > 0)
+
+# See ^
 def move_z(dz):
+    if dz == 0: return []
     c = 1 - 2 * (dz < 0)
     dz = abs(dz)
     full_steps = dz // JUMP_LONG
@@ -162,18 +191,18 @@ def move_z(dz):
 # Assumption: all bots are at z = 1. # TODO: relax this
 # Assumption: first bot it at x = 0.
 # Assumption: bots are spaced by distances in `strips`.
-def print_layer_below(model, i, strips):
+def print_layer_below(model, i, strips, last):
     bots = []
     lbound = 0
     for strip in strips:
         rbound = lbound + strip
-        bots.append(print_strip_below(model, i, lbound, rbound))
+        bots.append(print_strip_below(model, i, lbound, rbound, last))
         lbound = rbound
     return parallel(*bots)
 
 # Prints part of the model layer with y = i which lies at
 # lbound <= x < rbound
-def print_strip_below(model, i, lbound, rbound):
+def print_strip_below(model, i, lbound, rbound, last_layer):
     moves = []
     for z in range(0, model.R - 2):
         if model[Pos(lbound,i,z)]:
@@ -184,5 +213,5 @@ def print_strip_below(model, i, lbound, rbound):
                 moves.append(Fill(Diff(0,-1,0)))
         moves.extend(move_x(-1 * (rbound - lbound - 1)))
         moves.append(SMove(Diff(0,0,1))) # TODO: optimise this part, make an L move
-    moves.extend(move_z(-1 * (model.R - 2)))
+    moves.extend(move_z(-1 * (model.R - 2 + last_layer)))
     return moves

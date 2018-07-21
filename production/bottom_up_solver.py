@@ -8,6 +8,7 @@ import traceback
 from production.model import Model
 from production.commands import *
 from production.basics import Pos, Diff
+from production.orchestrate import sequential
 from production.solver_utils import *
 from production.solver_interface import Solver, SolverResult, Fail
 
@@ -28,15 +29,23 @@ def up_pass(model):
     steps.extend(steps_distr)
 
     (_, pos_high) = bounding_box(model)
+    maxy = pos_high.y
 
     # Print layer by layer
-    for layer in range(0, pos_high.y + 1):
-        steps.extend(print_layer_below(model, layer, strips))
-        steps.extend([[SMove(Diff(0,1,0))]] * len(strips))
+    for layer in range(0, maxy + 1):
+        last = layer == pos_high.y
+        steps.extend(print_layer_below(model, layer, strips, last))
+        if not last:
+            steps.extend([[SMove(Diff(0,1,0))]] * len(strips))
 
-    # TODO: Fussion back into one
+    steps.extend(fusion_unfill_right(strips))
+    steps.extend(sequential(move_y(-1 * (maxy + 1))))
 
-    # TODO: Return this one to the origin
+    # TODO: REMOVE ME
+    steps.append([Flip()])
+
+    steps.append([Halt()])
+
 
     return steps
 
