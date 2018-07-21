@@ -1,10 +1,11 @@
 import subprocess
+import os
 import os.path
 import sys
+import tempfile
 from dataclasses import dataclass
 from typing import Optional
 
-from production import utils
 from production import data_files
 
 
@@ -57,15 +58,20 @@ def do_run(model, trace) -> EmulatorResult:
 
 
 def run(model_data: bytes, trace_data: bytes) -> EmulatorResult:
-    model_name = utils.project_root() / '_tmp_model.mdl'
+    model_name = tempfile.NamedTemporaryFile(delete=False).name
     with open(model_name, 'wb') as fout:
         fout.write(model_data)
 
-    trace_name = utils.project_root() / '_tmp_trace.nbt'
+    trace_name = tempfile.NamedTemporaryFile(delete=False).name
     with open(trace_name, 'wb') as fout:
         fout.write(trace_data)
 
-    return do_run(str(model_name), str(trace_name))
+    result = do_run(str(model_name), str(trace_name))
+
+    os.remove(model_name)
+    os.remove(trace_name)
+    return result
+
 
 def read_trace_data(task_number):
     fname = 'LA{0:03d}.nbt'.format(task_number)
