@@ -1,6 +1,7 @@
 #include <cassert>
 #include <memory>
 #include <vector>
+#include <algorithm>
 #include "commands.h"
 #include "emulator.h"
 
@@ -23,6 +24,7 @@ void set_volatile_voxel(State* S, const Pos& p) {
 }
 
 void set_volatile_region(State* S, const Pos& a, const Pos& b) {
+	// TODO is_inside
 	Pos p (0, 0, 0);
 	for (p.x = min(a.x, b.x); p.x <= max(a.x, b.x); p.x++) 
 		for (p.y = min(a.y, b.y); p.y <= max(a.y, b.y); p.y++) 
@@ -83,7 +85,6 @@ unique_ptr<Command> Command::getnextcommand(Emulator* em) {
 
 
 /*==================== COMMAND LIST =====================*/
-
 
 void Halt::execute(Bot* b, State* S) {
 	if (b->position != Pos(0, 0, 0) || S->high_harmonics || S->count_active() != 1) {
@@ -161,6 +162,7 @@ void LMove::execute(Bot* b, State* S) {
 }
 
 void LMove::set_volatiles(Bot* b, State* S) {
+	// TODO:: check is_inside
 	set_volatile_region(S, b->position, b->position + sld1);
 	set_volatile_region(S, b->position + sld1, (b->position + sld1) + sld2);
 }
@@ -185,15 +187,22 @@ void FusionP::execute(Bot* b, State* S) {
 		if (!(S->bots[index].position == p)) continue;
 	}
 	if (index == S->bots.size()) {
-		// TODO: report
+		// TODO: report - no bot found
 		assert (false);
 	}
-	Bot& b2 = S->bots[index];
-	b2.active = false;
-	// TODO!!!!
+
+	Bot* b2 = &(S->bots[index]);
+	// assert b2 has corresponding FusionP command
+	b2->active = false;
+	b->seeds.push_back(b2->pid);
+	b->seeds.insert(b->seeds.end(), b2->seeds.begin(), b2->seeds.end());
+	b2->seeds = vector<unsigned char>();
+	std::sort(b->seeds.begin(), b->seeds.end());
+	S->energy -= 24;
 }
 
 void FusionP::set_volatiles(Bot* b, State* S) {
+	// TODO:: check is_inside
 	set_volatile_voxel(S, b->position);
 }
 
@@ -209,7 +218,9 @@ FusionS::FusionS(Diff nd)
 	//assert(nd.is_near());
 }
 
-void FusionS::execute(Bot* b, State* S) {}
+void FusionS::execute(Bot* b, State* S) {
+	// do nothing: all work done by FusionP
+}
 
 void FusionS::set_volatiles(Bot* b, State* S) {
 	set_volatile_voxel(S, b->position);
