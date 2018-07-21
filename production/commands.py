@@ -8,6 +8,22 @@ from production.basics import Diff
 __all__ = ['parse_command', 'parse_1command', 'parse_commands', 'compose_commands',
         'Halt', 'Wait', 'Flip', 'SMove', 'LMove', 'FusionP', 'FusionS', 'Fission', 'Fill']
 
+__doc__ = '''
+Python classes encapsulating commands, can be parsed and composed to and from binary representations.
+
+The structure of this file is as follows:
+
+- a bunch of helper functions
+
+- commands, with their parse and compose methods
+
+- low-level interface
+
+- high-level interface
+'''
+
+
+#region Helper functions
 
 def encode_sld(v : Diff):
     assert v.is_short_linear()
@@ -91,6 +107,9 @@ def command(cls):
     commands_by_id[cls.bid] = res
     return res
 
+#endregion
+
+#region Commands
 
 @command
 class Halt:
@@ -232,6 +251,9 @@ class FusionS:
         nd = encode_nd(self.nd)
         return [self.bid | nd << 3]
 
+#endregion
+
+#region low level interface
 
 @dataclass
 class ParserState:
@@ -277,23 +299,30 @@ def parse_command(input: ParserState):
 
 
 def parse_1command(input):
-    input = ParserState(bytes(input), 'zzzz')
+    'Utility function that parses a single command from a bytes object'
+    input = ParserState(bytes(input), 'parse_1command')
     return parse_command(input)
 
+#endregion
 
-def parse_commands(buf, source):
+#region High-level interface
+
+def parse_commands(buf: bytes, source: str):
+    'source is used for error reporting'
     input = ParserState(buf, source)
-    r = []
+    res = []
     while True:
         cmd = parse_command(input)
         if cmd is None:
-            return r
-        r.append(cmd)
+            return res
+        res.append(cmd)
 
 
-def compose_commands(commands):
-    'returns a bytearray'
-    res = bytearray()
+def compose_commands(commands, res: bytearray = None) -> bytearray:
+    if res is None:
+        res = bytearray()
     for cmd in commands:
         res.extend(cmd.compose())
     return res
+
+#endregion
