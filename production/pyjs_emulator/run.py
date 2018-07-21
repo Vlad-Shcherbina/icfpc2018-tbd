@@ -74,7 +74,7 @@ def read_trace_data(task_number):
 
 # Usage:
 #   run.py <task_number>
-#   run.py <default_solver_cmd> <task_number>
+#   run.py <default_solver_cmd.py> <task_number>
 def main():
     if len(sys.argv) == 3:
         (_, solver_cmd, task_number_str) = sys.argv
@@ -89,7 +89,7 @@ def main():
     trace_data = read_trace_data(task_number)
 
     result = run(model_data, trace_data)
-    print(f"| {task_number} | {result.score}")
+    print(f"| {task_number} | {result.energy}")
 
 if __name__ == "__main__":
     main()
