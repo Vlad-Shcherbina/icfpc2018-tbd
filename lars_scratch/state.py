@@ -58,6 +58,10 @@ class State:
         assert pos.is_inside_matrix(R)
         self._data[pos.x * R * R + pos.y * R + pos.z] = value
 
+    def bot_at(self, pos: Pos) -> Optional[Bot]:
+        bots = [b for b in self.bots if b.pos == pos]
+        return bots[0] if bots else None
+
     def tick(self, commands: List[Command]):
         assert len(commands) == len(self.bots)
         newbots = []
@@ -108,6 +112,9 @@ class State:
             elif isinstance(command, FusionP):
                 assert self[(bot.pos + command.nd)] == Cell.BOT
                 self._set(bot.pos + command.nd, Cell.EMPTY)
+                otherbot = self.bot_at(bot.pos + command.nd)
+                assert otherbot
+                bot.seeds = sorted(bot.seeds + otherbot.seeds + [otherbot.bid])
                 newbots.append(bot)
             elif isinstance(command, FusionS):
                 assert self[(bot.pos + command.nd)] == Cell.BOT
