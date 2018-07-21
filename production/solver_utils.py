@@ -118,7 +118,7 @@ def fusion(positions):
                     i += 2
                 else:
                     # MOVE CLOSER
-                    dist = Diff(max(-15, positions[i] + 1 - positions[i + 1]),
+                    dist = Diff(max(-15, positions[i].x + 1 - positions[i + 1].x),
                             0, 0)
                     commands.append(Wait())
                     commands.append(SMove(dist))
@@ -126,7 +126,7 @@ def fusion(positions):
                     newpositions.append(positions[i + 1] + dist)
                     i += 2
             else:
-                dist = Diff(max(-15, positions[i - 1] + 1 - positions[i]), 0, 0)
+                dist = Diff(max(-15, positions[i - 1].x + 1 - positions[i].x), 0, 0)
                 commands.append(SMove(dist))
                 newpositions.append(positions[i] + dist)
                 i += 1
