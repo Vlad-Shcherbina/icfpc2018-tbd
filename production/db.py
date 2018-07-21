@@ -24,6 +24,28 @@ def create_tables(conn):
         data JSON NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS models(
+        id SERIAL PRIMARY KEY,
+
+        -- like 'LA001'
+        name TEXT NOT NULL UNIQUE,
+
+        -- gzipped model data
+        data BYTEA NOT NULL,
+
+        -- {'R': 42, 'num_full_voxels': 42}
+        stats JSON NOT NULL,
+
+        -- just in case
+        extra JSON NOT NULL,
+
+        invocation_id INTEGER NOT NULL REFERENCES invocations,
+        timestamp DOUBLE PRECISION NOT NULL
+    );
+
+    -----------------
+    -- below are the tables for the cars&fuels example
+
     CREATE TABLE IF NOT EXISTS cars(
         id SERIAL PRIMARY KEY,
 

@@ -28,9 +28,9 @@ class Model:
         return Model(R=data[0], data=data[1:])
 
     def enum_voxels(self):
-        for x in range(R):
-            for y in range(R):
-                for z in range(R):
+        for x in range(self.R):
+            for y in range(self.R):
+                for z in range(self.R):
                     yield Pos(x, y, z)
 
     def grounded_voxels(self) -> Set[Pos]:

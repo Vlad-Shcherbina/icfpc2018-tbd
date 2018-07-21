@@ -11,7 +11,9 @@ def _open_datazipfile(name):
 
 
 def lightning_problem_names() -> List[str]:
-    return _open_datazipfile('problemsL').namelist()
+    result = _open_datazipfile('problemsL').namelist()
+    result.remove('problemsL.txt')
+    return result
 
 
 def lightning_problem(name: str) -> bytes:
