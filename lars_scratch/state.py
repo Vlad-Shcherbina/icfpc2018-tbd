@@ -72,20 +72,23 @@ class State:
                 newbots.append(bot)
             elif isinstance(command, SMove):
                 assert command.lld.is_long_linear()
+                self._set(bot.pos, Cell.EMPTY)
                 bot.move(command.lld)
-                assert bot.pos.is_inside_matrix(self.R)
+                self._set(bot.pos, Cell.BOT)
                 newbots.append(bot)
             elif isinstance(command, LMove):
                 assert command.sld1.is_short_linear()
                 assert command.sld2.is_short_linear()
+                self._set(bot.pos, Cell.EMPTY)
                 bot.move(command.sld1)
                 assert bot.pos.is_inside_matrix(self.R)
                 bot.move(command.sld1)
-                assert bot.pos.is_inside_matrix(self.R)
+                self._set(bot.pos, Cell.BOT)
                 newbots.append(bot)
             elif isinstance(command, Fission):
                 newbot = Bot(bot.seeds[0], bot.pos + command.nd,
                         bot.seeds[1:command.m + 1])
+                self._set(newbot.pos, Cell.BOT)
                 bot.seeds = bot.seeds[command.m + 1:]
                 newbots.append(bot)
                 newbots.append(newbot)
@@ -95,6 +98,7 @@ class State:
                 newbots.append(bot)
             elif isinstance(command, FusionP):
                 assert self[(bot.pos + command.nd)] == Cell.BOT
+                self._set(bot.pos + command.nd, Cell.EMPTY)
                 newbots.append(bot)
             elif isinstance(command, FusionS):
                 assert self[(bot.pos + command.nd)] == Cell.BOT
@@ -102,3 +106,6 @@ class State:
         self.bots = newbots
         self.bots.sort(key=lambda bot: bot.bid)
         self.trace.append(commands)
+
+    def dump_trace(self):
+        return compose_commands(cmd for tick in self.trace for cmd in tick)
