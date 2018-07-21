@@ -47,6 +47,10 @@ def is_inside_region(pt : Pos, pt0 : Pos, pt1 : Pos) -> bool:
 def projection_top(m):
     return [ [any([m[Pos(x,y,z)] for y in range(m.R)]) for z in range(m.R)] for x in range(m.R) ]
 
+# Orthographic (orthogonal) projection from front
+def projection_front(m):
+    return [ [any([m[Pos(x,y,z)] for z in range(m.R)]) for y in range(m.R)] for x in range(m.R) ]
+
 
 ####
 # Fission / fusion
@@ -161,7 +165,6 @@ def move_z(dz):
 def print_layer_below(model, i, strips):
     bots = []
     lbound = 0
-    logging.debug('%d', len(strips))
     for strip in strips:
         rbound = lbound + strip
         bots.append(print_strip_below(model, i, lbound, rbound))

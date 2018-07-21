@@ -20,13 +20,20 @@ def up_pass(model):
     # Up 1 and forward 1
     steps.append([LMove(Diff(0,1,0), Diff(0,0,1))])
 
-    # Distribute
+    # Fission into a line
     (steps_distr, strips) = fission_fill_right(list(range(2, 21)), model.R)
     steps.extend(steps_distr)
 
-    for layer in range(0, model.R - 1):
+    (_, pos_high) = bounding_box(model)
+
+    # Print layer by layer
+    for layer in range(0, pos_high.y + 1):
         steps.extend(print_layer_below(model, layer, strips))
         steps.extend([[SMove(Diff(0,1,0))]] * len(strips))
+
+    # TODO: Fussion back into one
+
+    # TODO: Return this one to the origin
 
     return steps
 

@@ -119,3 +119,34 @@ def test_projection_top():
         [0, 1, 0],
         [1, 1, 0]
     ]
+
+def test_projection_front():
+    matrix = [
+        #   z
+        #  ---->
+        [[1, 0, 0],   # |
+         [0, 1, 0],   # | y
+         [0, 0, 0]],  # v
+        # x = 0
+
+        [[0, 0, 0],
+         [0, 1, 0],
+         [0, 0, 0]],
+        # x = 1
+
+        [[0, 0, 0],
+         [1, 1, 0],
+         [0, 0, 0]],
+        # x = 2
+    ]
+    m = Model(3)
+    for x, slice in enumerate(matrix):
+        for y, row in enumerate(slice):
+            for z, cell in enumerate(row):
+                m[Pos(x, y, z)] = bool(cell)
+
+    assert projection_front(m) == [
+        [1, 1, 0],
+        [0, 1, 0],
+        [0, 1, 0]
+    ]
