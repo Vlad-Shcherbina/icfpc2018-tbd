@@ -1,17 +1,23 @@
-from typing import Tuple
+from typing import Tuple, Optional
 
 from production.model import Model
 from production.basics import Pos
 
 def bounding_box(model) -> Tuple[Pos, Pos]:
+    return bounding_box_region(model)
+
+def bounding_box_region(model, fx : Optional[int] = None, fy : Optional[int] = None, fz : Optional[int] = None) -> Tuple[Pos, Pos]:
+    fx = rangify(model.R, fx)
+    fy = rangify(model.R, fy)
+    fz = rangify(model.R, fz)
+
     filled_cell_visited = False
-    for x in range(model.R):
-        for y in range(model.R):
-            for z in range(model.R):
+    for x in fx:
+        for y in fy:
+            for z in fz:
                 if model[Pos(x,y,z)]:
                     if not filled_cell_visited:
-                        pos0 = Pos(x,y,z)
-                        pos1 = Pos(x,y,z)
+                        pos0 = pos1 = Pos(x,y,z)
                         filled_cell_visited = True
                     else:
                         pos0 = Pos(min(pos0.x,x),min(pos0.y,y),min(pos0.z,z))
@@ -19,3 +25,10 @@ def bounding_box(model) -> Tuple[Pos, Pos]:
 
     assert filled_cell_visited
     return (pos0,pos1)
+
+def rangify(R, fv = None):
+    if fv is None:
+        fv = range(R)
+    else:
+        fv = [fv]
+    return fv
