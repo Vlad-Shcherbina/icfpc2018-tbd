@@ -122,9 +122,9 @@ def view_trace(id):
         [id])
     [model_id, scent, status, energy, extra, inv_id] = cur.fetchone()
 
-    return flask.render_template_string(VIEW_MODEL_TEMPLATE, **locals())
+    return flask.render_template_string(VIEW_TRACE_TEMPLATE, **locals())
 
-VIEW_MODEL_TEMPLATE = '''\
+VIEW_TRACE_TEMPLATE = '''\
 {% extends "base.html" %}
 {% block body %}
 <h3>Trace info</h3>
