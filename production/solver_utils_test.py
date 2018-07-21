@@ -87,3 +87,35 @@ def test_is_inside_region():
     assert is_inside_region(Pos(1,1,1),bbox_min,bbox_max)
     assert is_inside_region(Pos(2,0,0),bbox_min,bbox_max)
     assert not is_inside_region(Pos(2,0,3),bbox_min,bbox_max)
+
+
+def test_projection_top():
+    matrix = [
+        #   z
+        #  ---->
+        [[1, 0, 0],   # |
+         [0, 1, 0],   # | y
+         [0, 0, 0]],  # v
+        # x = 0
+
+        [[0, 0, 0],
+         [0, 1, 0],
+         [0, 0, 0]],
+        # x = 1
+
+        [[0, 0, 0],
+         [1, 1, 0],
+         [0, 0, 0]],
+        # x = 2
+    ]
+    m = Model(3)
+    for x, slice in enumerate(matrix):
+        for y, row in enumerate(slice):
+            for z, cell in enumerate(row):
+                m[Pos(x, y, z)] = bool(cell)
+
+    assert projection_top(m) == [
+        [1, 1, 0],
+        [0, 1, 0],
+        [1, 1, 0]
+    ]

@@ -1,5 +1,9 @@
 from dataclasses import dataclass
 
+MAX_BOTS = 20
+JUMP_LONG = 15
+JUMP_SHORT = 5
+
 
 @dataclass(frozen=True)
 class Pos:
