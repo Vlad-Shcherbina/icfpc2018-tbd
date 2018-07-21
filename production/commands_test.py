@@ -1,7 +1,8 @@
+from pathlib import Path
 import pytest
 import production.commands as commands
 from production.commands import parse_command, parse_commands, compose_commands, ParserState, Diff, \
-    Halt, Wait, Flip, SMove, LMove, FusionP, FusionS, Fission, Fill
+    Halt, Wait, Flip, SMove, LMove, FusionP, FusionS, Fission, Fill, Void, GFill, GVoid
 
 
 def p(*args):
@@ -20,6 +21,11 @@ def test_command_examples():
     assert p(0b10011110) == FusionS(Diff(1, -1, 0))
     assert p(0b01110101, 0b00000101) == Fission(Diff(0, 0, 1), 5)
     assert p(0b01010011) == Fill(Diff(0, -1, 0))
+    assert p(0b10111010) == Void(Diff(1, 0, 1))
+    assert p(0b01010001, 0b00101000, 0b00001111, 0b00110010) == \
+            GFill(Diff(0, -1, 0), Diff(10, -15, 20))
+    assert p(0b10110000, 0b00100011, 0b00100011, 0b00011001) == \
+            GVoid(Diff(1, 0, 0), Diff(5, 5, -5))
 
 
 def test_command_exceptions():
@@ -34,7 +40,10 @@ def test_command_exceptions():
         p(0b11110110)
 
 
+
+
 def test_commands_roundtrip():
+    far_distances = (Diff(10, 20, 30), Diff(-30, -20, -10))
     cmds = []
     cmds.extend([Halt(), Wait(), Flip()])
     cmds.extend(SMove(v) for v in commands.lld_table.values())
@@ -43,7 +52,14 @@ def test_commands_roundtrip():
     cmds.extend(FusionS(n) for n in commands.nd_table.values())
     cmds.extend(Fission(n, m) for n in commands.nd_table.values() for m in range(256))
     cmds.extend(Fill(n) for n in commands.nd_table.values())
+    cmds.extend(Void(n) for n in commands.nd_table.values())
+    cmds.extend(GFill(n, d) for n in commands.nd_table.values() for d in far_distances)
+    cmds.extend(GVoid(n, d) for n in commands.nd_table.values() for d in far_distances)
     composed = compose_commands(cmds)
+    if 0: # for manual checking against their chk-trace
+        with open(Path(__file__) / '..' / 'testtrace.nbt', 'wb') as f:
+            f.write(composed)
+
     reparsed = parse_commands(composed, 'testinput')
     assert len(cmds) == len(reparsed)
     for i, [a, b] in enumerate(zip(cmds, reparsed)):

@@ -338,21 +338,19 @@ def parse_command(input: ParserState):
         cmd = commands_by_id.get(b & 0b111)
     if cmd is None:
         raise ValueError(f'Unrecognized command byte 0b{b:08b} at {input.source!r}[{pos}]')
-    if cmd.bsize == 2:
+    args = [b]
+    for _ in range(cmd.bsize - 1):
         b2 = input.readbyte()
         if b2 is None:
             raise ValueError(f'Unexpected EOF after 0b{b:08b} at {input.source!r}[{pos}]')
-        try:
-            return cmd.parse(b, b2)
-        except Exception as exc:
-            raise ValueError(f'Invalid data for command {cmd.__name__} 0b{b:08b} 0b{b2:08b} at {input.source!r}[{pos}]: {repr(exc)}') \
-                    from exc
-    else:
-        try:
-            return cmd.parse(b)
-        except Exception as exc:
-            raise ValueError(f'Invalid data for command {cmd.__name__} 0b{b:08b} at {input.source!r}[{pos}]: {repr(exc)}') \
-                    from exc
+        args.append(b2)
+
+    try:
+        return cmd.parse(*args)
+    except Exception as exc:
+        sargs = ' '.join(f'0b{b:08b}' for b in args)
+        raise ValueError(f'Invalid data for command {cmd.__name__} {sargs} at {input.source!r}[{pos}]: {repr(exc)}') \
+                from exc
 
 
 def parse_1command(input):
