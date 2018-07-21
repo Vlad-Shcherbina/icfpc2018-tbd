@@ -1,6 +1,10 @@
 import subprocess
 import os.path
 
+from production import utils
+from production import data_files
+
+
 def dictify(result):
     res = {}
     etc = []
@@ -28,9 +32,30 @@ def do_run(model, trace):
         res, etc = dictify(result)
         return (True, "Success") + dictify(result)
     else:
-        raise SimulatorException("simulation returned unknown result", res, etc)
-                
+        raise SimulatorException("simulation returned unknown result", result)
+
+
+def run(model_data: bytes, trace_data: bytes):
+    model_name = utils.project_root() / '_tmp_model.mdl'
+    with open(model_name, 'wb') as fout:
+        fout.write(model_data)
+
+    trace_name = utils.project_root() / '_tmp_trace.nbt'
+    with open(trace_name, 'wb') as fout:
+        fout.write(trace_data)
+
+    return do_run(str(model_name), str(trace_name))
+
+
+def main():
+    problem = 'LA005'
+
+    model_data = data_files.lightning_problem(f'{problem}_tgt.mdl')
+    trace_data = data_files.lightning_default_trace(f'{problem}.nbt')
+
+    result = run(model_data, trace_data)
+    print(result)
+
 
 if __name__ == "__main__":
-    directory = os.path.join(os.path.dirname(__file__), "../../../icfpcontest2018.github.io/assets/")
-    print(do_run(directory + "LA005_tgt.mdl", directory + "LA005.nbt"))
+    main()

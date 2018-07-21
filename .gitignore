@@ -7,3 +7,6 @@ __pycache__/
 .pytest_cache/
 .idea/
 virtualenv
+
+_tmp_model.mdl
+_tmp_trace.nbt
