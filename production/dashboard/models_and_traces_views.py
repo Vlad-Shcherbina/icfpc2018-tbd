@@ -13,7 +13,8 @@ def list_models():
     cur.execute('''
         SELECT
             models.id, models.name, models.stats, models.invocation_id,
-            traces.id, traces.scent, traces.status, traces.energy, traces.invocation_id
+            traces.id, traces.scent, traces.status, traces.energy, traces.invocation_id,
+            traces.data IS NOT NULL
         FROM models
         LEFT OUTER JOIN traces ON traces.model_id = models.id
         ORDER BY models.id DESC, traces.id DESC
@@ -26,14 +27,23 @@ LIST_MODELS_TEMPLATE = '''\
 <h3>All models</h3>
 <table id='t'>
 {% for model_id, model_name, model_stats, model_inv_id,
-       trace_id, trace_scent, trace_status, trace_energy, trace_inv_id in cur %}
+       trace_id, trace_scent, trace_status, trace_energy, trace_inv_id,
+       trace_has_data in cur %}
     <tr>
         <td>{{ url_for('view_invocation', id=model_inv_id) | linkify }}</td>
-        <td>{{ url_for('view_model', id=model_id) | linkify }}</td>
+        <td>
+            {{ url_for('view_model', id=model_id) | linkify }}
+            (<a href="{{ url_for('visualize_model', id=model_id)}}">vis</a>)
+        </td>
         <td>{{ model_name }}</td>
         <td>{{ model_stats }}</td>
         {% if trace_id is not none %}
-            <td>{{ url_for('view_trace', id=trace_id) | linkify }}</td>
+            <td>
+                {{ url_for('view_trace', id=trace_id) | linkify }}
+                {% if trace_has_data %}
+                    (<a href="{{ url_for('visualize_trace', id=trace_id)}}">vis</a>)
+                {% endif %}
+            </td>
             <td>{{ trace_status }}</td>
             <td>{{ trace_energy }}</td>
             <td>{{ trace_scent }}</td>
