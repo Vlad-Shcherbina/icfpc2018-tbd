@@ -11,7 +11,7 @@ class PillarSolver(Solver):
 
     def scent(self) -> str:
         # Iz govna i palok.
-        return 'pillar 0.2'
+        return 'pillar 0.3'
 
     def solve(self, name: str, model_data: bytes) -> SolverResult:
         self.model = Model.parse(model_data)
@@ -41,7 +41,7 @@ class PillarSolver(Solver):
 
     def fill_plot(self, pos):
       trace = []
-      while pos.y <= self.model_height:
+      while pos.y <= min(self.model.R - 1, self.model_height + 1):
         for diff in eight_around_and_maybe_one_below(pos, self.model.R):
           if self.model[pos + diff]:
             trace.append(Fill(diff))
@@ -71,8 +71,8 @@ def model_height(model):
 def create_plots(model):
   pos0, pos1 = bounding_box_region(model, fy=0)
   plots = []
-  for x in range(pos0.x, pos1.x + 1, 3):
-    for z in range(pos0.z, pos1.z + 1, 3):
+  for x in range(pos0.x, min(pos1.x + 4, model.R - 1), 3):
+    for z in range(pos0.z, min(pos1.z + 4, model.R - 1), 3):
       plots.append(Pos(x + 1, 0, z + 1))
   return plots
 

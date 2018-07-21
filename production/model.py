@@ -15,7 +15,7 @@ class Model:
 
     def __getitem__(self, pos: Pos) -> bool:
         R = self.R
-        assert pos.is_inside_matrix(R)
+        assert pos.is_inside_matrix(R), pos
         return self._data[pos.x * R * R + pos.y * R + pos.z]
 
     def __setitem__(self, pos: Pos, value: bool):
