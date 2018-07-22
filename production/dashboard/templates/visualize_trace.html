@@ -35,7 +35,7 @@
     <header>
       <div class="inner">
         <a href="https://icfpcontest2018.github.io/index.html">
-          <h1>ICFP Programming Contest 2018</h1>
+          <!-- <h1>ICFP Programming Contest 2018</h1> -->
         </a>
         <!-- <h2>ICFP Programming Contest 2018 (website)</h2> -->
         
@@ -47,12 +47,13 @@
     <div id="content-wrapper">
       <div class="wide-inner clearfix">
         <section id="main-content" style="width: 100%;">
-          <h1 id="execute-trace-full">Execute Trace (Full)</h1>
+          <!-- <h1 id="execute-trace-full">Execute Trace (Full)</h1> -->
 
 <form>
 
 <input type="hidden" id="full" value="true" />
 
+<div style="visibility:hidden">
 <p>
 <label for="srcModelFileIn">Source Model:</label>
 <input type="checkbox" id="srcModelEmpty" />
@@ -71,7 +72,7 @@
 <label for="traceFileIn">Trace:</label>
 <input accept=".nbt" type="file" id="traceFileIn" />
 </p>
-
+</div>
 
 <p>
 <label for="stepsPerFrame">Steps per Frame:</label><br />
@@ -134,32 +135,30 @@ var vis = null;
 
 <script>
 
-var srcModelBData =
+var srcModelBData = null;
 {% if src_data is not none %}
-  new Uint8Array({{ src_data }})
+  srcModelBData = new Uint8Array({{ src_data }});
 {% else %}
-  null
-{% endif %};
+  document.getElementById('srcModelEmpty').checked = true;
+{% endif %}
 
-var tgtModelBData =
+var tgtModelBData = null;
 {% if tgt_data is not none %}
-  new Uint8Array({{ tgt_data }})
+  tgtModelBData = new Uint8Array({{ tgt_data }});
 {% else %}
-  null
-{% endif %};
+  document.getElementById('tgtModelEmpty').checked = true;
+{% endif %}
 
 var traceBData = new Uint8Array({{ trace_data }});
 
 (function () {
-  var srcModelEmpty = document.getElementById('srcModelEmpty');
-  var tgtModelEmpty = document.getElementById('tgtModelEmpty');
-  var execTrace = document.getElementById('execTrace');
   function onStart() {
     document.getElementById('stdout').innerHTML = "";
     if (vis) { vis.setSize(8, 8, 8); };
     execTrace.disabled = true;
   }
   window.onload = function() {
+    onStart();
     execTrace.disabled = false;
   }
 })();
