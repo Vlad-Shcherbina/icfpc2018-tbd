@@ -11,16 +11,27 @@ def get_model(model_id):
 
 def solve(source, target):
     state = State(source, target)
-    state.tick([Fission(Diff(1, 0, 0), 20)])
-    state.tick([Fill(Diff(0, 1, 0)), SMove(Diff(0, 1, 0))])
-    state.tick([Wait(), Void(Diff(-1, 0, 0))])
-    state.tick([FusionP(Diff(1, 1, 0)), FusionS(Diff(-1, -1, 0))])
-    state.tick([Halt()])
+
+    state.bots[0].command = Fission(Diff(1, 0, 0), 20)
+    state.tick()
+
+    state.bots[0].command = Fill(Diff(0, 1, 0))
+    state.bots[1].command = SMove(Diff(0, 1, 0))
+    state.tick()
+
+    state.bots[1].command = Void(Diff(-1, 0, 0))
+    state.tick()
+
+    state.bots[0].fuse(state.bots[1])
+    state.tick()
+
+    pprint(state.bots)
+
+    state.bots[0].command = Halt()
+    state.tick()
 
     print(state.correct())
-
     pprint(state.trace)
-    pprint(state.bots)
     return state.dump_trace()
 
 binary_trace = solve(get_model(1), get_model(2))

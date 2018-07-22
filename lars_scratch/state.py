@@ -24,9 +24,12 @@ class Bot:
     bid: int
     pos: Pos
     seeds: List[int]
+    command: Command = Wait()
 
-    def move(self, diff: Diff):
-        self.pos += diff
+    def fuse(self, other: 'Bot'):
+        assert (other.pos - self.pos).is_near()
+        self.command = FusionP(other.pos - self.pos)
+        other.command = FusionS(self.pos - other.pos)
 
 @dataclass()
 class State:
@@ -72,11 +75,13 @@ class State:
                     return False
         return True
 
-    def tick(self, commands: List[Command]):
-        assert len(commands) == len(self.bots)
+    def tick(self):
         newbots = []
+        commands = []
 
-        for bot, command in zip(self.bots, commands):
+        for bot in self.bots:
+            command = bot.command
+            commands.append(command)
             if isinstance(command, Halt):
                 assert len(self.bots) == 1
                 assert self.bots[0].pos == Pos(0, 0, 0)
@@ -90,16 +95,16 @@ class State:
             elif isinstance(command, SMove):
                 assert command.lld.is_long_linear()
                 self._set(bot.pos, Cell.EMPTY)
-                bot.move(command.lld)
+                bot.pos += command.lld
                 self._set(bot.pos, Cell.BOT)
                 newbots.append(bot)
             elif isinstance(command, LMove):
                 assert command.sld1.is_short_linear()
                 assert command.sld2.is_short_linear()
                 self._set(bot.pos, Cell.EMPTY)
-                bot.move(command.sld1)
+                bot += command.sld1
                 assert bot.pos.is_inside_matrix(self.R)
-                bot.move(command.sld1)
+                bot += command.sld1
                 self._set(bot.pos, Cell.BOT)
                 newbots.append(bot)
 
@@ -148,6 +153,9 @@ class State:
         self.bots = newbots
         self.bots.sort(key=lambda bot: bot.bid)
         self.trace.append(commands)
+
+        for bot in self.bots:
+            bot.command = Wait()
 
     def dump_trace(self):
         return compose_commands(cmd for tick in self.trace for cmd in tick)
