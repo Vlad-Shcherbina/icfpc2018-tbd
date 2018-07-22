@@ -146,7 +146,7 @@ def main_run_interactive():
     s.energy = 30
     s.bots = [Bot(bid = 2, pos = Pos(0, 0, 1), seeds = [3, 4, 5])]
 
-    cmds = [commands.Fill(Diff(-1, 1, 0)), commands.SMove(Diff(0, 0, -1))]
+    cmds = [commands.Fill(Diff(1, 1, 0)), commands.SMove(Diff(0, 0, -1))]
 
     # we can run steps in cpp emulator and get new state
 
@@ -209,12 +209,13 @@ def main_run_file():
     print('some move commands:', Cpp.enum_move_commands()[:10], '...')
 
 
-if __name__ == '__main__':
+def main_simple_cmd_check():
     x = commands.Fill(Diff(-1, 1, 0))
     y = cmd_to_cpp(x)
     z = cmd_from_cpp(y)
     print("PyCommand -> CppCommand -> PyCommand gives initial: ", x == z, "\n")
 
+if __name__ == '__main__':
     main_run_file()
     main_run_interactive()
 

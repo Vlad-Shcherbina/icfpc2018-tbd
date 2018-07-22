@@ -45,20 +45,32 @@ Bot& Bot::operator=(const Bot& other) {
 }
 
 
-void Bot::check_preconditions(State* S) {
-	if (!command) throw malfunc_error("Active bot without command");
-	(*command).check_preconditions(this, S);
+string Bot::check_preconditions(State* S) {
+	if (!command) {
+			// TODO: log
+			assert (false);
+			throw malfunc_error("Active bot without command");
+	}
+	return (*command).check_preconditions(this, S);
 }
 
 
 void Bot::set_volatiles(State* S) {
-	if (!command) throw malfunc_error("Active bot without command");
+	if (!command) {
+		// TODO : log
+		assert (false);
+		throw malfunc_error("Active bot without command");
+	}
 	(*command).set_volatiles(this, S);
 }
 
 
 void Bot::execute(State* S) {
-	if (!command) throw malfunc_error("Active bot without command");
+	if (!command) {
+		// TODO : log
+		assert (false);
+		throw malfunc_error("Active bot without command");
+	}
 	(*command).execute(this, S);
 }
 
@@ -73,8 +85,11 @@ State::State(std::optional<Matrix> src, std::optional<Matrix> tgt)
 , high_harmonics(false)
 , halted(false)
 {
-	if (!src && !tgt)
+	if (!src && !tgt) {
+		// TODO : log
+		assert (false);
 		throw parser_error("Source and target matrices cannot both be None");
+	}
 	R = src ? src.value().R : tgt.value().R;
 	matrix = src ? src.value() : Matrix(R);
 	target = tgt ? tgt.value() : Matrix(R);
@@ -96,8 +111,11 @@ State::State(std::optional<Matrix> src,
 , high_harmonics(high_harmonics)
 , halted(false)
 { 
-	if (!src && !tgt)
+	if (!src && !tgt) {
+		// TODO : log
+		assert (false);
 		throw parser_error("Source and target matrices cannot both be None");
+	}
 	R = src ? src.value().R : tgt.value().R;
 	matrix = src ? src.value() : Matrix(R);
 	target = tgt ? tgt.value() : Matrix(R);
@@ -147,10 +165,18 @@ int State::count_active() {
 }
 
 
-void State::validate_step() {
+void State::validate_preconditions() {
 	// TODO: check floatings
 	volatiles = Matrix(R);
-	for (Bot& b : bots) if (b.active) b.check_preconditions(this);
+	for (Bot& b : bots) {
+		if (!b.active) continue;
+		string s = b.check_preconditions(this);
+		if (!s.empty()) {
+			//logger->logerror(s);
+			std::cout << "Preconditions failed: " << s << "\n";
+			assert (false);
+		}
+	}
 	for (Bot& b : bots) if (b.active) b.set_volatiles(this);
 }
 
@@ -163,6 +189,15 @@ void State::run_commands() {
 void State::add_passive_energy() {
 	energy += count_active() * 20 + R * R * R * (high_harmonics ? 30 : 3);
 }
+
+
+// void State::validate_state() {
+// 	if (!high_harmonics) validate_floating();
+// }
+
+
+// void State::validate_floating() {
+// }
 
 
 bool State::__getitem__(const Pos& p) const {
@@ -214,8 +249,9 @@ State Emulator::get_state() {
 
 unsigned char Emulator::getcommand() {
 	if (tracepointer == trace.size()) {
-		throw emulation_error("End of trace");
+		// TODO : log
 		assert (false);
+		throw emulation_error("End of trace");
 	}
 	return trace[tracepointer++];
 }
@@ -231,13 +267,16 @@ void Emulator::run_one_step() {
 			// std::cout << (*(b.command)).__repr__() << "\n";
 		}
 
-		S.validate_step();
+		S.validate_preconditions();
 		S.add_passive_energy();
 		S.run_commands();
+		// S.validate_state()
 	}
 	catch (base_error& e) {
 		logger->logerror(e.what());
 		S.halted = aborted = true;
+		// TODO : log
+		assert (false);
 		throw e;
 	}
 }

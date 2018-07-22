@@ -18,6 +18,8 @@ int max(int x, int y) { return x > y ? x : y; }
 
 void set_volatile_voxel(State* S, const Pos& p) {
 	if (S->volatiles.get(p)) {
+		// TODO : log
+		assert (false);
 		throw emulation_error("Volatile interference");
 	}
 	else S->volatiles.set(p, true);
@@ -66,6 +68,8 @@ Diff Command::get_lld(uint8_t a, uint8_t i) {
 	if (a == 1) return Diff(d, 0, 0);
 	if (a == 2) return Diff(0, d, 0);
 	if (a == 3) return Diff(0, 0, d);
+	// TODO : log
+	assert (false);
 	throw parser_error("Unable to decode trace");
 }
 
@@ -75,6 +79,8 @@ Diff Command::get_sld(uint8_t a, uint8_t i) {
 	if (a == 1) return Diff(d, 0, 0);
 	if (a == 2) return Diff(0, d, 0);
 	if (a == 3) return Diff(0, 0, d);
+	// TODO : log
+	assert (false);
 	throw parser_error("Unable to decode trace");
 }
 
@@ -109,6 +115,8 @@ unique_ptr<Command> Command::getnextcommand(Emulator* em) {
 		return make_unique<GFill>(get_nd(byte), get_fd(byte2, byte3, byte4));
 	if (tail == 0)
 		return make_unique<GVoid>(get_nd(byte), get_fd(byte2, byte3, byte4));
+	// TODO : log
+	assert (false);
 	throw parser_error("Unable to decode trace");
 }
 
@@ -116,10 +124,11 @@ unique_ptr<Command> Command::getnextcommand(Emulator* em) {
 /*==================== COMMAND LIST =====================*/
 
 
-void Halt::check_preconditions(Bot* b, State* S) {
+string Halt::check_preconditions(Bot* b, State* S) {
 	if (b->position != Pos(0, 0, 0) || S->high_harmonics || S->count_active() != 1) {
-		throw emulation_error("Halt pre-conditions not satisfied");
+		return("Halt pre-conditions not satisfied");
 	}
+	return "";
 }
 
 
@@ -138,7 +147,7 @@ string Halt::__repr__() { return "halt"; }
 
 /*-------------------------------------------------------*/
 
-void Wait::check_preconditions(Bot* b, State* S) {}
+string Wait::check_preconditions(Bot* b, State* S) { return ""; }
 
 
 void Wait::set_volatiles(Bot* b, State* S) {
@@ -154,7 +163,7 @@ string Wait::__repr__() { return "wait"; }
 
 /*-------------------------------------------------------*/
 
-void Flip::check_preconditions(Bot* b, State* S) {}
+string Flip::check_preconditions(Bot* b, State* S) { return ""; }
 
 
 void Flip::set_volatiles(Bot* b, State* S) {
@@ -174,16 +183,20 @@ string Flip::__repr__() { return "flip"; }
 SMove::SMove(Diff d)
 : lld(d)
 {
-	if (!lld.is_long()) 
+	if (!lld.is_long()) {
+		// TODO: log
+		assert (false);
 		throw emulation_error("SMove parameter is not long");
+	}
 }
 
 
-void SMove::check_preconditions(Bot* b, State* S) {
+string SMove::check_preconditions(Bot* b, State* S) {
 	if (!(b->position + lld).is_inside(S->R))
-		throw emulation_error("SMove is out of bounds");
+		return "SMove is out of bounds";
 	if (!is_void_region(S, b->position, b->position + lld))
-		throw emulation_error("SMove region has full voxels");
+		return "SMove region has full voxels";
+	return "";
 }
 
 
@@ -207,19 +220,22 @@ LMove::LMove(Diff d1, Diff d2)
 , sld2(d2)
 {
 	if (!sld1.is_short() || !sld2.is_short()) {
+		// TODO: log
+		assert (false);
 		throw emulation_error("LMove parameter is not short");
 	}
 }
 
 
-void LMove::check_preconditions(Bot* b, State* S) {
+string LMove::check_preconditions(Bot* b, State* S) {
 	Pos step1 = b->position + sld1;
 	Pos step2 = step1 + sld2;
 	if (!step1.is_inside(S->R) || !step2.is_inside(S->R))
-		throw emulation_error("LMove is out of bounds");
+		return "LMove is out of bounds";
 	if (!is_void_region(S, b->position, step1) || 
 		!is_void_region(S, step1, step2))
-		throw emulation_error("LMove region has full voxels");
+		return "LMove region has full voxels";
+	return "";
 }
 
 
@@ -247,15 +263,18 @@ string LMove::__repr__() {
 FusionP::FusionP(Diff nd)
 : nd(nd)
 {
-	if (!nd.is_near()) 
+	if (!nd.is_near()) {
+		// TODO: log
+		assert (false);
 		throw emulation_error("FusionP parameter is not near");
+	}
 }
 
 
-void FusionP::check_preconditions(Bot* b, State* S) {
-	if (!(b->position + nd).is_inside(S->R)) {
-		throw emulation_error("FusionP is out of bounds");
-	}
+string FusionP::check_preconditions(Bot* b, State* S) {
+	if (!(b->position + nd).is_inside(S->R))
+		return "FusionP is out of bounds";
+	return "";
 	// TODO: move pair search
 	// assert b2 has corresponding FusionP command
 }
@@ -275,6 +294,8 @@ void FusionP::execute(Bot* b, State* S) {
 	}
 	if (index == S->bots.size()) 
 		// TODO: move to preconditions
+		// TODO : log
+		assert (false);
 		throw emulation_error("FusionP without a pair");
 
 	Bot* b2 = &(S->bots[index]);
@@ -294,15 +315,18 @@ string FusionP::__repr__() { return "fusionP " + nd.__repr__(); }
 FusionS::FusionS(Diff nd)
 : nd(nd)
 {
-	if (!nd.is_near()) 
+	if (!nd.is_near()) {
+		// TODO: log
+		assert (false);
 		throw emulation_error("FusionS parameter is not near");
+	}
 }
 
 
-void FusionS::check_preconditions(Bot* b, State* S) {
+string FusionS::check_preconditions(Bot* b, State* S) {
 	if (!(b->position + nd).is_inside(S->R))
-		throw emulation_error("FusionS is out of bounds");
-
+		return "FusionS is out of bounds";
+	return "";
 }
 
 
@@ -324,20 +348,24 @@ Fission::Fission(Diff nd, unsigned m)
 : nd(nd)
 , m(m)
 {
-	if (!nd.is_near()) 
+	if (!nd.is_near()) {
+		// TODO: log
+		assert (false);
 		throw emulation_error("Fission parameter is not near");
+	}
 	// TODO : report m
 
 }
 
 
-void Fission::check_preconditions(Bot* b, State* S) {
+string Fission::check_preconditions(Bot* b, State* S) {
 	if (!(b->position + nd).is_inside(S->R))
-		throw emulation_error("Fission is out of bounds");
+		return "Fission is out of bounds";
 	if (!is_void_voxel(S, b->position + nd))
-		throw emulation_error("Fission to a full voxel");
+		return "Fission to a full voxel";
 	if (m+1 >= b->seeds.size())
-		throw emulation_error("Fission asks more seeds that it has");
+		return "Fission asks more seeds that it has";
+	return "";
 }
 
 
@@ -369,8 +397,24 @@ string Fission::__repr__() {
 Fill::Fill(Diff nd)
 : nd(nd)
 {
-	if (!nd.is_near()) 
+	if (!nd.is_near()) {
+		// TODO: log
+		assert (false);
 		throw emulation_error("Fill parameter is not near");
+	}
+}
+
+
+string Fill::check_preconditions(Bot* b, State* S) {
+	if (!(b->position + nd).is_inside(S->R))
+		return "Fill is out of bounds";
+	return "";
+}
+
+
+void Fill::set_volatiles(Bot* b, State* S) {
+	set_volatile_voxel(S, b->position);
+	set_volatile_voxel(S, b->position + nd);
 }
 
 
@@ -385,18 +429,6 @@ void Fill::execute(Bot* b, State* S) {
 }
 
 
-void Fill::check_preconditions(Bot* b, State* S) {
-	if (!(b->position + nd).is_inside(S->R))
-		throw emulation_error("Fill is out of bounds");
-}
-
-
-void Fill::set_volatiles(Bot* b, State* S) {
-	set_volatile_voxel(S, b->position);
-	set_volatile_voxel(S, b->position + nd);
-}
-
-
 string Fill::__repr__() { return "fill " + nd.__repr__(); }
 
 /*-------------------------------------------------------*/
@@ -404,14 +436,18 @@ string Fill::__repr__() { return "fill " + nd.__repr__(); }
 Void::Void(Diff nd)
 : nd(nd)
 {
-	if (!nd.is_near()) 
+	if (!nd.is_near()) {
+		// TODO: log
+		assert (false);
 		throw emulation_error("Void parameter is not near");
+	}
 }
 
 
-void Void::check_preconditions(Bot* b, State* S) {
+string Void::check_preconditions(Bot* b, State* S) {
 	if (!(b->position + nd).is_inside(S->R))
-		throw emulation_error("Void is out of bounds");
+		return "Void is out of bounds";
+	return "";
 }
 
 
@@ -440,15 +476,21 @@ GFill::GFill(Diff nd, Diff fd)
 : nd(nd)
 , fd(fd)
 {
-	if (!nd.is_near()) 
+	if (!nd.is_near()) {
+		// TODO: log
+		assert (false);
 		throw emulation_error("GFill first parameter is not near");
-	if (!fd.is_far()) 
+	}
+	if (!fd.is_far()) {
+		// TODO: log
+		assert (false);
 		throw emulation_error("Gfill second parameter is not near");
+	}
 }
 
 
-void GFill::check_preconditions(Bot* b, State* S) {
-
+string GFill::check_preconditions(Bot* b, State* S) {
+	return "";
 }
 
 
@@ -472,15 +514,21 @@ GVoid::GVoid(Diff nd, Diff fd)
 : nd(nd)
 , fd(fd)
 {
-	if (!nd.is_near()) 
+	if (!nd.is_near()) {
+		// TODO: log
+		assert (false);
 		throw emulation_error("GVoid first parameter is not near");
-	if (!fd.is_far()) 
+	}
+	if (!fd.is_far()) {
+		// TODO: log
+		assert (false);
 		throw emulation_error("GVoid second parameter is not near");
+	}
 }
 
 
-void GVoid::check_preconditions(Bot* b, State* S) {
-
+string GVoid::check_preconditions(Bot* b, State* S) {
+	return "";
 }
 
 

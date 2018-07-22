@@ -24,7 +24,7 @@ public:
 	Bot(const Bot&);
 	Bot& operator=(const Bot&);
 	Bot(uint8_t bid, Pos position, std::vector<uint8_t> seeds, bool active);
-	void check_preconditions(State* field);
+	std::string check_preconditions(State* field);
 	void set_volatiles(State* field);
 	void execute(State* field);
 };
@@ -57,12 +57,18 @@ public:
 	bool assert_well_formed();
 
 	int count_active();
-	void validate_step();
+	void validate_preconditions();
 	void run_commands();
 	void add_passive_energy();
+	// void validate_state();
+	// void validate_floating();
 
 	bool __getitem__(const Pos& p) const;
 	void __setitem__(const Pos& p, bool value);
+
+	// auxiliaries for move validations
+	std::vector<Pos> filled;
+
 
 };
 
