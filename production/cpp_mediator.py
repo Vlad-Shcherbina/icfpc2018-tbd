@@ -124,7 +124,7 @@ def main_run_interactive():
 def main_run_file():
     from production import utils
     modelfile = str(utils.project_root() / 'julie_scratch' / 'LA014_tgt.mdl')
-    tracefile = str(utils.project_root() / 'julie_scratch' / 'LA014.nbt')
+    tracefile = str(utils.project_root() / 'julie_scratch' / 'LA014_dflt.nbt')
     logfile = str(utils.project_root() / 'outputs' / 'cpp_emulator.log')
 
     em = Cpp.Emulator()
