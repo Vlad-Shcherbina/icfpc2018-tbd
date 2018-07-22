@@ -1,5 +1,5 @@
 from typing import Union, List, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 from production import data_files
@@ -34,7 +34,7 @@ class Fail:
 class SolverResult:
     trace_data: Union[bytes, Pass, Fail]
 
-    extra: dict
+    extra: dict = field(default_factory=dict)
     # any additional informaion (stats, errors, comments)
     # should be json-encodable
 
@@ -103,4 +103,4 @@ class TheirDefaultSolver(Solver):
             Model.parse(tgt_model)  # as a sanity check
 
         trace_data = data_files.full_default_trace(name)
-        return SolverResult(trace_data, extra={})
+        return SolverResult(trace_data)

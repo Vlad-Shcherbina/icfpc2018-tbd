@@ -16,6 +16,8 @@ import multiprocessing
 import argparse
 import multiprocessing.queues
 import logging
+import traceback
+from io import StringIO
 logger = logging.getLogger(__name__)
 
 from production import db
@@ -62,10 +64,18 @@ def put_trace(conn, problem_id: int, result: Result):
 
 def solve(
         solver: solver_interface.Solver, name: str,
-        src_data: Optional[bytes], tgt_data: Optional[bytes]) -> Result:
+        src_data: Optional[bytes], tgt_data: Optional[bytes],
+        pyjs_validate: bool = False) -> Result:
     logging.info('Solving...')
     start = time.time()
-    sr = solver.solve(name, src_model=src_data, tgt_model=tgt_data)
+    try:
+        sr = solver.solve(name, src_model=src_data, tgt_model=tgt_data)
+    except KeyboardInterrupt:
+        raise
+    except:
+        exc = StringIO()
+        traceback.print_exc(file=exc)
+        sr = solver_interface.SolverResult(solver_interface.Fail(), extra=dict(tb=exc.getvalue()))
     solver_time = time.time() - start
     logging.info(f'It took {solver_time}')
     if isinstance(sr.trace_data, solver_interface.Pass):
