@@ -17,10 +17,10 @@ int max(int x, int y) { return x > y ? x : y; }
 
 
 void set_volatile_voxel(State* S, const Pos& p) {
-	if (S->getbit(p, S->volatiles)) {
+	if (S->volatiles.get(p)) {
 		throw emulation_error("Volatile interference");
 	}
-	else S->setbit(p, true, S->volatiles);
+	else S->volatiles.set(p, true);
 }
 
 
@@ -34,7 +34,7 @@ void set_volatile_region(State* S, const Pos& a, const Pos& b) {
 
 
 bool is_void_voxel(State* S, const Pos& p) {
-	return !S->getbit(p, S->matrix);
+	return !S->matrix.get(p);
 }
 
 
@@ -43,14 +43,14 @@ bool is_void_region(State* S, const Pos& a, const Pos& b) {
 	for (p.x = min(a.x, b.x); p.x <= max(a.x, b.x); p.x++)
 		for (p.y = min(a.y, b.y); p.y <= max(a.y, b.y); p.y++)
 			for (p.z = min(a.z, b.z); p.z <= max(a.z, b.z); p.z++){
-				if (S->getbit(p, S->matrix)) return false;
+				if (S->matrix.get(p)) return false;
 			}
 	return true;
 }
 
 /*======================= COMMAND =======================*/
 
-Diff Command::get_nd(unsigned char byte) {
+Diff Command::get_nd(uint8_t byte) {
 	byte >>= 3;
 	int dz = byte % 3 - 1;
 	byte /= 3;
@@ -60,7 +60,7 @@ Diff Command::get_nd(unsigned char byte) {
 	return Diff(dx, dy, dz);
 }
 
-Diff Command::get_lld(unsigned char a, unsigned char i) {
+Diff Command::get_lld(uint8_t a, uint8_t i) {
 	a &= 3;
 	int d = (int)(i &= 31) - 15;
 	if (a == 1) return Diff(d, 0, 0);
@@ -69,7 +69,7 @@ Diff Command::get_lld(unsigned char a, unsigned char i) {
 	throw parser_error("Unable to decode trace");
 }
 
-Diff Command::get_sld(unsigned char a, unsigned char i) {
+Diff Command::get_sld(uint8_t a, uint8_t i) {
 	a &= 3;
 	int d = (int)(i &= 15) - 5;
 	if (a == 1) return Diff(d, 0, 0);
@@ -79,16 +79,16 @@ Diff Command::get_sld(unsigned char a, unsigned char i) {
 }
 
 unique_ptr<Command> Command::getnextcommand(Emulator* em) {
-	unsigned char byte = em->getcommand();
+	uint8_t byte = em->getcommand();
 	if (byte == 255) return make_unique<Halt>();
 	if (byte == 254) return make_unique<Wait>();
 	if (byte == 253) return make_unique<Flip>();
-	unsigned char tail = byte & 7;
+	uint8_t tail = byte & 7;
 	if (tail == 3) return make_unique<Fill>(get_nd(byte));
 	if (tail == 6) return make_unique<FusionS>(get_nd(byte));
 	if (tail == 7) return make_unique<FusionP>(get_nd(byte));
 
-	unsigned char byte2 = em->getcommand();
+	uint8_t byte2 = em->getcommand();
 	if (tail == 5) return make_unique<Fission>(get_nd(byte), byte2);
 	if (tail == 4) {
 		if (byte & 8) return make_unique<LMove>(get_sld(byte>>6, byte2>>4),
@@ -267,7 +267,7 @@ void FusionP::execute(Bot* b, State* S) {
 	b2->active = false;
 	b->seeds.push_back(b2->bid);
 	b->seeds.insert(b->seeds.end(), b2->seeds.begin(), b2->seeds.end());
-	b2->seeds = vector<unsigned char>();
+	b2->seeds = vector<uint8_t>();
 	std::sort(b->seeds.begin(), b->seeds.end());
 	S->energy -= 24;
 }
@@ -338,9 +338,9 @@ void Fission::execute(Bot* b, State* S) {
 	assert (!(b2->active));
 	b2->active = true;
 	b2->position = (b->position + nd);
-	b2->seeds = std::move(vector<unsigned char>(b->seeds.begin(), 
+	b2->seeds = std::move(vector<uint8_t>(b->seeds.begin(),
 												b->seeds.begin() + m + 1));
-	b->seeds = std::move(vector<unsigned char>(b->seeds.begin() + m + 1, 
+	b->seeds = std::move(vector<uint8_t>(b->seeds.begin() + m + 1,
 											   b->seeds.end()));
 	S->energy += 24;
 }
@@ -361,11 +361,13 @@ Fill::Fill(Diff nd)
 
 
 void Fill::execute(Bot* b, State* S) {
-	S->energy += 6;
-	if (!(S->getbit(b->position + nd, S->matrix))) {
+	Pos dest = b->position + nd;
+	if (!S->matrix.get(dest)) {
+		S->energy += 12;
+		S->matrix.set(dest, true);
+	} else {
 		S->energy += 6;
 	}
-	S->setbit(b->position + nd, true, S->matrix);
 }
 
 
@@ -406,11 +408,13 @@ void Void::set_volatiles(Bot* b, State* S) {
 
 
 void Void::execute(Bot* b, State* S) {
-	if (S->getbit(b->position + nd, S->matrix)) {
+	Pos dest = b->position + nd;
+	if (S->matrix.get(dest)) {
 		S->energy -= 12;
-		S->setbit(b->position + nd, false, S->matrix);
+		S->matrix.set(dest, false);
+	} else {
+		S->energy += 3;
 	}
-	else { S->energy += 3; }
 }
 
 

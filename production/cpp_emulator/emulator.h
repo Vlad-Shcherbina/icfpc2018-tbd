@@ -3,9 +3,10 @@
 
 #include <vector>
 #include <string>
-#include <bitset>
+#include <optional>
 
 #include "coordinates.h"
+#include "matrix.h"
 
 struct Command;
 class State;
@@ -13,16 +14,16 @@ class Logger;
 
 class Bot {
 public:
-	unsigned char bid;
+	uint8_t bid;
 	Pos position;
-	std::vector<unsigned char> seeds;
+	std::vector<uint8_t> seeds;
 	std::unique_ptr<Command> command;
 	bool active;
 
 	Bot();
 	Bot(const Bot&);
 	Bot& operator=(const Bot&);
-	Bot(unsigned char bid, Pos position, std::vector<unsigned char> seeds, bool active);
+	Bot(uint8_t bid, Pos position, std::vector<uint8_t> seeds, bool active);
 	void check_preconditions(State* field);
 	void set_volatiles(State* field);
 	void execute(State* field);
@@ -32,31 +33,26 @@ public:
 class State {
 public:
 	int R;
-	std::vector<unsigned char> matrix;
-	//std::vector<unsigned char> floating;
-	std::vector<unsigned char> target;
-	std::vector<unsigned char> volatiles;
+	Matrix matrix;
+	Matrix target;
+	Matrix volatiles;
 
 	int64_t energy;
 	bool high_harmonics;
 	std::vector<Bot> bots;
 	bool halted;
 
-	State();
-	State(unsigned char R);
-	void set_size(unsigned char R);
-	void set_initials();
+	State(std::optional<Matrix> src, std::optional<Matrix> tgt);
+	State(std::optional<Matrix> src,
+		  std::optional<Matrix> tgt,
+		  bool high_harmonics,
+		  int64_t energy,
+		  std::vector<Bot> bots);
+	State(const State& S);
 	void set_default_bots();
-	void set_state(unsigned char R,
-				   bool high_harmonics,
-				   int64_t energy,
-				   std::vector<unsigned char> matrix,
-				   std::vector<Bot> bots);
 
 	bool getbit(const Pos& p) const;
 	void setbit(const Pos& p, bool value);
-	bool getbit(const Pos& p, const std::vector<unsigned char>& v) const;
-	void setbit(const Pos& p, bool value, std::vector<unsigned char>& v);
 
 	bool assert_well_formed();
 
@@ -65,6 +61,8 @@ public:
 	void run_commands();
 	void add_passive_energy();
 
+	bool __getitem__(const Pos& p) const;
+	void __setitem__(const Pos& p, bool value);
 };
 
 
@@ -72,26 +70,23 @@ class Emulator {
 public:
 	State S;
 	int time_step;
-	std::vector<unsigned char> trace;
+	std::vector<uint8_t> trace;
 	unsigned tracepointer;
 	std::unique_ptr<Logger> logger;
 	bool aborted;
 
 	
-	Emulator();
+	Emulator(std::optional<Matrix> src, std::optional<Matrix> tgt);
+	Emulator(const State& S);
 
-	void set_size(unsigned char R);
-	void set_src_model(std::vector<unsigned char> bytes);
-	void set_tgt_model(std::vector<unsigned char> bytes);
-	void set_trace(std::vector<unsigned char> bytes);
-	void set_state(State S);
+	void set_trace(std::vector<uint8_t> bytes);
+	void set_state(State S);				// TODO: take ownership
 	State get_state();
 
-	unsigned char getcommand();
+	uint8_t getcommand();
 	void run_one_step();
 	void run_all();
-	void run_given(std::vector<unsigned char> newtrace);
-	void load(std::string modelfile, std::string tracefile);
+	void run_given(std::vector<uint8_t> newtrace);
 
 	int64_t energy();
 

@@ -1,15 +1,12 @@
 #ifndef __LOGGER_H_INCLUDED__
 #define __LOGGER_H_INCLUDED__
 
-#include <iostream>
 #include <fstream>
 #include <string>
 #include <chrono>
 #include <memory>
 #include <exception>
 
-
-class Emulator;
 
 class base_error : public std::runtime_error {
 public:
@@ -41,8 +38,7 @@ public:
 };
 
 
-
-class State;
+class Emulator;
 
 class Logger {
 public:

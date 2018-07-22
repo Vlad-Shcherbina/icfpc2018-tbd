@@ -3,6 +3,9 @@
 
 #include <string>
 
+const int SHORT_DISTANCE = 5;
+const int LONG_DISTANCE = 15;
+const int FAR_DISTANCE = 30;
 
 class Diff {
 public:

@@ -33,17 +33,15 @@ def state_from_cpp(cs):
     s.bots = list(bot_from_cpp(cb) for cb in cs.bots if cb.active)
     return s
 
+
 def state_to_cpp(s):
-    cm = s.matrix._data.tobytes()
-    # cbots = list(Cpp.Bot(i, Cpp.Pos(0, 0, 0), [], False) 
-    #                      for i in range(MAXBOTNUMBER + 1))
+    rawdata = bytes([s.R]) + s.matrix._data.tobytes()
     cbots = list(Cpp.Bot() for i in range(MAXBOTNUMBER + 1))
     for b in s.bots:
         cb = Cpp.Bot(b.bid, pos_to_cpp(b.pos), b.seeds, True)
         cbots[b.bid] = cb
-    cs = Cpp.State()
-    cs.set_state(s.R, s.harmonics == HIGH, s.energy, cm, cbots)
-    return cs
+    cm = Cpp.Matrix.parse(rawdata)      # source matrix
+    return Cpp.State(cm, None, s.harmonics == HIGH, s.energy, cbots)
 
 
 def from_cpp(item):
@@ -66,6 +64,7 @@ def to_cpp(item):
 #----------- examples --------------#
 
 def main_run_interactive():
+
     import production.utils as utils
 
     # assuming we have left state and expecting right state
@@ -86,11 +85,9 @@ def main_run_interactive():
 
     cmds = [commands.Fill(Diff(-1, 1, 0)), commands.SMove(Diff(0, 0, -1))]
 
-
     # we can run steps in cpp emulator and get new state
 
-    em = Cpp.Emulator()
-    em.set_state(state_to_cpp(s))
+    em = Cpp.Emulator(state_to_cpp(s))
 
     # if no logfile name given, emulator doesn't log
     # problemname and solutionname are optional
@@ -109,6 +106,7 @@ def main_run_interactive():
     # if some are invalid or illegal
 
     try:
+        print(len(cmdlist))
         em.run_commands(cmdlist)
     except Cpp.SimulatorException as e:
         print(e)
@@ -131,12 +129,11 @@ def main_run_file():
     tracefile = utils.project_root() / 'julie_scratch' / 'LA014_dflt.nbt'
     logfile = str(utils.project_root() / 'outputs' / 'cpp_emulator.log')
 
-    em = Cpp.Emulator()
-
     mf = open(modelfile, 'rb')
-    em.set_size(ord(mf.read(1)))
-    em.set_tgt_model(mf.read())
+    m = Cpp.Matrix.parse(mf.read())
     mf.close()
+
+    em = Cpp.Emulator(None, m)      # (source, target)
 
     tf = open(tracefile, 'rb')
     em.set_trace(tf.read())
@@ -149,4 +146,4 @@ def main_run_file():
 
 if __name__ == '__main__':
     main_run_file()
-    main_run_interactive()
+    # main_run_interactive()

@@ -15,9 +15,9 @@ struct Command {
 	virtual void set_volatiles(Bot* b, State* S) = 0;
 	virtual std::string __str__() = 0;
 
-	static Diff get_nd(unsigned char byte);
-	static Diff get_lld(unsigned char a, unsigned char i);
-	static Diff get_sld(unsigned char a, unsigned char i);
+	static Diff get_nd(uint8_t byte);
+	static Diff get_lld(uint8_t a, uint8_t i);
+	static Diff get_sld(uint8_t a, uint8_t i);
 	static std::unique_ptr<Command> getnextcommand(Emulator* em);
 };
 

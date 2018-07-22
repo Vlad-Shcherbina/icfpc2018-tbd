@@ -15,12 +15,12 @@ def test_run_from_file():
     tracefile = utils.project_root() / 'julie_scratch' / 'LA014_dflt.nbt'
     logfilename = str(utils.project_root() / 'outputs' / 'cpp_emulator.log')
 
-    em = Cpp.Emulator()
-
     mf = open(modelfile, 'rb')
-    em.set_size(ord(mf.read(1)))
-    em.set_tgt_model(mf.read())
+    R = ord(mf.read(1))
+    m = Cpp.Matrix.parse(mf.read())
     mf.close()
+
+    assert m.R == R
 
     tf = open(tracefile, 'rb')
     em.set_trace(tf.read())

@@ -29,14 +29,38 @@ int Diff::clen() const {
 	return (x >= y && x >= z) ? x : ((y >= z) ? y : z);
 }
 
-bool Diff::is_adjacent() const { return mlen() == 1; }
-bool Diff::is_near() const { return (clen() == 1) && (mlen() == 1 || mlen() == 2); }
-bool Diff::is_far() const { return (clen() > 0) && (clen() <= 30); }
-bool Diff::is_linear() const { return ((dx == 0) + (dy == 0) + (dz == 0)) == 2; }
-bool Diff::is_short() const { return is_linear() && mlen() <= 5; }
-bool Diff::is_long() const {return is_linear() && mlen() <= 15; }
-bool Diff::operator==(const Diff& other) const { return dx == other.dx && dy == other.dy && dz == other.dz; }
-bool Diff::operator!=(const Diff& other) const { return !(*this == other); }
+bool Diff::is_adjacent() const {
+	return mlen() == 1;
+}
+
+bool Diff::is_near() const {
+	return (clen() == 1) && (mlen() == 1 || mlen() == 2);
+}
+
+bool Diff::is_far() const {
+	return (clen() > 0) && (clen() <= FAR_DISTANCE);
+}
+
+bool Diff::is_linear() const {
+	return ((dx == 0) + (dy == 0) + (dz == 0)) == 2;
+}
+
+bool Diff::is_short() const {
+	return is_linear() && mlen() <= SHORT_DISTANCE;
+}
+
+bool Diff::is_long() const {
+	return is_linear() && mlen() <= LONG_DISTANCE;
+}
+
+bool Diff::operator==(const Diff& other) const {
+	return dx == other.dx && dy == other.dy && dz == other.dz;
+}
+
+bool Diff::operator!=(const Diff& other) const {
+	return !(*this == other);
+}
+
 
 string Diff::__str__() const {
 	return "[" + std::to_string(dx) + ", " + std::to_string(dy) + ", " + std::to_string(dz) + "]";
@@ -57,12 +81,32 @@ Pos::Pos(const Pos& other) {
 	this->z = other.z;
 }
 
-bool Pos::is_inside(int R) const { return x >= 0 && x < R && y >= 0 && y < R && z >= 0 && z < R; }
-Diff Pos::operator-(const Pos& other) const { return Diff(x - other.x, y - other.y, z - other.z); }
-Pos Pos::operator+(const Diff& d) const { return Pos(x + d.dx, y + d.dy, z + d.dz); }
-Pos Pos::operator-(const Diff& d) const { return Pos(x - d.dx, y - d.dy, z - d.dz); }
-bool Pos::operator==(const Pos& other) const { return x == other.x && y == other.y && z == other.z; }
-bool Pos::operator!=(const Pos& other) const { return !(*this == other); }
+bool Pos::is_inside(int R) const {
+	return x >= 0 && x < R &&
+	       y >= 0 && y < R &&
+	       z >= 0 && z < R;
+}
+
+Diff Pos::operator-(const Pos& other) const {
+	return Diff(x - other.x, y - other.y, z - other.z);
+}
+
+Pos Pos::operator+(const Diff& d) const {
+	return Pos(x + d.dx, y + d.dy, z + d.dz);
+}
+
+Pos Pos::operator-(const Diff& d) const {
+	return Pos(x - d.dx, y - d.dy, z - d.dz);
+}
+
+bool Pos::operator==(const Pos& other) const {
+	return x == other.x && y == other.y && z == other.z;
+}
+
+bool Pos::operator!=(const Pos& other) const {
+	return !(*this == other);
+}
+
 bool Pos::operator<(const Pos& other) const {
 	return make_tuple(x, y, z) < make_tuple(other.x, other.y, other.z);
 }

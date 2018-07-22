@@ -23,6 +23,10 @@ namespace py = pybind11;
 PYBIND11_MODULE(emulator, m) {
 	m.doc() = "C++ Emulator";
 
+	m.attr("SHORT_DISTANCE") = SHORT_DISTANCE;
+	m.attr("LONG_DISTANCE") = LONG_DISTANCE;
+	m.attr("FAR_DISTANCE") = FAR_DISTANCE;
+
 	py::class_<Diff> DiffClass(m, "Diff");
 	DiffClass
 		.def(py::init<int, int, int>())
@@ -44,11 +48,8 @@ PYBIND11_MODULE(emulator, m) {
 		.def("is_inside_matrix", &Pos::is_inside)
 		.def("__add__", &Pos::operator+, py::is_operator())
 		.def("__iadd__", &Pos::operator+=, py::is_operator())
-		// .def("__sub__", &Pos::operator-<DiffClass>, py::is_operator())
-		// .def("__isub__", &Pos::operator-=<Diff>, py::is_operator())
 		.def(py::self == py::self)
 		.def(py::self != py::self)
-		.def(py::self < py::self)
 		.def("__str__", &Pos::__str__)
 		.def_readonly("x", &Pos::x)
 		.def_readonly("y", &Pos::y)
@@ -76,8 +77,12 @@ PYBIND11_MODULE(emulator, m) {
 
 	py::class_<State> StClass(m, "State");
 	StClass
-		.def(py::init<>())
-		.def(py::init<int>())
+		.def(py::init<std::optional<Matrix>, std::optional<Matrix>>())
+		.def(py::init<std::optional<Matrix>,
+					  std::optional<Matrix>,
+					  bool,
+					  int64_t,
+					  std::vector<Bot>>())
 
 		.def_readonly("R", &State::R)
 		.def_readonly("high_harmonics", &State::high_harmonics)
@@ -85,18 +90,15 @@ PYBIND11_MODULE(emulator, m) {
 		.def_readonly("matrix", &State::matrix)
 		.def_readonly("energy", &State::energy)
 
-		//.def("__getitem__", (bool (*)(const Pos&)) &State::getbit)
-		//.def("__setitem__", (void (*)(const Pos&, bool)) &State::setbit)
+		.def("__getitem__", &State::__getitem__)
+		.def("__setitem__", &State::__setitem__)
 		.def("assert_well_formed", &State::assert_well_formed)
-		.def("set_state", &State::set_state)
 	;
 
 	py::class_<Emulator> EmClass(m, "Emulator");
 	EmClass
-		.def(py::init<>())
-		.def("set_size", &Emulator::set_size)
-		.def("set_src_model", &Emulator::set_src_model)
-		.def("set_tgt_model", &Emulator::set_tgt_model)
+		.def(py::init<std::optional<Matrix>, std::optional<Matrix>>())
+//		.def(py::init<const State&>())
 		.def("set_trace", &Emulator::set_trace)
 
 		.def("set_state", &Emulator::set_state)
