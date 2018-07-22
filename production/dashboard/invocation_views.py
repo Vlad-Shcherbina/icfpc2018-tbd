@@ -4,6 +4,7 @@ from collections import defaultdict
 import flask
 
 from production.dashboard import app, get_conn
+from production.dashboard.flask_utils import memoized_render_template_string
 
 
 @app.template_filter('json_dump')
@@ -13,7 +14,7 @@ def json_dump(value):
 
 @app.template_filter('render_version')
 def render_version(version):
-    return flask.Markup(flask.render_template_string('''\
+    return flask.Markup(memoized_render_template_string('''\
     <a href="https://github.com/Vlad-Shcherbina/icfpc2018-tbd/commit/{{
         version['commit'] }}">
         {{ version['commit'][:8] -}}
@@ -31,7 +32,7 @@ def list_invocations():
     cur = conn.cursor()
     cur.execute('SELECT id, data FROM invocations ORDER BY id DESC')
 
-    return flask.render_template_string(LIST_INVOCATIONS_TEMPLATE, **locals())
+    return memoized_render_template_string(LIST_INVOCATIONS_TEMPLATE, **locals())
 
 LIST_INVOCATIONS_TEMPLATE = '''\
 {% extends "base.html" %}
@@ -113,7 +114,7 @@ def view_invocation(id):
         [id])
     fuel_submissions = cur.fetchall()
 
-    return flask.render_template_string(VIEW_INVOCATION_TEMPLATE, **locals())
+    return memoized_render_template_string(VIEW_INVOCATION_TEMPLATE, **locals())
 
 VIEW_INVOCATION_TEMPLATE = '''\
 {% extends "base.html" %}

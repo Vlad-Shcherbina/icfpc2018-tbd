@@ -3,6 +3,8 @@ import json
 import flask
 
 from production.dashboard import app, get_conn
+from production.dashboard.flask_utils import memoized_render_template_string
+
 
 @app.route('/cars')
 def list_cars():
@@ -18,7 +20,7 @@ def list_cars():
         LEFT OUTER JOIN fuel_submissions ON fuel_submissions.fuel_id = fuels.id
         ORDER BY cars.id DESC, fuels.id DESC, fuel_submissions.id DESC
     ''')
-    return flask.render_template_string(LIST_CARS_TEMPLATE, **locals())
+    return memoized_render_template_string(LIST_CARS_TEMPLATE, **locals())
 
 LIST_CARS_TEMPLATE = '''\
 {% extends "base.html" %}
@@ -80,7 +82,7 @@ def view_car(id):
         [id])
     fuels = cur.fetchall()
 
-    return flask.render_template_string(VIEW_CAR_TEMPLATE, **locals())
+    return memoized_render_template_string(VIEW_CAR_TEMPLATE, **locals())
 
 VIEW_CAR_TEMPLATE = '''\
 {% extends "base.html" %}
@@ -136,7 +138,7 @@ def list_fuels():
         LEFT OUTER JOIN fuel_submissions ON fuels.id = fuel_submissions.fuel_id
         ORDER BY fuels.id DESC, fuel_submissions.id DESC
         ''')
-    return flask.render_template_string(LIST_FUELS_TEMPLATE, **locals())
+    return memoized_render_template_string(LIST_FUELS_TEMPLATE, **locals())
 
 LIST_FUELS_TEMPLATE = '''\
 {% extends "base.html" %}
@@ -190,7 +192,7 @@ def view_fuel(id):
         [id])
     submissions = cur.fetchall()
 
-    return flask.render_template_string(VIEW_FUEL_TEMPLATE, **locals())
+    return memoized_render_template_string(VIEW_FUEL_TEMPLATE, **locals())
 
 VIEW_FUEL_TEMPLATE = '''\
 {% extends "base.html" %}
@@ -238,7 +240,7 @@ def list_fuel_submissions():
         JOIN fuels ON fuel_submissions.fuel_id = fuels.id
         ORDER BY fuel_submissions.id DESC
         ''')
-    return flask.render_template_string(LIST_FUEL_SUBMISSIONS_TEMPLATE, **locals())
+    return memoized_render_template_string(LIST_FUEL_SUBMISSIONS_TEMPLATE, **locals())
 
 LIST_FUEL_SUBMISSIONS_TEMPLATE = '''\
 {% extends "base.html" %}
@@ -284,7 +286,7 @@ def view_fuel_submission(id):
         [fuel_id])
     [car_id] = cur.fetchone()
 
-    return flask.render_template_string(VIEW_FUEL_SUBMISSION_TEMPLATE, **locals())
+    return memoized_render_template_string(VIEW_FUEL_SUBMISSION_TEMPLATE, **locals())
 
 VIEW_FUEL_SUBMISSION_TEMPLATE = '''\
 {% extends "base.html" %}

@@ -5,6 +5,7 @@ from collections import defaultdict
 import flask
 
 from production.dashboard import app, get_conn
+from production.dashboard.flask_utils import memoized_render_template_string
 
 
 @app.route('/problems')
@@ -31,7 +32,7 @@ def list_problems():
         if energy is not None:
             best_by_problem[problem_id] = min(best_by_problem[problem_id], energy)
 
-    return flask.render_template_string(LIST_PROBLEMS_TEMPLATE, **locals())
+    return memoized_render_template_string(LIST_PROBLEMS_TEMPLATE, **locals())
 
 LIST_PROBLEMS_TEMPLATE = '''\
 {% extends "base.html" %}
@@ -117,7 +118,7 @@ def view_problem(id):
     best_energy = min(
         (energy for _, _, _, energy, _, _ in traces if energy is not None),
         default=-1)
-    return flask.render_template_string(VIEW_PROBLEM_TEMPLATE, **locals())
+    return memoized_render_template_string(VIEW_PROBLEM_TEMPLATE, **locals())
 
 VIEW_PROBLEM_TEMPLATE = '''\
 {% extends "base.html" %}
@@ -178,7 +179,7 @@ def view_trace(id):
         [id])
     [problem_id, scent, status, energy, extra, inv_id] = cur.fetchone()
 
-    return flask.render_template_string(VIEW_TRACE_TEMPLATE, **locals())
+    return memoized_render_template_string(VIEW_TRACE_TEMPLATE, **locals())
 
 VIEW_TRACE_TEMPLATE = '''\
 {% extends "base.html" %}

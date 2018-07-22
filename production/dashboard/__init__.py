@@ -4,6 +4,7 @@ import flask
 import jinja2
 
 from production import db
+from production.dashboard.flask_utils import memoized_render_template_string
 
 
 app = flask.Flask(__name__)
@@ -33,7 +34,7 @@ def get_conn():
 
 @app.template_filter('linkify')
 def linkify(url):
-    return flask.Markup(flask.render_template_string(
+    return flask.Markup(memoized_render_template_string(
         '<a href="{{ url }}">{{ url }}</a>',
         url=url))
 
@@ -46,7 +47,7 @@ def render_timestamp(ts, fmt='%m-%d %H:%M:%S'):
 
 @app.route('/')
 def hello():
-    return flask.render_template_string('''\
+    return memoized_render_template_string('''\
     {% extends "base.html" %}
     {% block body %}
     Hello, world!
