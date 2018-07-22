@@ -24,19 +24,18 @@ def bounding_box_region(model, fx : Optional[int] = None, fy : Optional[int] = N
     fy = rangify(model.R, fy)
     fz = rangify(model.R, fz)
 
-    filled_cell_visited = False
+    pos0 = pos1 = None
     for x in fx:
         for y in fy:
             for z in fz:
                 if model[Pos(x,y,z)]:
-                    if not filled_cell_visited:
+                    if pos0 is None:
                         pos0 = pos1 = Pos(x,y,z)
                         filled_cell_visited = True
                     else:
                         pos0 = Pos(min(pos0.x,x),min(pos0.y,y),min(pos0.z,z))
                         pos1 = Pos(max(pos1.x,x),max(pos1.y,y),max(pos1.z,z))
 
-    assert filled_cell_visited
     return (pos0,pos1)
 
 def bounding_box_footprint(model):
@@ -45,8 +44,19 @@ def bounding_box_footprint(model):
     pos1 = Pos(pos1.x, 0, pos1.z)
     return (pos0, pos1)
 
-def is_inside_region(pt : Pos, pt0 : Pos, pt1 : Pos) -> bool:
-    return pt0.x <= pt.x <= pt1.x and pt0.y <= pt.y <= pt1.y and pt0.z <= pt.z <= pt1.z
+def merge_bounding_boxes(b0,b1) -> Tuple[Pos,Pos]:
+    bmin0,bmax0 = b0
+    bmin1,bmax1 = b1
+    if bmin0 is None:
+        return b1
+    if bmin1 is None:
+        return b0
+    new_min = Pos(min(bmin0.x,bmin1.x),min(bmin0.y,bmin1.y),min(bmin0.z,bmin1.z))
+    new_max = Pos(max(bmax0.x,bmax1.x),max(bmax0.y,bmax1.y),max(bmax0.z,bmax1.z))
+    return new_min,new_max
+
+def is_inside_region(pt : Pos, ref_pt0 : Pos, ref_pt1 : Pos) -> bool:
+    return ref_pt0.x <= pt.x <= ref_pt1.x and ref_pt0.y <= pt.y <= ref_pt1.y and ref_pt0.z <= pt.z <= ref_pt1.z
 
 
 # Orthographic (orthogonal) projection from the top
