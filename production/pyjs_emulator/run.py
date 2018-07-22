@@ -39,10 +39,7 @@ def do_run(*args) -> EmulatorResult:
         stderr=subprocess.PIPE,
         universal_newlines=True)
     stdout, stderr = proc.communicate()
-    if proc.returncode != 0:
-        return EmulatorResult(
-            energy=None,
-            extra=dict(returncode=proc.returncode, stdout=stdout, stderr=stderr))
+    assert proc.returncode == 0, (stdout, stderr)
     result = stdout.split('=== ')[-1].split('\n')
     if result[0].startswith("Failure"):
         res, etc = dictify(result)
