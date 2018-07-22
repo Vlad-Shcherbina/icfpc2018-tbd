@@ -47,6 +47,9 @@ def default_reassembly(model_src, model_tgt) -> List[Command]:
 def apply_default_strategy(model_src, model_tgt, speeds : Tuple[int,int,int], starting_point : Pos,
                            reassembly : Optional[bool] = False) -> List[Command]:
 
+    if model_src == model_tgt:
+        return [Halt()]
+
     x_speed, y_speed, z_speed = speeds
 
     bbox_min,bbox_max = merge_bounding_boxes(bounding_box(model_src),bounding_box(model_tgt))
@@ -54,7 +57,14 @@ def apply_default_strategy(model_src, model_tgt, speeds : Tuple[int,int,int], st
 
     offset = int(not reassembly)
 
-    x,y,z,commands = go_to_point(0,0,0,starting_point+Diff(0,offset,0))
+    corner_voxel = reassembly and model_src[starting_point]
+    mind_the_corner = Diff(0,0,1) if corner_voxel else Diff(0,0,0)
+
+    x,y,z,commands = go_to_point(0,0,0, (starting_point + Diff(0,offset,0)) + (-mind_the_corner))
+    if corner_voxel:
+        commands.append(Void(mind_the_corner))
+        commands.append(SMove(mind_the_corner))
+        z += 1
 
     xup = True
     zup = True
@@ -123,11 +133,15 @@ def apply_default_strategy(model_src, model_tgt, speeds : Tuple[int,int,int], st
             zup = not zup
 
 
-        if y == offset+int(y_speed < 0):
+        if not reassembly and y == offset+int(y_speed < 0):
             commands.append(Flip())
         if y == y_finish+int(y_speed > 0):
             break
 
+
+        if reassembly:
+            if model_tgt[Pos(x,y+y_speed,z)]:
+                commands.append(Void(Diff(0,y_speed,0)))
 
         commands.append(SMove(Diff(0,y_speed,0)))
         y += y_speed
@@ -137,8 +151,16 @@ def apply_default_strategy(model_src, model_tgt, speeds : Tuple[int,int,int], st
         xup = not xup
         zup = not zup
 
-    if y_speed > 0:
+    if y_speed > 0 or reassembly:
         commands.append(Flip())
+
+    corner_voxel = reassembly and model_tgt[Pos(x,y,z)]
+    mind_the_corner = Diff(0,0,-1) if corner_voxel else Diff(0,0,0)
+
+    if corner_voxel:
+        commands.append(SMove(mind_the_corner))
+        z -= 1
+        commands.append(Fill(-mind_the_corner))
 
     x,y,z,return_commands = go_to_point(x,y,z,Pos(0,0,0),False)
 
@@ -190,7 +212,8 @@ class DefaultSolver(Solver):
         return 'Default 1.4'
 
     def supports(self, problem_type: ProblemType) -> bool:
-        result = problem_type == ProblemType.Assemble\
+        result = \
+                 problem_type == ProblemType.Assemble\
               or problem_type == ProblemType.Disassemble\
               or problem_type == ProblemType.Reassemble
         return result
@@ -222,7 +245,7 @@ class DefaultSolver(Solver):
 
 
 def write_solution(bytetrace, number): # -> IO ()
-    with open('FA{0:03d}.nbt'.format(number), 'wb') as f:
+    with open('FR{0:03d}.nbt'.format(number), 'wb') as f:
         f.write(bytetrace)
 
 def main():
@@ -230,14 +253,14 @@ def main():
 
     task_number = int(sys.argv[1]) if len(sys.argv) > 1 else 1
 
-    name = 'FA{0:03d}'.format(task_number)
+    name = 'FR{0:03d}'.format(task_number)
     data_src,data_tgt = data_files.full_problem(name)
     if data_src is not None:
         m_src = Model.parse(data_src)
     if data_tgt is not None:
         m_tgt = Model.parse(data_tgt)
 
-    commands = default_assembly(None,m_tgt)
+    commands = default_reassembly(m_src,m_tgt)
     trace = compose_commands(commands)
     write_solution(trace, task_number)
 
