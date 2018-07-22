@@ -191,7 +191,7 @@ class DefaultSolver(Solver):
 
     def supports(self, problem_type: ProblemType) -> bool:
         result = problem_type == ProblemType.Assemble\
-              or problem_type == ProblemType.Deassemble\
+              or problem_type == ProblemType.Disassemble\
               or problem_type == ProblemType.Reassemble
 
     def solve(
