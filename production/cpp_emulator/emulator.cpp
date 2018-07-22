@@ -84,6 +84,7 @@ State::State(std::optional<Matrix> src, std::optional<Matrix> tgt)
 , high_harmonics(false)
 , halted(false)
 {
+	std::cout << "Short arg list, energy = " << energy << "\n";
 	if (!src && !tgt) {
 		// TODO : log
 		assert (false);
@@ -108,7 +109,8 @@ State::State(std::optional<Matrix> src,
 , energy(energy)
 , high_harmonics(high_harmonics)
 , halted(false)
-{ 
+{
+	std::cout << "Full arg list, energy = " << energy << "\n";
 	if (!src && !tgt) {
 		// TODO : log
 		assert (false);
@@ -125,10 +127,11 @@ State::State(std::optional<Matrix> src,
 State::State(const State& S)
 : matrix(0)
 , target(0)
-, energy(S.energy)
+, energy(0)
 , high_harmonics(S.high_harmonics)
 , halted(S.halted)
 {
+	std::cout << "Copy constructor, energy = " << energy << "\n";
 	matrix = S.matrix;
 	target = S.target;
 
@@ -164,15 +167,20 @@ int State::count_active() {
 
 
 bool State::validate_volatiles() {
-	for (Bot& b : bots) if (b.active) b.get_volatiles(this);
-	// TODO
+	volatiles = vector<Pos>();
+	for (Bot& b : bots) if (b.active) {
+		vector<Pos> v = b.get_volatiles(this);
+		for (Pos& p1 : v)
+			for (Pos& p2 : volatiles)
+				if (p1 == p2) return false;
+		volatiles.insert(volatiles.end(), v.begin(), v.end());
+	}
 	return true;
 }
 
 
 void State::validate_preconditions() {
-	for (Bot& b : bots) {
-		if (!b.active) continue;
+	for (Bot& b : bots) if (b.active) {
 		string s = b.check_preconditions(this);
 		if (!s.empty()) {
 			//logger->logerror(s);
@@ -180,7 +188,7 @@ void State::validate_preconditions() {
 			assert (false);
 		}
 	}
-	volatiles = vector<Pos>();
+
 	if (!validate_volatiles()) {
 		// TODO: log
 		assert (false);
