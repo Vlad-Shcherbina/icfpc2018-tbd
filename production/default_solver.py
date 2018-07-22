@@ -125,7 +125,7 @@ def apply_default_strategy(model_src, model_tgt, speeds : Tuple[int,int,int], st
 
         if y == offset+int(y_speed < 0):
             commands.append(Flip())
-        if y == y_finish+2*int(y_speed > 0):
+        if y == y_finish+int(y_speed > 0):
             break
 
 
@@ -222,7 +222,7 @@ class DefaultSolver(Solver):
 
 
 def write_solution(bytetrace, number): # -> IO ()
-    with open('FD{0:03d}.nbt'.format(number), 'wb') as f:
+    with open('FA{0:03d}.nbt'.format(number), 'wb') as f:
         f.write(bytetrace)
 
 def main():
@@ -230,14 +230,14 @@ def main():
 
     task_number = int(sys.argv[1]) if len(sys.argv) > 1 else 1
 
-    name = 'FD{0:03d}'.format(task_number)
+    name = 'FA{0:03d}'.format(task_number)
     data_src,data_tgt = data_files.full_problem(name)
     if data_src is not None:
         m_src = Model.parse(data_src)
     if data_tgt is not None:
         m_tgt = Model.parse(data_tgt)
 
-    commands = default_deassembly(m_src)
+    commands = default_assembly(None,m_tgt)
     trace = compose_commands(commands)
     write_solution(trace, task_number)
 
