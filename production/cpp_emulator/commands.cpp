@@ -16,22 +16,14 @@ int min(int x, int y) { return x < y ? x : y; }
 int max(int x, int y) { return x > y ? x : y; }
 
 
-void set_volatile_voxel(State* S, const Pos& p) {
-	if (S->volatiles.get(p)) {
-		// TODO : log
-		assert (false);
-		throw emulation_error("Volatile interference");
-	}
-	else S->volatiles.set(p, true);
-}
-
-
-void set_volatile_region(State* S, const Pos& a, const Pos& b) {
+vector<Pos> get_region(const Pos& a, const Pos& b) {
 	Pos p (0, 0, 0);
+	vector<Pos> result;
 	for (p.x = min(a.x, b.x); p.x <= max(a.x, b.x); p.x++)
 		for (p.y = min(a.y, b.y); p.y <= max(a.y, b.y); p.y++)
 			for (p.z = min(a.z, b.z); p.z <= max(a.z, b.z); p.z++)
-				set_volatile_voxel(S, p);
+				result.push_back(p);
+	return result;
 }
 
 
@@ -132,8 +124,8 @@ string Halt::check_preconditions(Bot* b, State* S) {
 }
 
 
-void Halt::set_volatiles(Bot* b, State* S) {
-	set_volatile_voxel(S, b->position);
+vector<Pos> Halt::get_volatiles(Bot* b, State* S) {
+	return { b->position };
 }
 
 
@@ -150,8 +142,8 @@ string Halt::__repr__() { return "halt"; }
 string Wait::check_preconditions(Bot* b, State* S) { return ""; }
 
 
-void Wait::set_volatiles(Bot* b, State* S) {
-	set_volatile_voxel(S, b->position);
+vector<Pos> Wait::get_volatiles(Bot* b, State* S) {
+	return { b->position };
 }
 
 
@@ -166,8 +158,8 @@ string Wait::__repr__() { return "wait"; }
 string Flip::check_preconditions(Bot* b, State* S) { return ""; }
 
 
-void Flip::set_volatiles(Bot* b, State* S) {
-	set_volatile_voxel(S, b->position);
+vector<Pos> Flip::get_volatiles(Bot* b, State* S) {
+	return { b->position };
 }
 
 
@@ -200,8 +192,8 @@ string SMove::check_preconditions(Bot* b, State* S) {
 }
 
 
-void SMove::set_volatiles(Bot* b, State* S) {
-	set_volatile_region(S, b->position, b->position + lld);
+vector<Pos> SMove::get_volatiles(Bot* b, State* S) {
+	return get_region(b->position, b->position + lld);
 }
 
 
@@ -239,11 +231,13 @@ string LMove::check_preconditions(Bot* b, State* S) {
 }
 
 
-void LMove::set_volatiles(Bot* b, State* S) {
+vector<Pos> LMove::get_volatiles(Bot* b, State* S) {
 	Pos step1 = b->position + sld1;
 	Pos step2 = step1 + sld2;
-	set_volatile_region(S, b->position, step1);
-	set_volatile_region(S, step1, step2);
+	vector<Pos> v1 = get_region(b->position, step1);
+	vector<Pos> v2 = get_region(step1, step2);
+	v1.insert(v1.end(), v2.begin(), v2.end());
+	return v1;
 }
 
 
@@ -280,8 +274,8 @@ string FusionP::check_preconditions(Bot* b, State* S) {
 }
 
 
-void FusionP::set_volatiles(Bot* b, State* S) {
-	set_volatile_voxel(S, b->position);
+vector<Pos> FusionP::get_volatiles(Bot* b, State* S) {
+	return { b->position };
 }
 
 
@@ -330,13 +324,13 @@ string FusionS::check_preconditions(Bot* b, State* S) {
 }
 
 
-void FusionS::execute(Bot* b, State* S) {
-	// do nothing: all work done by FusionP
+vector<Pos> FusionS::get_volatiles(Bot* b, State* S) {
+	return { b->position };
 }
 
 
-void FusionS::set_volatiles(Bot* b, State* S) {
-	set_volatile_voxel(S, b->position);
+void FusionS::execute(Bot* b, State* S) {
+	// do nothing: all work done by FusionP
 }
 
 
@@ -369,9 +363,8 @@ string Fission::check_preconditions(Bot* b, State* S) {
 }
 
 
-void Fission::set_volatiles(Bot* b, State* S) {
-	set_volatile_voxel(S, b->position);
-	set_volatile_voxel(S, b->position + nd);
+vector<Pos> Fission::get_volatiles(Bot* b, State* S) {
+	return { b->position, b->position + nd };
 }
 
 
@@ -412,9 +405,8 @@ string Fill::check_preconditions(Bot* b, State* S) {
 }
 
 
-void Fill::set_volatiles(Bot* b, State* S) {
-	set_volatile_voxel(S, b->position);
-	set_volatile_voxel(S, b->position + nd);
+vector<Pos> Fill::get_volatiles(Bot* b, State* S) {
+	return { b->position, b->position + nd };
 }
 
 
@@ -451,9 +443,8 @@ string Void::check_preconditions(Bot* b, State* S) {
 }
 
 
-void Void::set_volatiles(Bot* b, State* S) {
-	set_volatile_voxel(S, b->position);
-	set_volatile_voxel(S, b->position + nd);
+vector<Pos> Void::get_volatiles(Bot* b, State* S) {
+	return { b->position, b->position + nd };
 }
 
 
@@ -494,9 +485,10 @@ string GFill::check_preconditions(Bot* b, State* S) {
 }
 
 
-void GFill::set_volatiles(Bot* b, State* S) {
-	// TODO
-	assert (false);
+vector<Pos> GFill::get_volatiles(Bot* b, State* S) {
+	vector<Pos> result = get_region(b->position + nd, b->position + nd + fd);
+	result.push_back(b->position);
+	return result;
 }
 
 
@@ -532,9 +524,10 @@ string GVoid::check_preconditions(Bot* b, State* S) {
 }
 
 
-void GVoid::set_volatiles(Bot* b, State* S) {
-	// TODO
-	assert (false);
+vector<Pos> GVoid::get_volatiles(Bot* b, State* S) {
+	vector<Pos> result = get_region(b->position + nd, b->position + nd + fd);
+	result.push_back(b->position);
+	return result;
 }
 
 

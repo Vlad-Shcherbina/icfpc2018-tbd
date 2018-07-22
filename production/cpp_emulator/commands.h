@@ -5,6 +5,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 #include <assert.h>
 
 class Bot;
@@ -14,7 +15,7 @@ class Emulator;
 struct Command {
 	virtual ~Command() = default;
 	virtual std::string check_preconditions(Bot* b, State* S) = 0;
-	virtual void set_volatiles(Bot* b, State* S) = 0;
+	virtual std::vector<Pos> get_volatiles(Bot* b, State* S) = 0;
 	virtual void execute(Bot* b, State* S) = 0;
 	virtual std::string __repr__() = 0;
 	virtual Diff move_offset() const {
@@ -33,21 +34,21 @@ struct Command {
 struct Halt : Command {
 	void execute(Bot* b, State* S) override;
 	std::string check_preconditions(Bot* b, State* S) override;
-	void set_volatiles(Bot* b, State* S) override;
+	std::vector<Pos> get_volatiles(Bot* b, State* S) override;
 	std::string __repr__() override;
 };
 
 struct Wait : Command {
 	void execute(Bot* b, State* S) override;
 	std::string check_preconditions(Bot* b, State* S) override;
-	void set_volatiles(Bot* b, State* S) override;
+	std::vector<Pos> get_volatiles(Bot* b, State* S) override;
 	std::string __repr__() override;
 };
 
 struct Flip : Command {
 	void execute(Bot* b, State* S) override;
 	std::string check_preconditions(Bot* b, State* S) override;
-	void set_volatiles(Bot* b, State* S) override;
+	std::vector<Pos> get_volatiles(Bot* b, State* S) override;
 	std::string __repr__() override;
 };
 
@@ -56,7 +57,7 @@ struct SMove : Command {
 	SMove(Diff d);
 	void execute(Bot* b, State* S) override;
 	std::string check_preconditions(Bot* b, State* S) override;
-	void set_volatiles(Bot* b, State* S) override;
+	std::vector<Pos> get_volatiles(Bot* b, State* S) override;
 	std::string __repr__() override;
 	virtual Diff move_offset() const {
 		return lld;
@@ -68,7 +69,7 @@ struct LMove : Command {
 	LMove(Diff d1, Diff d2);
 	void execute(Bot* b, State* S) override;
 	std::string check_preconditions(Bot* b, State* S) override;
-	void set_volatiles(Bot* b, State* S) override;
+	std::vector<Pos> get_volatiles(Bot* b, State* S) override;
 
 	std::string __repr__() override;
 
@@ -83,7 +84,7 @@ struct FusionP : Command {
 	FusionP(Diff nd);
 	void execute(Bot* b, State* S) override;
 	std::string check_preconditions(Bot* b, State* S) override;
-	void set_volatiles(Bot* b, State* S) override;
+	std::vector<Pos> get_volatiles(Bot* b, State* S) override;
 	std::string __repr__() override;
 };
 
@@ -93,7 +94,7 @@ struct FusionS : Command
 	FusionS(Diff nd);
 	void execute(Bot* b, State* S) override;
 	std::string check_preconditions(Bot* b, State* S) override;
-	void set_volatiles(Bot* b, State* S) override;
+	std::vector<Pos> get_volatiles(Bot* b, State* S) override;
 	std::string __repr__() override;
 };
 
@@ -104,7 +105,7 @@ struct Fission : Command
 	Fission(Diff nd, unsigned m);
 	void execute(Bot* b, State* S) override;
 	std::string check_preconditions(Bot* b, State* S) override;
-	void set_volatiles(Bot* b, State* S) override;
+	std::vector<Pos> get_volatiles(Bot* b, State* S) override;
 	std::string __repr__() override;
 };
 
@@ -114,7 +115,7 @@ struct Fill : Command
 	Fill(Diff nd);
 	void execute(Bot* b, State* S) override;
 	std::string check_preconditions(Bot* b, State* S) override;
-	void set_volatiles(Bot* b, State* S) override;
+	std::vector<Pos> get_volatiles(Bot* b, State* S) override;
 	std::string __repr__() override;
 };
 
@@ -124,7 +125,7 @@ struct Void : Command
 	Void(Diff nd);
 	void execute(Bot* b, State* S) override;
 	std::string check_preconditions(Bot* b, State* S) override;
-	void set_volatiles(Bot* b, State* S) override;
+	std::vector<Pos> get_volatiles(Bot* b, State* S) override;
 	std::string __repr__() override;
 };
 
@@ -136,7 +137,7 @@ struct GFill : Command
 	GFill(Diff nd, Diff fd);
 	void execute(Bot* b, State* S) override;
 	std::string check_preconditions(Bot* b, State* S) override;
-	void set_volatiles(Bot* b, State* S) override;
+	std::vector<Pos> get_volatiles(Bot* b, State* S) override;
 	std::string __repr__() override;
 };
 
@@ -148,7 +149,7 @@ struct GVoid : Command
 	GVoid(Diff nd, Diff fd);
 	void execute(Bot* b, State* S) override;
 	std::string check_preconditions(Bot* b, State* S) override;
-	void set_volatiles(Bot* b, State* S) override;
+	std::vector<Pos> get_volatiles(Bot* b, State* S) override;
 	std::string __repr__() override;
 };
 

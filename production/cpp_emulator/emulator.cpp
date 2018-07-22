@@ -55,13 +55,13 @@ string Bot::check_preconditions(State* S) {
 }
 
 
-void Bot::set_volatiles(State* S) {
+std::vector<Pos> Bot::get_volatiles(State* S) {
 	if (!command) {
 		// TODO : log
 		assert (false);
 		throw malfunc_error("Active bot without command");
 	}
-	(*command).set_volatiles(this, S);
+	return (*command).get_volatiles(this, S);
 }
 
 
@@ -80,7 +80,6 @@ void Bot::execute(State* S) {
 State::State(std::optional<Matrix> src, std::optional<Matrix> tgt)
 : matrix(0)
 , target(0)
-, volatiles(0)
 , energy(0)
 , high_harmonics(false)
 , halted(false)
@@ -93,8 +92,8 @@ State::State(std::optional<Matrix> src, std::optional<Matrix> tgt)
 	R = src ? src.value().R : tgt.value().R;
 	matrix = src ? src.value() : Matrix(R);
 	target = tgt ? tgt.value() : Matrix(R);
-	volatiles = Matrix(R);
 
+	volatiles = vector<Pos>();
 	set_default_bots();
 }
 
@@ -106,7 +105,6 @@ State::State(std::optional<Matrix> src,
 			 vector<Bot> bots)
 : matrix(0)
 , target(0)
-, volatiles(0)
 , energy(energy)
 , high_harmonics(high_harmonics)
 , halted(false)
@@ -119,22 +117,22 @@ State::State(std::optional<Matrix> src,
 	R = src ? src.value().R : tgt.value().R;
 	matrix = src ? src.value() : Matrix(R);
 	target = tgt ? tgt.value() : Matrix(R);
-	volatiles = Matrix(R);
-	
+
+	volatiles = vector<Pos>();
 	this->bots = bots;
 }
 
 State::State(const State& S)
 : matrix(0)
 , target(0)
-, volatiles(0)
 , energy(S.energy)
 , high_harmonics(S.high_harmonics)
 , halted(S.halted)
 {
 	matrix = S.matrix;
 	target = S.target;
-	volatiles = S.volatiles;
+
+	volatiles = vector<Pos>();
 	bots = S.bots;
 }
 
@@ -165,9 +163,14 @@ int State::count_active() {
 }
 
 
+bool State::validate_volatiles() {
+	for (Bot& b : bots) if (b.active) b.get_volatiles(this);
+	// TODO
+	return true;
+}
+
+
 void State::validate_preconditions() {
-	// TODO: check floatings
-	volatiles = Matrix(R);
 	for (Bot& b : bots) {
 		if (!b.active) continue;
 		string s = b.check_preconditions(this);
@@ -177,11 +180,15 @@ void State::validate_preconditions() {
 			assert (false);
 		}
 	}
-	for (Bot& b : bots) if (b.active) b.set_volatiles(this);
+	volatiles = vector<Pos>();
+	if (!validate_volatiles()) {
+		// TODO: log
+		assert (false);
+	}
 }
 
 
-void State::run_commands() {
+void State::run() {
 	for (Bot& b : bots) if (b.active) b.execute(this);
 }
 
@@ -269,7 +276,7 @@ void Emulator::run_one_step() {
 
 		S.validate_preconditions();
 		S.add_passive_energy();
-		S.run_commands();
+		S.run();
 		// S.validate_state()
 	}
 	catch (base_error& e) {
@@ -282,7 +289,7 @@ void Emulator::run_one_step() {
 }
 
 
-void Emulator::run_all() {
+void Emulator::run_full() {
 	logger->mode = "auto";
 	logger->start();
 	while (!S.halted) run_one_step();
@@ -290,12 +297,12 @@ void Emulator::run_all() {
 }
 
 
-void Emulator::run_given(vector<unsigned char> newtrace) {
+void Emulator::run_commands(vector<unsigned char> newtrace) {
 	logger->mode = "interactive";
 	logger->start();
 	trace = newtrace;
 	tracepointer = 0;
-	while (tracepointer < trace.size() && !S.halted) run_one_step();
+	while ((tracepointer < trace.size()) && !S.halted) run_one_step();
 	logger->logsuccess(S.energy);
 }
 

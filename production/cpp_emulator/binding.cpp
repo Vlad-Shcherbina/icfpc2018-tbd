@@ -180,8 +180,8 @@ PYBIND11_MODULE(emulator, m) {
 		.def("get_state", &Emulator::get_state)
 
 		.def("run_step", &Emulator::run_one_step)
-		.def("run", &Emulator::run_all)
-		.def("run_commands", &Emulator::run_given)
+		.def("run", &Emulator::run_full)
+		.def("run_commands", &Emulator::run_commands)
 
 		.def("energy", &Emulator::energy)
 		.def_readonly("aborted", &Emulator::aborted)

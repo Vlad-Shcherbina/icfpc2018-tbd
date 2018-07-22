@@ -25,7 +25,7 @@ public:
 	Bot& operator=(const Bot&);
 	Bot(uint8_t bid, Pos position, std::vector<uint8_t> seeds, bool active);
 	std::string check_preconditions(State* field);
-	void set_volatiles(State* field);
+	std::vector<Pos> get_volatiles(State* field);
 	void execute(State* field);
 };
 
@@ -35,7 +35,6 @@ public:
 	int R;
 	Matrix matrix;
 	Matrix target;
-	Matrix volatiles;
 
 	int64_t energy;
 	bool high_harmonics;
@@ -58,17 +57,18 @@ public:
 
 	int count_active();
 	void validate_preconditions();
-	void run_commands();
-	void add_passive_energy();
+	bool validate_volatiles();
 	// void validate_state();
 	// void validate_floating();
+	void run();
+	void add_passive_energy();
 
 	bool __getitem__(const Pos& p) const;
 	void __setitem__(const Pos& p, bool value);
 
 	// auxiliaries for move validations
+	std::vector<Pos> volatiles;
 	std::vector<Pos> filled;
-
 
 };
 
@@ -91,8 +91,8 @@ public:
 
 	uint8_t getcommand();
 	void run_one_step();
-	void run_all();
-	void run_given(std::vector<uint8_t> newtrace);
+	void run_full();
+	void run_commands(std::vector<uint8_t> newtrace);
 
 	int64_t energy();
 
