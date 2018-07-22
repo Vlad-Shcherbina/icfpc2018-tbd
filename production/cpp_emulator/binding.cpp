@@ -105,4 +105,12 @@ PYBIND11_MODULE(emulator, m) {
 
 	m.def("region_dimension", (int (*)(const Pos&, const Pos&)) &region_dimension);
 
+	static py::exception<base_error> base_exc(m, "SimulatorException");
+	py::register_exception_translator([](std::exception_ptr p) {
+	    try {
+	        if (p) std::rethrow_exception(p);
+	    } catch (const base_error &e) {
+	        base_exc(e.what());
+	    }
+	});
 }

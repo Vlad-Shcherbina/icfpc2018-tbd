@@ -84,7 +84,7 @@ def main_run_interactive():
     s.energy = 30
     s.bots = [Bot(bid = 2, pos = Pos(0, 0, 1), seeds = [3, 4, 5])]
 
-    cmds = [commands.Fill(Diff(1, 1, 0)), commands.SMove(Diff(0, 0, -1))]
+    cmds = [commands.Fill(Diff(-1, 1, 0)), commands.SMove(Diff(0, 0, -1))]
 
 
     # we can run steps in cpp emulator and get new state
@@ -108,7 +108,11 @@ def main_run_interactive():
     # emulator runs bunch of commands and throws exceptions
     # if some are invalid or illegal
 
-    em.run_commands(cmdlist)
+    try:
+        em.run_commands(cmdlist)
+    except Cpp.SimulatorException as e:
+        print(e)
+
 
     # current state;
     # previous state if exception was raised
