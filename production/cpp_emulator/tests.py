@@ -20,13 +20,13 @@ def test_matrix():
     print('and a hole in the middle')
     x = m.R // 2
 
-    m.set(Pos(m.R // 2, 1, 1), True)
-    m.set(Pos(m.R // 2, 4, 8), False)
+    m[Pos(m.R // 2, 1, 1)] = True
+    m[Pos(m.R // 2, 4, 8)] = False
 
     for y in reversed(range(m.R)):
         s = []
         for z in range(m.R):
-            if m.get(Pos(x, y, z)):
+            if m[Pos(x, y, z)]:
                 s.append('*')
             else:
                 s.append('.')
@@ -60,7 +60,7 @@ def test_pathfinding():
     for x, slice in enumerate(matrix):
         for y, row in enumerate(slice):
             for z, cell in enumerate(row):
-                m.set(Pos(x, y, z), bool(cell))
+                m[Pos(x, y, z)] = bool(cell)
 
     dst, path = cpp.path_to_nearest_of(m, Pos(0, 0, 1), [Pos(0, 0, 1)])
     assert dst == Pos(0, 0, 1)

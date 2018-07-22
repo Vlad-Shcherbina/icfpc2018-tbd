@@ -70,8 +70,8 @@ PYBIND11_MODULE(emulator, m) {
 		.def(py::init<int>())
 		.def("parse", &Matrix::parse)
 		.def_readonly("R", &Matrix::R)
-		.def("get", &Matrix::get)
-		.def("set", &Matrix::set)
+		.def("__getitem__", &Matrix::get)
+		.def("__setitem__", &Matrix::set)
 		.def("grounded_voxels", &Matrix::grounded_voxels)
 		.def("count_inside_region", &Matrix::count_inside_region)
 	;

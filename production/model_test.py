@@ -30,7 +30,7 @@ class CommonTests():
         for x, slice in enumerate(matrix):
             for y, row in enumerate(slice):
                 for z, cell in enumerate(row):
-                    self.set(m, self.Pos(x, y, z), bool(cell))
+                    m[self.Pos(x, y, z)] = bool(cell)
 
         assert sorted(m.grounded_voxels()) == sorted([
             self.Pos(0, 0, 0),
@@ -42,15 +42,9 @@ class PyModelTests(unittest.TestCase, CommonTests):
     def setUp(self):
         self.Pos = Pos
         self.Model = Model
-        def set(m, p, value):
-            m[p] = value
-        self.set = set
 
 
 class CppMatrixTests(unittest.TestCase, CommonTests):
     def setUp(self):
         self.Pos = cppe.Pos
         self.Model = cppe.Matrix
-        def set(m, p, value):
-            m.set(p, value)
-        self.set = set
