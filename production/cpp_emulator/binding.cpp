@@ -39,8 +39,11 @@ PYBIND11_MODULE(emulator, m) {
 		.def(py::self == py::self)
 		.def(py::self != py::self)
 		.def(py::self < py::self)
-		.def("__str__", &Diff::__str__)
+		.def("__repr__", &Diff::__repr__)
 		.def("__add__", &Diff::operator+, py::is_operator())
+		.def_readonly("dx", &Diff::dx)
+		.def_readonly("dy", &Diff::dy)
+		.def_readonly("dz", &Diff::dz)
 	;
 
 	py::class_<Pos> PosClass(m, "Pos");
@@ -53,7 +56,7 @@ PYBIND11_MODULE(emulator, m) {
 		.def(py::self == py::self)
 		.def(py::self != py::self)
 		.def(py::self < py::self)
-		.def("__str__", &Pos::__str__)
+		.def("__repr__", &Pos::__repr__)
 		.def_readonly("x", &Pos::x)
 		.def_readonly("y", &Pos::y)
 		.def_readonly("z", &Pos::z)
@@ -71,14 +74,68 @@ PYBIND11_MODULE(emulator, m) {
 	// TODO
 	py::class_<Command>(m, "Command")
 	;
+	py::class_<Halt>(m, "Halt")
+		.def(py::init<>())
+		.def("__repr__", &Halt::__repr__)
+	;
+	py::class_<Wait>(m, "Wait")
+		.def(py::init<>())
+		.def("__repr__", &Wait::__repr__)
+	;
+	py::class_<Flip>(m, "Flip")
+		.def(py::init<>())
+		.def("__repr__", &Flip::__repr__)
+	;
 	py::class_<SMove>(m, "SMove")
 		.def(py::init<Diff>())
-		.def("__repr__", &SMove::__str__)
+		.def("__repr__", &SMove::__repr__)
+		.def_readonly("lld", &SMove::lld)
 	;
 	py::class_<LMove>(m, "LMove")
 		.def(py::init<Diff, Diff>())
-		.def("__repr__", &LMove::__str__)
+		.def("__repr__", &LMove::__repr__)
+		.def_readonly("sld1", &LMove::sld1)
+		.def_readonly("sld2", &LMove::sld2)
 	;
+	py::class_<FusionP>(m, "FusionP")
+		.def(py::init<Diff>())
+		.def("__repr__", &FusionP::__repr__)
+		.def_readonly("nd", &FusionP::nd)
+	;
+	py::class_<FusionS>(m, "FusionS")
+		.def(py::init<Diff>())
+		.def("__repr__", &FusionS::__repr__)
+		.def_readonly("nd", &FusionS::nd)
+	;
+	py::class_<Fission>(m, "Fission")
+		.def(py::init<Diff, unsigned>())
+		.def("__repr__", &Fission::__repr__)
+		.def_readonly("nd", &Fission::nd)
+		.def_readonly("m", &Fission::m)
+	;
+	py::class_<Fill>(m, "Fill")
+		.def(py::init<Diff>())
+		.def("__repr__", &Fill::__repr__)
+		.def_readonly("nd", &Fill::nd)
+	;
+	py::class_<Void>(m, "Void")
+		.def(py::init<Diff>())
+		.def("__repr__", &Void::__repr__)
+		.def_readonly("nd", &Void::nd)
+	;
+	py::class_<GFill>(m, "GFill")
+		.def(py::init<Diff, Diff>())
+		.def("__repr__", &GFill::__repr__)
+		.def_readonly("nd", &GFill::nd)
+		.def_readonly("fd", &GFill::fd)
+	;
+	py::class_<GVoid>(m, "GVoid")
+		.def(py::init<Diff, Diff>())
+		.def("__repr__", &GVoid::__repr__)
+		.def_readonly("nd", &GVoid::nd)
+		.def_readonly("fd", &GVoid::fd)
+	;
+	
 
 	py::class_<Bot> BotClass(m, "Bot");
 	BotClass

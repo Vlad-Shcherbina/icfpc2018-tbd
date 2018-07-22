@@ -134,7 +134,7 @@ void Halt::execute(Bot* b, State* S) {
 }
 
 
-string Halt::__str__() { return "halt"; }
+string Halt::__repr__() { return "halt"; }
 
 /*-------------------------------------------------------*/
 
@@ -149,7 +149,7 @@ void Wait::set_volatiles(Bot* b, State* S) {
 void Wait::execute(Bot* b, State* S) {}
 
 
-string Wait::__str__() { return "wait"; }
+string Wait::__repr__() { return "wait"; }
 
 
 /*-------------------------------------------------------*/
@@ -167,7 +167,7 @@ void Flip::execute(Bot* b, State* S) {
 }
 
 
-string Flip::__str__() { return "flip"; }
+string Flip::__repr__() { return "flip"; }
 
 /*-------------------------------------------------------*/
 
@@ -198,7 +198,7 @@ void SMove::execute(Bot* b, State* S) {
 }
 
 
-string SMove::__str__() { return "smove " + lld.__str__(); }
+string SMove::__repr__() { return "smove " + lld.__repr__(); }
 
 /*-------------------------------------------------------*/
 
@@ -237,8 +237,8 @@ void LMove::execute(Bot* b, State* S) {
 }
 
 
-string LMove::__str__() { 
-	return "lmove " + sld1.__str__() + " " + sld2.__str__(); 
+string LMove::__repr__() { 
+	return "lmove " + sld1.__repr__() + " " + sld2.__repr__(); 
 }
 
 
@@ -287,7 +287,7 @@ void FusionP::execute(Bot* b, State* S) {
 }
 
 
-string FusionP::__str__() { return "fusionP " + nd.__str__(); }
+string FusionP::__repr__() { return "fusionP " + nd.__repr__(); }
 
 /*-------------------------------------------------------*/
 
@@ -316,7 +316,7 @@ void FusionS::set_volatiles(Bot* b, State* S) {
 }
 
 
-string FusionS::__str__() { return "fusionS " + nd.__str__(); }
+string FusionS::__repr__() { return "fusionS " + nd.__repr__(); }
 
 /*-------------------------------------------------------*/
 
@@ -360,8 +360,8 @@ void Fission::execute(Bot* b, State* S) {
 }
 
 
-string Fission::__str__() {
-	return "fission " + nd.__str__() + " " + std::to_string(m);
+string Fission::__repr__() {
+	return "fission " + nd.__repr__() + " " + std::to_string(m);
 }
 
 /*-------------------------------------------------------*/
@@ -397,7 +397,7 @@ void Fill::set_volatiles(Bot* b, State* S) {
 }
 
 
-string Fill::__str__() { return "fill " + nd.__str__(); }
+string Fill::__repr__() { return "fill " + nd.__repr__(); }
 
 /*-------------------------------------------------------*/
 
@@ -432,7 +432,7 @@ void Void::execute(Bot* b, State* S) {
 }
 
 
-std::string Void::__str__() { return "void " + nd.__str__(); }
+std::string Void::__repr__() { return "void " + nd.__repr__(); }
 
 /*-------------------------------------------------------*/
 
@@ -464,7 +464,7 @@ void GFill::execute(Bot* b, State* S) {
 }
 
 
-std::string GFill::__str__() { return "gfill"; }
+std::string GFill::__repr__() { return "gfill"; }
 
 /*-------------------------------------------------------*/
 
@@ -496,4 +496,4 @@ void GVoid::execute(Bot* b, State* S) {
 }
 
 
-std::string GVoid::__str__() { return "gvoid"; }
+std::string GVoid::__repr__() { return "gvoid"; }

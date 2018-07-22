@@ -75,7 +75,6 @@ public:
 	unsigned tracepointer;
 	std::unique_ptr<Logger> logger;
 	bool aborted;
-
 	
 	Emulator(std::optional<Matrix> src, std::optional<Matrix> tgt);
 	Emulator(const State& S);

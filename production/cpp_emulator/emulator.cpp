@@ -228,7 +228,7 @@ void Emulator::run_one_step() {
 		for (Bot& b : S.bots) {
 			if (!b.active) continue;
 			b.command = Command::getnextcommand(this);
-			// std::cout << (*(b.command)).__str__() << "\n";
+			// std::cout << (*(b.command)).__repr__() << "\n";
 		}
 
 		S.validate_step();

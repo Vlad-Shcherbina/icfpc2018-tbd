@@ -18,6 +18,13 @@ def pos_to_cpp(pos):
     return Cpp.Pos(pos.x, pos.y, pos.z)
 
 
+def diff_from_cpp(cdiff):
+    return Diff(dx=cdiff.dx, dy=cdiff.dy, dz=cdiff.dz)
+
+def diff_to_cpp(diff):
+    return Cpp.Diff(diff.dx, diff.dy, diff.dz)
+
+
 def bot_from_cpp(cb):
     return Bot(bid=cb.bid, pos=pos_from_cpp(cb.pos), seeds=cb.seeds)
 
@@ -61,6 +68,61 @@ def to_cpp(item):
     if isinstance(item, State):
         return state_to_cpp(item)
 
+
+#----------- commands --------------#
+
+def cmd_from_cpp(ccmd):
+    if isinstance(ccmd, Cpp.Halt):
+        return commands.Halt()
+    if isinstance(ccmd, Cpp.Wait):
+        return commands.Wait()
+    if isinstance(ccmd, Cpp.Flip):
+        return commands.Flip()
+    if isinstance(ccmd, Cpp.SMove):
+        return commands.SMove(diff_from_cpp(ccmd.lld))
+    if isinstance(ccmd, Cpp.LMove):
+        return commands.LMove(diff_from_cpp(ccmd.sld1), 
+                              diff_from_cpp(ccmd.sld2))
+    if isinstance(ccmd, Cpp.Fission):
+        return commands.Fission(diff_from_cpp(ccmd.nd), ccmd.m)
+    if isinstance(ccmd, Cpp.Fill):
+        return commands.Fill(diff_from_cpp(ccmd.nd))
+    if isinstance(ccmd, Cpp.Void):
+        return commands.Void(diff_from_cpp(ccmd.nd))
+    if isinstance(ccmd, Cpp.GFill):
+        return commands.GFill(diff_from_cpp(ccmd.nd), 
+                              diff_from_cpp(ccmd.fd))
+    if isinstance(ccmd, Cpp.GVoid):
+        return commands.GVoid(diff_from_cpp(ccmd.nd), 
+                              diff_from_cpp(ccmd.fd))
+    assert False, ccmd
+
+
+def cmd_to_cpp(cmd):
+    if isinstance(cmd, commands.Halt):
+        return Cpp.Halt()
+    if isinstance(cmd, commands.Wait):
+        return Cpp.Wait()
+    if isinstance(cmd, commands.Flip):
+        return Cpp.Flip()
+    if isinstance(cmd, commands.SMove):
+        return Cpp.SMove(diff_to_cpp(cmd.lld))
+    if isinstance(cmd, commands.LMove):
+        return Cpp.LMove(diff_to_cpp(cmd.sld1),
+                         diff_to_cpp(cmd.sld2))
+    if isinstance(cmd, commands.Fission):
+        return Cpp.Fission(diff_to_cpp(cmd.nd), cmd.m)
+    if isinstance(cmd, commands.Fill):
+        return Cpp.Fill(diff_to_cpp(cmd.nd))
+    if isinstance(cmd, commands.Void):
+        return Cpp.Void(diff_to_cpp(cmd.nd))
+    if isinstance(cmd, commands.GFill):
+        return Cpp.GFill(diff_to_cpp(cmd.nd),
+                         diff_to_cpp(cmd.fd))
+    if isinstance(cmd, commands.GVoid):
+        return Cpp.GVoid(diff_to_cpp(cmd.nd),
+                         diff_to_cpp(cmd.fd))
+    assert False, cmd
 
 #----------- examples --------------#
 
@@ -148,5 +210,11 @@ def main_run_file():
 
 
 if __name__ == '__main__':
+    x = commands.Fill(Diff(-1, 1, 0))
+    y = cmd_to_cpp(x)
+    z = cmd_from_cpp(y)
+    print("PyCommand -> CppCommand -> PyCommand gives initial: ", x == z, "\n")
+
     main_run_file()
     main_run_interactive()
+

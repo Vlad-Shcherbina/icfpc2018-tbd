@@ -29,7 +29,7 @@ public:
 		return Diff(dx + other.dx, dy + other.dy, dz + other.dz);
 	}
 
-	std::string __str__() const;
+	std::string __repr__() const;
 };
 
 
@@ -48,7 +48,7 @@ public:
 	bool operator<(const Pos& other) const;
 	Pos& operator+= (const Diff& d);
 	Pos& operator-= (const Diff& d);
-	std::string __str__() const;
+	std::string __repr__() const;
 
 };
 

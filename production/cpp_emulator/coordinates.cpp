@@ -65,7 +65,7 @@ bool Diff::operator<(const Diff& other) const {
 	return make_tuple(dx, dy, dz) < make_tuple(other.dx, other.dy, other.dz);
 }
 
-string Diff::__str__() const {
+string Diff::__repr__() const {
 	return "[" + std::to_string(dx) + ", " + std::to_string(dy) + ", " + std::to_string(dz) + "]";
 }
 
@@ -128,7 +128,7 @@ Pos& Pos::operator-= (const Diff& d) {
 	return *this;
 }
 
-string Pos::__str__() const {
+string Pos::__repr__() const {
 	return "[" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + "]";
 }
 

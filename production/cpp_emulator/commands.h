@@ -16,7 +16,7 @@ struct Command {
 	virtual void check_preconditions(Bot* b, State* S) = 0;
 	virtual void set_volatiles(Bot* b, State* S) = 0;
 	virtual void execute(Bot* b, State* S) = 0;
-	virtual std::string __str__() = 0;
+	virtual std::string __repr__() = 0;
 	virtual Diff move_offset() const {
 		// should only be called for SMove and LMove
 		assert(false);
@@ -34,21 +34,21 @@ struct Halt : Command {
 	void execute(Bot* b, State* S) override;
 	void check_preconditions(Bot* b, State* S) override;
 	void set_volatiles(Bot* b, State* S) override;
-	std::string __str__() override;
+	std::string __repr__() override;
 };
 
 struct Wait : Command {
 	void execute(Bot* b, State* S) override;
 	void check_preconditions(Bot* b, State* S) override;
 	void set_volatiles(Bot* b, State* S) override;
-	std::string __str__() override;
+	std::string __repr__() override;
 };
 
 struct Flip : Command {
 	void execute(Bot* b, State* S) override;
 	void check_preconditions(Bot* b, State* S) override;
 	void set_volatiles(Bot* b, State* S) override;
-	std::string __str__() override;
+	std::string __repr__() override;
 };
 
 struct SMove : Command {
@@ -57,7 +57,7 @@ struct SMove : Command {
 	void execute(Bot* b, State* S) override;
 	void check_preconditions(Bot* b, State* S) override;
 	void set_volatiles(Bot* b, State* S) override;
-	std::string __str__() override;
+	std::string __repr__() override;
 	virtual Diff move_offset() const {
 		return lld;
 	}
@@ -70,7 +70,7 @@ struct LMove : Command {
 	void check_preconditions(Bot* b, State* S) override;
 	void set_volatiles(Bot* b, State* S) override;
 
-	std::string __str__() override;
+	std::string __repr__() override;
 
 	virtual Diff move_offset() const {
 		return sld1 + sld2;
@@ -84,7 +84,7 @@ struct FusionP : Command {
 	void execute(Bot* b, State* S) override;
 	void check_preconditions(Bot* b, State* S) override;
 	void set_volatiles(Bot* b, State* S) override;
-	std::string __str__() override;
+	std::string __repr__() override;
 };
 
 struct FusionS : Command
@@ -94,7 +94,7 @@ struct FusionS : Command
 	void execute(Bot* b, State* S) override;
 	void check_preconditions(Bot* b, State* S) override;
 	void set_volatiles(Bot* b, State* S) override;
-	std::string __str__() override;
+	std::string __repr__() override;
 };
 
 struct Fission : Command
@@ -105,7 +105,7 @@ struct Fission : Command
 	void execute(Bot* b, State* S) override;
 	void check_preconditions(Bot* b, State* S) override;
 	void set_volatiles(Bot* b, State* S) override;
-	std::string __str__() override;
+	std::string __repr__() override;
 };
 
 struct Fill : Command
@@ -115,7 +115,7 @@ struct Fill : Command
 	void execute(Bot* b, State* S) override;
 	void check_preconditions(Bot* b, State* S) override;
 	void set_volatiles(Bot* b, State* S) override;
-	std::string __str__() override;
+	std::string __repr__() override;
 };
 
 struct Void : Command
@@ -125,7 +125,7 @@ struct Void : Command
 	void execute(Bot* b, State* S) override;
 	void check_preconditions(Bot* b, State* S) override;
 	void set_volatiles(Bot* b, State* S) override;
-	std::string __str__() override;
+	std::string __repr__() override;
 };
 
 
@@ -137,7 +137,7 @@ struct GFill : Command
 	void execute(Bot* b, State* S) override;
 	void check_preconditions(Bot* b, State* S) override;
 	void set_volatiles(Bot* b, State* S) override;
-	std::string __str__() override;
+	std::string __repr__() override;
 };
 
 
@@ -149,7 +149,7 @@ struct GVoid : Command
 	void execute(Bot* b, State* S) override;
 	void check_preconditions(Bot* b, State* S) override;
 	void set_volatiles(Bot* b, State* S) override;
-	std::string __str__() override;
+	std::string __repr__() override;
 };
 
 
