@@ -47,6 +47,9 @@ def build_extension(caller_file, name, sources, headers):
     try:
         os.chdir(os.path.dirname(caller_file))
 
+        for filename in sources + headers:
+            assert os.path.exists(filename), filename
+
         # Distutils looks at the timestamps to determine whether the extension
         # should be rebuilt. We want it rebuilt when compiler options change,
         # even if no source file is touched.
