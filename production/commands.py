@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from functools import update_wrapper
-from typing import Tuple, ClassVar, Dict, Union
+from typing import Tuple, ClassVar, Dict, Union, Set
 import itertools
 
-from production.basics import Diff
+from production.basics import Diff, Pos
 
 __all__ = ['parse_command', 'parse_1command', 'parse_commands', 'compose_commands',
         'Halt', 'Wait', 'Flip', 'SMove', 'LMove', 'FusionP', 'FusionS', 'Fission', 'Fill',
@@ -124,6 +124,9 @@ class Halt:
     def compose(self):
         return [self.bid]
 
+    def volatile(self, source: Pos) -> Set[Pos]:
+        return {source}
+
 
 @command
 class Wait:
@@ -137,6 +140,9 @@ class Wait:
     def compose(self):
         return [self.bid]
 
+    def volatile(self, source: Pos) -> Set[Pos]:
+        return {source}
+
 
 @command
 class Flip:
@@ -149,6 +155,9 @@ class Flip:
 
     def compose(self):
         return [self.bid]
+
+    def volatile(self, source: Pos) -> Set[Pos]:
+        return {source}
 
 
 @command
@@ -165,6 +174,9 @@ class SMove:
     def compose(self):
         lld = encode_lld(self.lld)
         return [self.bid | ((lld & 0b0110_0000) >> 1), lld & 0b11111]
+
+    def volatile(self, source: Pos) -> Set[Pos]:
+        return {pos for pos in Region(source, source + lld)}
 
 
 @command
@@ -187,6 +199,10 @@ class LMove:
         return [self.bid | (sld1 & 0b0011_0000) | ((sld2 & 0b0011_0000) << 2),
                 (sld1 & 0b1111) | ((sld2 & 0b1111) << 4)]
 
+    def volatile(self, source: Pos) -> Set[Pos]:
+        p0, p1, p2 = source, source + self.sld1, source + self.sld1 + self.sld2
+        return {pos for pos in Region(p0, p1)} | {pos for pos in Region(p1, p2)}
+
 
 @command
 class Fission:
@@ -204,6 +220,9 @@ class Fission:
         nd = encode_nd(self.nd)
         return [self.bid | nd << 3, self.m]
 
+    def volatile(self, source: Pos) -> Set[Pos]:
+        return {source, source + self.nd}
+
 
 @command
 class Fill:
@@ -219,6 +238,9 @@ class Fill:
     def compose(self):
         nd = encode_nd(self.nd)
         return [self.bid | nd << 3]
+
+    def volatile(self, source: Pos) -> Set[Pos]:
+        return {source, source + self.nd}
 
 
 @command
@@ -236,6 +258,9 @@ class Void:
         nd = encode_nd(self.nd)
         return [self.bid | nd << 3]
 
+    def volatile(self, source: Pos) -> Set[Pos]:
+        return {source, source + self.nd}
+
 
 @command
 class FusionP:
@@ -252,6 +277,9 @@ class FusionP:
         nd = encode_nd(self.nd)
         return [self.bid | nd << 3]
 
+    def volatile(self, source: Pos) -> Set[Pos]:
+        return {source, source + self.nd}
+
 
 @command
 class FusionS:
@@ -267,6 +295,9 @@ class FusionS:
     def compose(self):
         nd = encode_nd(self.nd)
         return [self.bid | nd << 3]
+
+    def volatile(self, source: Pos) -> Set[Pos]:
+        return {source, source + self.nd}
 
 
 @command
@@ -286,6 +317,9 @@ class GFill:
         fd = self.fd
         return [self.bid | nd << 3, fd.dx + 30, fd.dy + 30, fd.dz + 30]
 
+    def volatile(self, source: Pos) -> Set[Pos]:
+        return {source} | {pos for pos in Region(source + nd, source + nd + fd)}
+
 
 @command
 class GVoid:
@@ -303,6 +337,9 @@ class GVoid:
         nd = encode_nd(self.nd)
         fd = self.fd
         return [self.bid | nd << 3, fd.dx + 30, fd.dy + 30, fd.dz + 30]
+
+    def volatile(self, source: Pos) -> Set[Pos]:
+        return {source} | {pos for pos in Region(source + nd, source + nd + fd)}
 
 
 Command = Union[Halt, Wait, Flip, SMove, LMove, FusionP, FusionS, Fission, Fill,
