@@ -84,7 +84,6 @@ State::State(std::optional<Matrix> src, std::optional<Matrix> tgt)
 , high_harmonics(false)
 , halted(false)
 {
-	std::cout << "Short arg list, energy = " << energy << "\n";
 	if (!src && !tgt) {
 		// TODO : log
 		assert (false);
@@ -110,7 +109,6 @@ State::State(std::optional<Matrix> src,
 , high_harmonics(high_harmonics)
 , halted(false)
 {
-	std::cout << "Full arg list, energy = " << energy << "\n";
 	if (!src && !tgt) {
 		// TODO : log
 		assert (false);
@@ -124,20 +122,20 @@ State::State(std::optional<Matrix> src,
 	this->bots = bots;
 }
 
-State::State(const State& S)
-: matrix(0)
-, target(0)
-, energy(0)
-, high_harmonics(S.high_harmonics)
-, halted(S.halted)
-{
-	std::cout << "Copy constructor, energy = " << energy << "\n";
-	matrix = S.matrix;
-	target = S.target;
+// State::State(const State& S)
+// : matrix(0)
+// , target(0)
+// , energy(0)
+// , high_harmonics(S.high_harmonics)
+// , halted(S.halted)
+// {
+// 	std::cout << "Copy constructor, energy = " << energy << "\n";
+// 	matrix = S.matrix;
+// 	target = S.target;
 
-	volatiles = vector<Pos>();
-	bots = S.bots;
-}
+// 	volatiles = vector<Pos>();
+// 	bots = S.bots;
+// }
 
 
 void State::set_default_bots() {
@@ -237,7 +235,7 @@ Emulator::Emulator(std::optional<Matrix> src, std::optional<Matrix> tgt)
 
 
 Emulator::Emulator(const State& S)
-: S(S)
+: S(S.matrix, S.target, S.high_harmonics, S.energy, S.bots)
 , time_step(0)
 , aborted(false)
 {

@@ -47,7 +47,7 @@ public:
 		  bool high_harmonics,
 		  int64_t energy,
 		  std::vector<Bot> bots);
-	State(const State& S);
+//	State(const State& S);
 	void set_default_bots();
 
 	bool getbit(const Pos& p) const;
