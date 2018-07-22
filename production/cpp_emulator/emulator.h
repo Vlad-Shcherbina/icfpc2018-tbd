@@ -23,6 +23,7 @@ public:
 	Bot(const Bot&);
 	Bot& operator=(const Bot&);
 	Bot(unsigned char bid, Pos position, std::vector<unsigned char> seeds, bool active);
+	void check_preconditions(State* field);
 	void set_volatiles(State* field);
 	void execute(State* field);
 };

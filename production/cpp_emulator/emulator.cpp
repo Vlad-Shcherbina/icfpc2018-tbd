@@ -45,6 +45,12 @@ Bot& Bot::operator=(const Bot& other) {
 }
 
 
+void Bot::check_preconditions(State* S) {
+	if (!command) throw malfunc_error("Active bot without command");
+	(*command).check_preconditions(this, S);
+}
+
+
 void Bot::set_volatiles(State* S) {
 	if (!command) throw malfunc_error("Active bot without command");
 	(*command).set_volatiles(this, S);
@@ -153,6 +159,7 @@ int State::count_active() {
 void State::validate_step() {
 	// TODO: check floatings
 	for (auto& x : volatiles) x = 0;
+	for (Bot& b : bots) if (b.active) b.check_preconditions(this);
 	for (Bot& b : bots) if (b.active) b.set_volatiles(this);
 }
 

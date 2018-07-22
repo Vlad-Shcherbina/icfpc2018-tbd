@@ -15,6 +15,7 @@ using std::vector;
 int min(int x, int y) { return x < y ? x : y; }
 int max(int x, int y) { return x > y ? x : y; }
 
+
 void set_volatile_voxel(State* S, const Pos& p) {
 	if (S->getbit(p, S->volatiles)) {
 		throw emulation_error("Volatile interference");
@@ -22,12 +23,29 @@ void set_volatile_voxel(State* S, const Pos& p) {
 	else S->setbit(p, true, S->volatiles);
 }
 
+
 void set_volatile_region(State* S, const Pos& a, const Pos& b) {
 	Pos p (0, 0, 0);
-	for (p.x = min(a.x, b.x); p.x <= max(a.x, b.x); p.x++) 
-		for (p.y = min(a.y, b.y); p.y <= max(a.y, b.y); p.y++) 
-			for (p.z = min(a.z, b.z); p.z <= max(a.z, b.z); p.z++) 
+	for (p.x = min(a.x, b.x); p.x <= max(a.x, b.x); p.x++)
+		for (p.y = min(a.y, b.y); p.y <= max(a.y, b.y); p.y++)
+			for (p.z = min(a.z, b.z); p.z <= max(a.z, b.z); p.z++)
 				set_volatile_voxel(S, p);
+}
+
+
+bool is_void_voxel(State* S, const Pos& p) {
+	return !S->getbit(p, S->matrix);
+}
+
+
+bool is_void_region(State* S, const Pos& a, const Pos& b) {
+	Pos p (0, 0, 0);
+	for (p.x = min(a.x, b.x); p.x <= max(a.x, b.x); p.x++)
+		for (p.y = min(a.y, b.y); p.y <= max(a.y, b.y); p.y++)
+			for (p.z = min(a.z, b.z); p.z <= max(a.z, b.z); p.z++){
+				if (S->getbit(p, S->matrix)) return false;
+			}
+	return true;
 }
 
 /*======================= COMMAND =======================*/
@@ -83,26 +101,30 @@ unique_ptr<Command> Command::getnextcommand(Emulator* em) {
 
 /*==================== COMMAND LIST =====================*/
 
+
+void Halt::check_preconditions(Bot* b, State* S) {
+	if (b->position != Pos(0, 0, 0) || S->high_harmonics || S->count_active() != 1) {
+		throw emulation_error("Halt pre-conditions not satisfied");
+	}
+}
+
+
+void Halt::set_volatiles(Bot* b, State* S) {
+	set_volatile_voxel(S, b->position);
+}
+
+
 void Halt::execute(Bot* b, State* S) {
 	b->active = false;
 	S->halted = true;
 }
 
 
-void Halt::set_volatiles(Bot* b, State* S) {
-	if (b->position != Pos(0, 0, 0) || S->high_harmonics || S->count_active() != 1) {
-		throw emulation_error("Halt pre-conditions not satisfied");
-	}
-	set_volatile_voxel(S, b->position);
-}
-
-
 string Halt::__str__() { return "halt"; }
-
 
 /*-------------------------------------------------------*/
 
-void Wait::execute(Bot* b, State* S) {}
+void Wait::check_preconditions(Bot* b, State* S) {}
 
 
 void Wait::set_volatiles(Bot* b, State* S) {
@@ -110,14 +132,15 @@ void Wait::set_volatiles(Bot* b, State* S) {
 }
 
 
+void Wait::execute(Bot* b, State* S) {}
+
+
 string Wait::__str__() { return "wait"; }
 
 
 /*-------------------------------------------------------*/
 
-void Flip::execute(Bot* b, State* S) {
-	S->high_harmonics = !(S->high_harmonics);
-}
+void Flip::check_preconditions(Bot* b, State* S) {}
 
 
 void Flip::set_volatiles(Bot* b, State* S) {
@@ -125,8 +148,12 @@ void Flip::set_volatiles(Bot* b, State* S) {
 }
 
 
-string Flip::__str__() { return "flip"; }
+void Flip::execute(Bot* b, State* S) {
+	S->high_harmonics = !(S->high_harmonics);
+}
 
+
+string Flip::__str__() { return "flip"; }
 
 /*-------------------------------------------------------*/
 
@@ -138,22 +165,26 @@ SMove::SMove(Diff d)
 }
 
 
+void SMove::check_preconditions(Bot* b, State* S) {
+	if (!(b->position + lld).is_inside(S->R))
+		throw emulation_error("SMove is out of bounds");
+	if (!is_void_region(S, b->position, b->position + lld))
+		throw emulation_error("SMove region has full voxels");
+}
+
+
+void SMove::set_volatiles(Bot* b, State* S) {
+	set_volatile_region(S, b->position, b->position + lld);
+}
+
+
 void SMove::execute(Bot* b, State* S) {
 	b->position += lld;
 	S->energy += 2 * lld.mlen();
 }
 
 
-void SMove::set_volatiles(Bot* b, State* S) {
-	if (!(b->position + lld).is_inside(S->R)) {
-		throw emulation_error("SMove is out of bounds");
-	}
-	set_volatile_region(S, b->position, b->position + lld);
-}
-
-
 string SMove::__str__() { return "smove " + lld.__str__(); }
-
 
 /*-------------------------------------------------------*/
 
@@ -167,20 +198,28 @@ LMove::LMove(Diff d1, Diff d2)
 }
 
 
-void LMove::execute(Bot* b, State* S) {
-	b->position = (b->position + sld1) + sld2;
-	S->energy += 2 * (sld1.mlen() + 2 + sld2.mlen());
+void LMove::check_preconditions(Bot* b, State* S) {
+	Pos step1 = b->position + sld1;
+	Pos step2 = step1 + sld2;
+	if (!step1.is_inside(S->R) || !step2.is_inside(S->R))
+		throw emulation_error("LMove is out of bounds");
+	if (!is_void_region(S, b->position, step1) || 
+		!is_void_region(S, step1, step2))
+		throw emulation_error("LMove region has full voxels");
 }
 
 
 void LMove::set_volatiles(Bot* b, State* S) {
 	Pos step1 = b->position + sld1;
 	Pos step2 = step1 + sld2;
-	if (!step1.is_inside(S->R) || !step2.is_inside(S->R)) {
-		throw emulation_error("LMove is out of bounds");
-	}
-	set_volatile_region(S, b->position, b->position + sld1);
-	set_volatile_region(S, b->position + sld1, (b->position + sld1) + sld2);
+	set_volatile_region(S, b->position, step1);
+	set_volatile_region(S, step1, step2);
+}
+
+
+void LMove::execute(Bot* b, State* S) {
+	b->position = (b->position + sld1) + sld2;
+	S->energy += 2 * (sld1.mlen() + 2 + sld2.mlen());
 }
 
 
@@ -199,6 +238,20 @@ FusionP::FusionP(Diff nd)
 }
 
 
+void FusionP::check_preconditions(Bot* b, State* S) {
+	if (!(b->position + nd).is_inside(S->R)) {
+		throw emulation_error("FusionP is out of bounds");
+	}
+	// TODO: move pair search
+	// assert b2 has corresponding FusionP command
+}
+
+
+void FusionP::set_volatiles(Bot* b, State* S) {
+	set_volatile_voxel(S, b->position);
+}
+
+
 void FusionP::execute(Bot* b, State* S) {
 	Pos p = b->position + nd;
 	unsigned index;
@@ -207,10 +260,10 @@ void FusionP::execute(Bot* b, State* S) {
 		if (!(S->bots[index].position == p)) continue;
 	}
 	if (index == S->bots.size()) 
+		// TODO: move to preconditions
 		throw emulation_error("FusionP without a pair");
 
 	Bot* b2 = &(S->bots[index]);
-	// assert b2 has corresponding FusionP command
 	b2->active = false;
 	b->seeds.push_back(b2->bid);
 	b->seeds.insert(b->seeds.end(), b2->seeds.begin(), b2->seeds.end());
@@ -220,17 +273,7 @@ void FusionP::execute(Bot* b, State* S) {
 }
 
 
-void FusionP::set_volatiles(Bot* b, State* S) {
-	if (!(b->position + nd).is_inside(S->R)) {
-		throw emulation_error("FusionP is out of bounds");
-	}
-	// TODO: move pair search
-	set_volatile_voxel(S, b->position);
-}
-
-
 string FusionP::__str__() { return "fusionP " + nd.__str__(); }
-
 
 /*-------------------------------------------------------*/
 
@@ -242,21 +285,24 @@ FusionS::FusionS(Diff nd)
 }
 
 
+void FusionS::check_preconditions(Bot* b, State* S) {
+	if (!(b->position + nd).is_inside(S->R))
+		throw emulation_error("FusionS is out of bounds");
+
+}
+
+
 void FusionS::execute(Bot* b, State* S) {
 	// do nothing: all work done by FusionP
 }
 
 
 void FusionS::set_volatiles(Bot* b, State* S) {
-	if (!(b->position + nd).is_inside(S->R))
-		throw emulation_error("FusionS is out of bounds");
-	// todo : check there is pair
 	set_volatile_voxel(S, b->position);
 }
 
 
 string FusionS::__str__() { return "fusionS " + nd.__str__(); }
-
 
 /*-------------------------------------------------------*/
 
@@ -268,6 +314,22 @@ Fission::Fission(Diff nd, unsigned m)
 		throw emulation_error("Fission parameter is not near");
 	// TODO : report m
 
+}
+
+
+void Fission::check_preconditions(Bot* b, State* S) {
+	if (!(b->position + nd).is_inside(S->R))
+		throw emulation_error("Fission is out of bounds");
+	if (!is_void_voxel(S, b->position + nd))
+		throw emulation_error("Fission to a full voxel");
+	if (m+1 >= b->seeds.size())
+		throw emulation_error("Fission asks more seeds that it has");
+}
+
+
+void Fission::set_volatiles(Bot* b, State* S) {
+	set_volatile_voxel(S, b->position);
+	set_volatile_voxel(S, b->position + nd);
 }
 
 
@@ -284,20 +346,9 @@ void Fission::execute(Bot* b, State* S) {
 }
 
 
-void Fission::set_volatiles(Bot* b, State* S) {
-	if (!(b->position + nd).is_inside(S->R))
-		throw emulation_error("Fission is out of bounds");
-	set_volatile_voxel(S, b->position);
-	set_volatile_voxel(S, b->position + nd);
-	if (m+1 >= b->seeds.size())
-		throw emulation_error("Fission asks more seeds that it has");
-}
-
-
 string Fission::__str__() {
 	return "fission " + nd.__str__() + " " + std::to_string(m);
 }
-
 
 /*-------------------------------------------------------*/
 
@@ -318,9 +369,13 @@ void Fill::execute(Bot* b, State* S) {
 }
 
 
-void Fill::set_volatiles(Bot* b, State* S) {
+void Fill::check_preconditions(Bot* b, State* S) {
 	if (!(b->position + nd).is_inside(S->R))
 		throw emulation_error("Fill is out of bounds");
+}
+
+
+void Fill::set_volatiles(Bot* b, State* S) {
 	set_volatile_voxel(S, b->position);
 	set_volatile_voxel(S, b->position + nd);
 }
@@ -338,6 +393,18 @@ Void::Void(Diff nd)
 }
 
 
+void Void::check_preconditions(Bot* b, State* S) {
+	if (!(b->position + nd).is_inside(S->R))
+		throw emulation_error("Void is out of bounds");
+}
+
+
+void Void::set_volatiles(Bot* b, State* S) {
+	set_volatile_voxel(S, b->position);
+	set_volatile_voxel(S, b->position + nd);
+}
+
+
 void Void::execute(Bot* b, State* S) {
 	if (S->getbit(b->position + nd, S->matrix)) {
 		S->energy -= 12;
@@ -347,16 +414,7 @@ void Void::execute(Bot* b, State* S) {
 }
 
 
-void Void::set_volatiles(Bot* b, State* S) {
-	if (!(b->position + nd).is_inside(S->R))
-		throw emulation_error("Void is out of bounds");
-	set_volatile_voxel(S, b->position);
-	set_volatile_voxel(S, b->position + nd);
-}
-
-
 std::string Void::__str__() { return "void " + nd.__str__(); }
-
 
 /*-------------------------------------------------------*/
 
@@ -371,13 +429,18 @@ GFill::GFill(Diff nd, Diff fd)
 }
 
 
-void GFill::execute(Bot* b, State* S) {
+void GFill::check_preconditions(Bot* b, State* S) {
+
+}
+
+
+void GFill::set_volatiles(Bot* b, State* S) {
 	// TODO
 	assert (false);
 }
 
 
-void GFill::set_volatiles(Bot* b, State* S) {
+void GFill::execute(Bot* b, State* S) {
 	// TODO
 	assert (false);
 }
@@ -398,13 +461,18 @@ GVoid::GVoid(Diff nd, Diff fd)
 }
 
 
-void GVoid::execute(Bot* b, State* S) {
+void GVoid::check_preconditions(Bot* b, State* S) {
+
+}
+
+
+void GVoid::set_volatiles(Bot* b, State* S) {
 	// TODO
 	assert (false);
 }
 
 
-void GVoid::set_volatiles(Bot* b, State* S) {
+void GVoid::execute(Bot* b, State* S) {
 	// TODO
 	assert (false);
 }
