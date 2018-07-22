@@ -1,3 +1,5 @@
+#!/bin/env python3
+
 from importlib.util import find_spec
 if __name__ == '__main__' and find_spec('hintcheck'):
     import hintcheck
@@ -11,6 +13,7 @@ import zlib
 from typing import Optional, Any, List, Dict
 from dataclasses import dataclass
 import multiprocessing
+import argparse
 import multiprocessing.queues
 import logging
 logger = logging.getLogger(__name__)
@@ -142,21 +145,29 @@ def work(
         output_queue.put(output_entry)
 
 
-def main():
-    if len(sys.argv) < 2 :
-        print('Usage:')
-        print('    python -m production.solver_worker <solver> [<solver args>...]')
-        print(f'where <solver> is one of {ALL_SOLVERS.keys()}')
-        sys.exit(1)
+def parse_args():
+    cores = multiprocessing.cpu_count() or 1
+    parser = argparse.ArgumentParser(prog='python -m production.solver_worker')
+    # optional
+    parser.add_argument('-j', '--jobs', metavar='N', help=f'number of worker threads (default: all {cores} cores)',
+            type=int, default=cores)
+    # positional
+    parser.add_argument('solver', help='solver to use', choices=ALL_SOLVERS.keys())
+    parser.add_argument('solver_args', metavar='ARG', help='argument for the solver', nargs='*')
+    return parser.parse_args()
 
+
+def main():
     logging.basicConfig(
         level=logging.INFO,
         format='%(levelname).1s %(module)10.10s:%(lineno)-4d %(message)s')
 
+    args = parse_args()
+
     conn = db.get_conn()
     cur = conn.cursor()
 
-    solver = ALL_SOLVERS[sys.argv[1]](sys.argv[2:])
+    solver = ALL_SOLVERS[args.solver](args.solver_args)
     logger.info(f'Solver scent: {solver.scent()!r}')
 
     cur.execute('''
@@ -179,7 +190,7 @@ def main():
     random.shuffle(problem_ids)
     #problem_ids.sort(reverse=True)
 
-    num_workers = multiprocessing.cpu_count()
+    num_workers = args.jobs
     # num_workers = 1
     output_queue = multiprocessing.SimpleQueue()
     input_queues = [multiprocessing.SimpleQueue() for _ in range(num_workers)]
