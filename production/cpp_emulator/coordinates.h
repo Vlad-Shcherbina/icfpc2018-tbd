@@ -23,6 +23,11 @@ public:
 	bool is_long() const;
 	bool operator==(const Diff& other) const;
 	bool operator!=(const Diff& other) const;
+	bool operator<(const Diff& other) const;
+
+	Diff operator+(Diff other) const {
+		return Diff(dx + other.dx, dy + other.dy, dz + other.dz);
+	}
 
 	std::string __str__() const;
 };

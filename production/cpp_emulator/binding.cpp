@@ -12,12 +12,12 @@
 #include "commands.h"
 #include "emulator.h"
 #include "logger.h"
+#include "algo.h"
 
 using std::vector;
 using std::string;
 using std::unique_ptr;
 using std::make_unique;
-
 
 namespace py = pybind11;
 PYBIND11_MODULE(emulator, m) {
@@ -38,7 +38,9 @@ PYBIND11_MODULE(emulator, m) {
 		.def("is_near", &Diff::is_near)
 		.def(py::self == py::self)
 		.def(py::self != py::self)
+		.def(py::self < py::self)
 		.def("__str__", &Diff::__str__)
+		.def("__add__", &Diff::operator+, py::is_operator())
 	;
 
 	py::class_<Pos> PosClass(m, "Pos");
@@ -64,6 +66,18 @@ PYBIND11_MODULE(emulator, m) {
 		.def("get", &Matrix::get)
 		.def("set", &Matrix::set)
 		.def("grounded_voxels", &Matrix::grounded_voxels)
+	;
+
+	// TODO
+	py::class_<Command>(m, "Command")
+	;
+	py::class_<SMove>(m, "SMove")
+		.def(py::init<Diff>())
+		.def("__repr__", &SMove::__str__)
+	;
+	py::class_<LMove>(m, "LMove")
+		.def(py::init<Diff, Diff>())
+		.def("__repr__", &LMove::__str__)
 	;
 
 	py::class_<Bot> BotClass(m, "Bot");
@@ -118,6 +132,8 @@ PYBIND11_MODULE(emulator, m) {
 	;
 
 	m.def("region_dimension", (int (*)(const Pos&, const Pos&)) &region_dimension);
+
+	m.def("enum_move_commands", &enum_move_commands);
 
 	static py::exception<base_error> base_exc(m, "SimulatorException");
 	py::register_exception_translator([](std::exception_ptr p) {

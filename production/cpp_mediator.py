@@ -143,6 +143,8 @@ def main_run_file():
     em.run()
 
     print("Energy: ", em.energy())
+    print('some move commands:', Cpp.enum_move_commands()[:10], '...')
+
 
 if __name__ == '__main__':
     main_run_file()

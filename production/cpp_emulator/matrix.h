@@ -7,11 +7,11 @@
 #include <assert.h>
 
 class Matrix {
+public:
+    int R;
 private:
     std::vector<uint8_t> data;
 public:
-    int R;
-
     Matrix(int R) : R(R), data((R * R * R + 7) / 8, 0) { }
 
     static Matrix parse(const std::vector<uint8_t> &raw) {
@@ -63,6 +63,6 @@ public:
 private:
     Matrix(const std::vector<uint8_t> &raw)
         : R(raw.at(0)), data(raw.begin() + 1, raw.end()) {
-        assert(data.size() == (R * R * R + 7) / 8);
+        assert((int)data.size() == (R * R * R + 7) / 8);
     }
 };

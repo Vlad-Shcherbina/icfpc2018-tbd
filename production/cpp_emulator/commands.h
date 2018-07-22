@@ -1,8 +1,11 @@
 #ifndef __COMMANDS_H_INCLUDED__
 #define __COMMANDS_H_INCLUDED__
 
-#include <string>
 #include "coordinates.h"
+
+#include <string>
+#include <memory>
+#include <assert.h>
 
 class Bot;
 class State;
@@ -14,6 +17,11 @@ struct Command {
 	virtual void set_volatiles(Bot* b, State* S) = 0;
 	virtual void execute(Bot* b, State* S) = 0;
 	virtual std::string __str__() = 0;
+	virtual Diff move_offset() const {
+		// should only be called for SMove and LMove
+		assert(false);
+		return Diff(0, 0, 0);
+	}
 
 	static Diff get_nd(uint8_t byte);
 	static Diff get_lld(uint8_t a, uint8_t i);
@@ -50,6 +58,9 @@ struct SMove : Command {
 	void check_preconditions(Bot* b, State* S) override;
 	void set_volatiles(Bot* b, State* S) override;
 	std::string __str__() override;
+	virtual Diff move_offset() const {
+		return lld;
+	}
 };
 
 struct LMove : Command {
@@ -60,6 +71,10 @@ struct LMove : Command {
 	void set_volatiles(Bot* b, State* S) override;
 
 	std::string __str__() override;
+
+	virtual Diff move_offset() const {
+		return sld1 + sld2;
+	}
 };
 
 struct FusionP : Command {
