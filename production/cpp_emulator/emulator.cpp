@@ -184,17 +184,7 @@ Emulator::Emulator()
 }
 
 
-void Emulator::load_trace(string filename) {
-	trace = vector<unsigned char>();
-	std::ifstream f(filename, std::ios::binary);
-	f >> std::noskipws;
-	unsigned char c;
-	uint32_t i = 0;
-	while (f >> c) trace.push_back(c);
-	f.close();
-	tracepointer = 0;
-	if (logger->solutionname == "") logger->solutionname = filename;
-}
+void Emulator::set_size(unsigned char R) { S.set_size(R); }
 
 
 void Emulator::set_trace(vector<unsigned char> bytes) {
@@ -203,38 +193,17 @@ void Emulator::set_trace(vector<unsigned char> bytes) {
 }
 
 
-vector<unsigned char>* Emulator::choose_matrix(char c) {
-	switch (c) {
-		case 's' : return &S.matrix;
-		case 't' : return &S.target;
-		case 'v' : return &S.volatiles;
-		default  : throw std::runtime_error("Unknown matrix identifier");
-	}
+void Emulator::set_src_model(vector<unsigned char> bytes) {
+	// TODO: set size
+	// 	S.set_size( ... );
+	S.matrix = std::move(bytes);
 }
 
 
-void Emulator::load_model(string filename, char dest) {
-	std::ifstream f(filename, std::ios::binary);
-	f >> std::noskipws;
-	unsigned char c;
-
-	f >> c;
-	S.set_size((unsigned)c);
-
-	vector<unsigned char>* m = choose_matrix(dest);
-	uint32_t i = 0;
-	while (f >> c) (*m)[i++] = c;
-	f.close();
-
-	if (logger->problemname == "") logger->problemname = filename + " " + dest;
-	// TODO : doesn't work for reassembling
-	assert (S.target.size() == S.matrix.size());
-}
-
-
-void Emulator::set_model(vector<unsigned char> bytes, char dest) {
-	vector<unsigned char>* m = choose_matrix(dest);
-	*m = std::move(bytes);
+void Emulator::set_tgt_model(vector<unsigned char> bytes) {
+	// TODO: set size
+	// 	S.set_size( ... );
+	S.target = std::move(bytes);
 }
 
 

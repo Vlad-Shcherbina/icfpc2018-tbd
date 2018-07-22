@@ -127,13 +127,21 @@ def main_run_interactive():
 
 def main_run_file():
     from production import utils
-    modelfile = str(utils.project_root() / 'julie_scratch' / 'LA014_tgt.mdl')
-    tracefile = str(utils.project_root() / 'julie_scratch' / 'LA014_dflt.nbt')
+    modelfile = utils.project_root() / 'julie_scratch' / 'LA014_tgt.mdl'
+    tracefile = utils.project_root() / 'julie_scratch' / 'LA014_dflt.nbt'
     logfile = str(utils.project_root() / 'outputs' / 'cpp_emulator.log')
 
     em = Cpp.Emulator()
-    em.load_model(modelfile, 't')   # t - target model, s - source or current model
-    em.load_trace(tracefile)
+
+    mf = open(modelfile, 'rb')
+    em.set_size(ord(mf.read(1)))
+    em.set_tgt_model(mf.read())
+    mf.close()
+
+    tf = open(tracefile, 'rb')
+    em.set_trace(tf.read())
+    tf.close()
+
     em.setlogfile(logfile)
     em.run()
 

@@ -83,9 +83,9 @@ PYBIND11_MODULE(emulator, m) {
 	py::class_<Emulator> EmClass(m, "Emulator");
 	EmClass
 		.def(py::init<>())
-		.def("load_model", &Emulator::load_model)
-		.def("set_model", &Emulator::set_model)
-		.def("load_trace", &Emulator::load_trace)
+		.def("set_size", &Emulator::set_size)
+		.def("set_src_model", &Emulator::set_src_model)
+		.def("set_tgt_model", &Emulator::set_tgt_model)
 		.def("set_trace", &Emulator::set_trace)
 
 		.def("set_state", &Emulator::set_state)

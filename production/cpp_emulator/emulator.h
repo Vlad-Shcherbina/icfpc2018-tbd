@@ -31,16 +31,16 @@ public:
 
 class State {
 public:
-	int64_t energy;
-	bool high_harmonics;
-	std::vector<unsigned char> matrix;
 	int R;
-	std::vector<Bot> bots;
-	bool halted;
-
+	std::vector<unsigned char> matrix;
 	//std::vector<unsigned char> floating;
 	std::vector<unsigned char> target;
 	std::vector<unsigned char> volatiles;
+
+	int64_t energy;
+	bool high_harmonics;
+	std::vector<Bot> bots;
+	bool halted;
 
 	State();
 	State(unsigned char R);
@@ -80,12 +80,10 @@ public:
 	
 	Emulator();
 
-	void load_model(std::string filename, char dest);
-	void set_model(std::vector<unsigned char> bytes, char dest);
-
-	void load_trace(std::string filename);
+	void set_size(unsigned char R);
+	void set_src_model(std::vector<unsigned char> bytes);
+	void set_tgt_model(std::vector<unsigned char> bytes);
 	void set_trace(std::vector<unsigned char> bytes);
-
 	void set_state(State S);
 	State get_state();
 
@@ -101,11 +99,6 @@ public:
 	void setproblemname(std::string);
 	void setsolutionname(std::string);
 	void setlogfile(std::string);
-
-
-
-private:
-	std::vector<unsigned char>* choose_matrix(char c);
 };
 
 #endif

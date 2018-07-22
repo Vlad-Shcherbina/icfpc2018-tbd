@@ -8,15 +8,27 @@ from production import utils
 # from bitarray import bitarray
 
 
+
+
 def test_run_from_file():
-    modelfile = str(utils.project_root() / 'julie_scratch' / 'LA014_tgt.mdl')
-    tracefile = str(utils.project_root() / 'julie_scratch' / 'LA014_dflt.nbt')
-    logfile = str(utils.project_root() / 'outputs' / 'cpp_emulator.log')
+    modelfile = utils.project_root() / 'julie_scratch' / 'LA014_tgt.mdl'
+    tracefile = utils.project_root() / 'julie_scratch' / 'LA014_dflt.nbt'
+    logfilename = str(utils.project_root() / 'outputs' / 'cpp_emulator.log')
+
     em = Cpp.Emulator()
-    em.load_model(modelfile, 't')   # t - target model, s - source or current model
-    em.load_trace(tracefile)
-    em.setlogfile(logfile)
+
+    mf = open(modelfile, 'rb')
+    em.set_size(ord(mf.read(1)))
+    em.set_tgt_model(mf.read())
+    mf.close()
+
+    tf = open(tracefile, 'rb')
+    em.set_trace(tf.read())
+    tf.close()
+
+    em.setlogfile(logfilename)
     em.run()
+
     assert em.energy() == 501700108
 
 if __name__ == '__main__':
