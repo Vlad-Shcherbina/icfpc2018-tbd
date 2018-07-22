@@ -2,8 +2,12 @@
 
 #include "commands.h"
 #include "matrix.h"
+#include "coordinates.h"
 
 #include <memory>
 #include <vector>
+#include <utility>
+#include <optional>
 
-void bfs(const Matrix &m, Pos start);
+std::optional<std::pair<Pos, std::vector<std::unique_ptr<Command>>>> path_to_nearest_of(
+    const Matrix &obstacles, Pos src, std::vector<Pos> dsts);

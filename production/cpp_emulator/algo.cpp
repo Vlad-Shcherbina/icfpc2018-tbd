@@ -10,6 +10,8 @@
 #include <memory>
 #include <map>
 #include <deque>
+#include <functional>
+#include <algorithm>
 
 using namespace std;
 
@@ -65,13 +67,16 @@ unique_ptr<Command> recover_move_command(const Matrix &m, Pos src, Pos dst) {
     return nullptr;
 }
 
-void bfs(const Matrix &m, Pos start) {
-    debug(start);
+void bfs(const Matrix &m, Pos start, function<bool (Pos, const map<Pos, Pos>&)> visit) {
     assert(!m.get(start));
     map<Pos, Pos> prev;
+    if (!visit(start, prev)) {
+        return;
+    }
     Matrix visited(m.R);
     deque<Pos> work = {{start, start}};
     visited.set(start, true);
+
     while (!work.empty()) {
         Pos p = work.front();
         work.pop_front();
@@ -80,10 +85,39 @@ void bfs(const Matrix &m, Pos start) {
             Pos p2 = p + d;
             if (!visited.get(p2)) {
                 visited.set(p2, true);
-                debug2(p2, p);
                 prev[p2] = p;
                 work.push_back(p2);
+                if (!visit(p2, prev)) {
+                    return;
+                }
             }
         }
     }
+}
+
+vector<unique_ptr<Command>> recover_path(
+        const map<Pos, Pos>& prev, const Matrix &m, Pos start, Pos finish) {
+    Pos p = finish;
+    vector<unique_ptr<Command>> result;
+    while (p != start) {
+        Pos p1 = prev.at(p);
+        result.push_back(recover_move_command(m, p1, p));
+        p = p1;
+    }
+    reverse(begin(result), end(result));
+    return result;
+}
+
+optional<pair<Pos, vector<unique_ptr<Command>>>> path_to_nearest_of(
+    const Matrix &obstacles, Pos src, vector<Pos> dsts) {
+    optional<pair<Pos, vector<unique_ptr<Command>>>> result;
+    sort(begin(dsts), end(dsts));
+    bfs(obstacles, src, [&](Pos p, const map<Pos, Pos> &prev) {
+        if (binary_search(begin(dsts), end(dsts), p)) {
+            result = make_pair(p, recover_path(prev, obstacles, src, p));
+            return false;
+        }
+        return true;
+    });
+    return result;
 }

@@ -193,7 +193,7 @@ PYBIND11_MODULE(emulator, m) {
 
 	m.def("region_dimension", (int (*)(const Pos&, const Pos&)) &region_dimension);
 
-	m.def("bfs", &bfs);
+	m.def("path_to_nearest_of", &path_to_nearest_of);
 
 	static py::exception<base_error> base_exc(m, "SimulatorException");
 	py::register_exception_translator([](std::exception_ptr p) {
