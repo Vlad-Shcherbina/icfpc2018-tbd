@@ -13,7 +13,10 @@ public:
 private:
     std::vector<uint8_t> data;
 public:
-    Matrix(int R) : R(R), data((R * R * R + 7) / 8, 0) { }
+    Matrix(int R) : R(R) {
+        assert(R >= 0);
+        data.assign((R * R * R + 7) / 8, 0);
+    }
 
     static Matrix parse(const std::vector<uint8_t> &raw) {
         return Matrix(raw);
