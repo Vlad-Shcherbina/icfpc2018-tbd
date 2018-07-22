@@ -14,7 +14,7 @@ private:
     std::vector<uint8_t> data;
 public:
     Matrix(int R) : R(R) {
-        assert(R >= 0);
+        assert(0 <= R <= 250);
         data.assign((R * R * R + 7) / 8, 0);
     }
 
