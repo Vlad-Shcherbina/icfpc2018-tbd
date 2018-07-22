@@ -1,6 +1,9 @@
 #include "coordinates.h"
 
+#include <tuple>
+
 using std::string;
+using std::make_tuple;
 
 
 /*======================== DIFF =========================*/
@@ -60,6 +63,9 @@ Pos Pos::operator+(const Diff& d) const { return Pos(x + d.dx, y + d.dy, z + d.d
 Pos Pos::operator-(const Diff& d) const { return Pos(x - d.dx, y - d.dy, z - d.dz); }
 bool Pos::operator==(const Pos& other) const { return x == other.x && y == other.y && z == other.z; }
 bool Pos::operator!=(const Pos& other) const { return !(*this == other); }
+bool Pos::operator<(const Pos& other) const {
+	return make_tuple(x, y, z) < make_tuple(other.x, other.y, other.z);
+}
 
 Pos& Pos::operator+= (const Diff& d) {
 	x += d.dx;

@@ -5,7 +5,7 @@ JUMP_LONG = 15
 JUMP_SHORT = 5
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, order=True)
 class Pos:
     x: int
     y: int

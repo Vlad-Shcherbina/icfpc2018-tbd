@@ -7,10 +7,11 @@
 #include <assert.h>
 
 class Matrix {
+public:
+    const int R;
 private:
     std::vector<uint8_t> data;
 public:
-    const int R;
 
     Matrix(int R) : R(R), data((R * R * R + 7) / 8, 0) {}
 
@@ -33,9 +34,36 @@ public:
         }
     }
 
+    std::vector<Pos> grounded_voxels() const {
+        Matrix visited(R);
+        std::vector<Pos> result;
+        std::vector<Pos> work;
+        for (int x = 0; x < R; x++) {
+            for (int z = 0; z < R; z++) {
+                work.push_back(Pos(x, 0, z));
+            }
+        }
+        while (!work.empty()) {
+            Pos p = work.back();
+            work.pop_back();
+            if (!p.is_inside(R) || !get(p) || visited.get(p)) {
+                continue;
+            }
+            visited.set(p, true);
+            result.push_back(p);
+            work.emplace_back(p.x - 1, p.y, p.z);
+            work.emplace_back(p.x + 1, p.y, p.z);
+            work.emplace_back(p.x, p.y - 1, p.z);
+            work.emplace_back(p.x, p.y + 1, p.z);
+            work.emplace_back(p.x, p.y, p.z - 1);
+            work.emplace_back(p.x, p.y, p.z + 1);
+        }
+        return result;
+    }
+
 private:
     Matrix(const std::vector<uint8_t> &raw)
         : R(raw.at(0)), data(raw.begin() + 1, raw.end()) {
-        assert(data.size() == (R * R * R + 7) / 8);
+        assert((int)data.size() == (R * R * R + 7) / 8);
     }
 };

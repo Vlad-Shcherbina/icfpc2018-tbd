@@ -48,6 +48,7 @@ PYBIND11_MODULE(emulator, m) {
 		// .def("__isub__", &Pos::operator-=<Diff>, py::is_operator())
 		.def(py::self == py::self)
 		.def(py::self != py::self)
+		.def(py::self < py::self)
 		.def("__str__", &Pos::__str__)
 		.def_readonly("x", &Pos::x)
 		.def_readonly("y", &Pos::y)
@@ -60,6 +61,7 @@ PYBIND11_MODULE(emulator, m) {
 		.def_readonly("R", &Matrix::R)
 		.def("get", &Matrix::get)
 		.def("set", &Matrix::set)
+		.def("grounded_voxels", &Matrix::grounded_voxels)
 	;
 
 	py::class_<Bot> BotClass(m, "Bot");

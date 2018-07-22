@@ -1,33 +1,56 @@
+import unittest
+
 from production.model import Model
 from production.basics import *
 
+from production.cpp_emulator import emulator as cppe
 
-def test_grounded():
-    matrix = [
-        #   z
-        #  ---->
-        [[1, 0, 0],   # |
-         [0, 1, 0],   # | y
-         [0, 0, 0]],  # v
-        # x = 0
 
-        [[0, 0, 0],
-         [0, 0, 0],
-         [1, 1, 1]],
-        # x = 1
+class CommonTests():
+    def test_grounded(self):
+        matrix = [
+            #   z
+            #  ---->
+            [[1, 0, 0],   # |
+            [0, 1, 0],   # | y
+            [0, 0, 0]],  # v
+            # x = 0
 
-        [[0, 0, 1],
-         [0, 1, 1],
-         [0, 0, 0]],
-        # x = 2
-    ]
-    m = Model(3)
-    for x, slice in enumerate(matrix):
-        for y, row in enumerate(slice):
-            for z, cell in enumerate(row):
-                m[Pos(x, y, z)] = bool(cell)
+            [[0, 0, 0],
+            [0, 0, 0],
+            [1, 1, 1]],
+            # x = 1
 
-    assert m.grounded_voxels() == {
-        Pos(0, 0, 0),
-        Pos(2, 0, 2), Pos(2, 1, 2), Pos(2, 1, 1),
-    }
+            [[0, 0, 1],
+            [0, 1, 1],
+            [0, 0, 0]],
+            # x = 2
+        ]
+        m = self.Model(3)
+        for x, slice in enumerate(matrix):
+            for y, row in enumerate(slice):
+                for z, cell in enumerate(row):
+                    self.set(m, self.Pos(x, y, z), bool(cell))
+
+        assert sorted(m.grounded_voxels()) == sorted([
+            self.Pos(0, 0, 0),
+            self.Pos(2, 0, 2), self.Pos(2, 1, 2), self.Pos(2, 1, 1),
+        ])
+
+
+class PyModelTests(unittest.TestCase, CommonTests):
+    def setUp(self):
+        self.Pos = Pos
+        self.Model = Model
+        def set(m, p, value):
+            m[p] = value
+        self.set = set
+
+
+class CppMatrixTests(unittest.TestCase, CommonTests):
+    def setUp(self):
+        self.Pos = cppe.Pos
+        self.Model = cppe.Matrix
+        def set(m, p, value):
+            m.set(p, value)
+        self.set = set

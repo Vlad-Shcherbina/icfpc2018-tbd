@@ -37,6 +37,7 @@ public:
 	Pos operator-(const Diff& d) const;
 	bool operator==(const Pos& other) const;
 	bool operator!=(const Pos& other) const;
+	bool operator<(const Pos& other) const;
 	Pos& operator+= (const Diff& d);
 	Pos& operator-= (const Diff& d);
 	std::string __str__() const;
