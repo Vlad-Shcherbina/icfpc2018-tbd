@@ -105,6 +105,8 @@ class DefaultSolver(Solver):
         assert not args
 
     def scent(self) -> str:
+        # note that 'Default 2.0' (and perhaps higher)
+        # are already taken by default_solver2.py :(
         return 'Default 1.2'
 
     def supports(self, problem_type: ProblemType) -> bool:
