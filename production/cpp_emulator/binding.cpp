@@ -8,6 +8,7 @@
 #include <cassert>
 
 #include "coordinates.h"
+#include "matrix.h"
 #include "commands.h"
 #include "emulator.h"
 #include "logger.h"
@@ -51,6 +52,14 @@ PYBIND11_MODULE(emulator, m) {
 		.def_readonly("x", &Pos::x)
 		.def_readonly("y", &Pos::y)
 		.def_readonly("z", &Pos::z)
+	;
+
+	py::class_<Matrix>(m, "Matrix")
+		.def(py::init<int>())
+		.def("parse", &Matrix::parse)
+		.def_readonly("R", &Matrix::R)
+		.def("get", &Matrix::get)
+		.def("set", &Matrix::set)
 	;
 
 	py::class_<Bot> BotClass(m, "Bot");
