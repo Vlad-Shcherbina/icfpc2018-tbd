@@ -23,6 +23,10 @@ class Model:
         assert pos.is_inside_matrix(R)
         self._data[pos.x * R * R + pos.y * R + pos.z] = value
 
+    def __eq__(self, other):
+        return self.R == other.R\
+           and self.filled_voxels() == other.filled_voxels()
+
     @staticmethod
     def parse(data: bytes) -> 'Model':
         return Model(R=data[0], data=data[1:])
@@ -32,6 +36,17 @@ class Model:
             for y in range(self.R):
                 for z in range(self.R):
                     yield Pos(x, y, z)
+
+
+    def filled_voxels(self) -> Set[Pos]:
+        filled = set()
+        for x in range(self.R):
+            for y in range(self.R):
+                for z in range(self.R):
+                    if self[Pos(x,y,z)]:
+                        filled.add(Pos(x,y,z))
+        return filled
+
 
     def grounded_voxels(self) -> Set[Pos]:
         visited = set()
