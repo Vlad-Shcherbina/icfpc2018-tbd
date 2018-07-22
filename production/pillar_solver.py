@@ -11,7 +11,7 @@ class PillarSolver(Solver):
 
     def scent(self) -> str:
         # Iz govna i palok.
-        return 'pillar 0.3'
+        return 'pillar 0.4.2'
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Assemble
@@ -21,67 +21,99 @@ class PillarSolver(Solver):
             src_model: Optional[bytes],
             tgt_model: Optional[bytes]) -> SolverResult:
         assert src_model is None
-        self.model = Model.parse(tgt_model)
-        self.model_height = model_height(self.model)
+        model = Model.parse(tgt_model)
+        model_height = get_model_height(model)
 
-        self.plots = create_plots(self.model)
+        plots = create_plots(model)
 
-        trace = self.single_bot_trace()
+        trace = single_bot_trace(model, model_height, plots)
 
         trace_data = compose_commands(trace)
         return SolverResult(trace_data, extra={})
 
-    def single_bot_trace(self):
-      trace = []
-      trace.append(Flip())
-      empty = True
-      current_pos = Pos(0, 0, 0)
-      for plot in self.plots:
-        trace.extend(move_in_empty_space(plot - current_pos))
-        current_pos = plot
-        plot_trace, current_pos = self.fill_plot(current_pos)
-        trace.extend(plot_trace)
-      trace.append(Flip())
-      trace.extend(move_in_empty_space(Pos(0, 0, 0) - current_pos))
-      trace.append(Halt())
-      return trace
 
-    def fill_plot(self, pos):
-      trace = []
-      while pos.y <= min(self.model.R - 1, self.model_height + 1):
-        for diff in eight_around_and_maybe_one_below(pos, self.model.R):
-          if self.model[pos + diff]:
-            trace.append(Fill(diff))
-        shift = Diff(0, 1, 0)
-        trace.append(SMove(shift))
-        pos += shift
-      return trace, pos
+def single_bot_trace(model, model_height, plots):
+  trace = []
+  trace.append(Flip())
+  empty = True
+  current_pos = Pos(0, 0, 0)
+  for plot in plots:
+    plot_pos, plot_height = plot
+    trace.extend(move_in_empty_space(plot_pos - current_pos))
+    current_pos = plot_pos
+    plot_trace, current_pos = fill_plot(model, model_height, plot)
+    trace.extend(plot_trace)
+  trace.append(Flip())
+  trace.extend(move_in_empty_space(Pos(0, 0, 0) - current_pos))
+  trace.append(Halt())
+  return trace
 
 
-def eight_around_and_maybe_one_below(pos, R):
-  if pos.y > 0:
-    yield Diff(0, -1, 0)
-  dx_low = -1 if pos.x > 0 else 0
-  dx_high = 1 if pos.x < R - 1 else 0
-  dz_low = -1 if pos.z > 0 else 0
-  dz_high = 1 if pos.z < R - 1 else 0
+def fill_plot(model, model_height, plot):
+  pos, plot_height = plot
+  trace = []
+  while True:
+    for diff in eight_around_one_below(pos, model.R):
+      if model[pos + diff]:
+        trace.append(Fill(diff))
+    if pos.y == plot_height:
+      break
+    else:
+      shift = Diff(0, 1, 0)
+      trace.append(SMove(shift))
+      pos += shift
+
+  if pos.y != model_height:
+      shift = Diff(0, model_height - pos.y, 0)
+      trace.extend(move_in_empty_space(shift))
+      pos += shift
+  return trace, pos
+
+
+def dx_dz_3x3(x, z, R):
+  dx_low = -1 if x > 0 else 0
+  dx_high = 1 if x < R - 1 else 0
+  dz_low = -1 if z > 0 else 0
+  dz_high = 1 if z < R - 1 else 0
   for dx in range(dx_low, dx_high + 1):
     for dz in range(dz_low, dz_high + 1):
-      if (dx != 0) or (dz != 0):
-        yield Diff(dx, 0, dz)
+      yield (dx, dz)
 
 
-def model_height(model):
+def eight_around_one_below(pos, R):
+  if pos.y > 0:
+    yield Diff(0, -1, 0)
+  for (dx, dz) in dx_dz_3x3(pos.x, pos.z, R):
+    if (dx != 0) or (dz != 0):
+      yield Diff(dx, 0, dz)
+
+
+def get_model_height(model):
   pos0, pos1 = bounding_box_region(model)
   return pos1.y + 1
 
+
 def create_plots(model):
-  pos0, pos1 = bounding_box_region(model, fy=0)
+  pos0, pos1 = bounding_box_footprint(model)
   plots = []
-  for x in range(pos0.x, min(pos1.x + 4, model.R - 1), 3):
-    for z in range(pos0.z, min(pos1.z + 4, model.R - 1), 3):
-      plots.append(Pos(x + 1, 0, z + 1))
+  for x in range(pos0.x + 1, min(pos1.x + 2, model.R), 3):
+    for z in range(pos0.z + 1, min(pos1.z + 2, model.R), 3):
+      plot_pos = Pos(x, 0, z)
+      plot_height = get_plot_height(model, plot_pos)
+      if plot_height > 0:
+        plots.append((plot_pos, plot_height))
   return plots
+
+
+def get_plot_height(model, plot_pos):
+  x_z = [(plot_pos.x + dx, plot_pos.z + dz) \
+    for (dx, dz) in dx_dz_3x3(plot_pos.x, plot_pos.z, model.R)]
+  for y in range(model.R - 2, -1, -1):
+    for x, z in x_z:
+      if model[Pos(x, y, z)]:
+        return y + 1
+  return 0
+
 
 def long_distances(d):
   assert d != 0
@@ -95,6 +127,7 @@ def long_distances(d):
       yield -15
       d += 15
     yield d
+
 
 def move_in_empty_space(diff):
   # Move in XZ plane first, that way we can use this to float above model.
@@ -119,8 +152,9 @@ def write_solution(bytetrace, name): # -> IO ()
 
 if __name__ == '__main__':
   import production.data_files
-  name = 'LA109'
+  import sys
+  name = sys.argv[-1]
   model_data = production.data_files.lightning_problem(f'{name}_tgt.mdl')
   solver = PillarSolver(None)
-  result = solver.solve(name, model_data).trace_data
+  result = solver.solve(name, None, model_data).trace_data
   write_solution(result, name)

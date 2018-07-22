@@ -39,6 +39,12 @@ def bounding_box_region(model, fx : Optional[int] = None, fy : Optional[int] = N
     assert filled_cell_visited
     return (pos0,pos1)
 
+def bounding_box_footprint(model):
+    pos0, pos1 = bounding_box_region(model)
+    pos0 = Pos(pos0.x, 0, pos0.z)
+    pos1 = Pos(pos1.x, 0, pos1.z)
+    return (pos0, pos1)
+
 def is_inside_region(pt : Pos, pt0 : Pos, pt1 : Pos) -> bool:
     return pt0.x <= pt.x <= pt1.x and pt0.y <= pt.y <= pt1.y and pt0.z <= pt.z <= pt1.z
 
