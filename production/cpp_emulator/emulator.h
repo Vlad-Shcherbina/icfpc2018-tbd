@@ -12,19 +12,16 @@ class State;
 
 class Bot {
 public:
-	unsigned char pid;
+	unsigned char bid;
 	Pos position;
 	std::vector<unsigned char> seeds;
 	std::unique_ptr<Command> command;
 	bool active;
 
-	Bot(unsigned char pid, Pos position, std::vector<unsigned char> seeds, bool active);
-	Bot(	unsigned char pid,
-			unsigned char x,
-			unsigned char y,
-			unsigned char z,
-			std::vector<unsigned char> seeds,
-			bool active);
+	Bot();
+	Bot(const Bot&);
+	Bot& operator=(const Bot&);
+	Bot(unsigned char bid, Pos position, std::vector<unsigned char> seeds, bool active);
 	void set_volatiles(State* field);
 	void execute(State* field);
 };
@@ -48,6 +45,13 @@ public:
 	State();
 	State(unsigned char R);
 	void set_size(unsigned char R);
+	void set_initials();
+	void set_default_bots();
+	void set_state(unsigned char R,
+				   bool high_harmonics,
+				   int64_t energy,
+				   std::vector<unsigned char> matrix,
+				   std::vector<Bot> bots);
 
 	bool getbit(const Pos& p) const;
 	void setbit(const Pos& p, bool value);
@@ -61,8 +65,6 @@ public:
 	void run_commands();
 	void add_passive_energy();
 
-private:
-	void set_initials();
 };
 
 
@@ -81,26 +83,29 @@ public:
 	void load_trace(std::string filename);
 	void set_trace(std::vector<unsigned char> bytes);
 
+	void set_state(State S);
+	State get_state();
+
 	unsigned char getcommand();
 	void run_one_step();
 	void run_all();
 	void run_given(std::vector<unsigned char> newtrace);
 	void load(std::string modelfile, std::string tracefile);
 
-	void reconstruct_state(
-			unsigned char R,
-			std::vector<unsigned char> matrix,
-			bool harmonics,
-			int64_t energy);
+	// void reconstruct_state(
+	// 		unsigned char R,
+	// 		std::vector<unsigned char> matrix,
+	// 		bool harmonics,
+	// 		int64_t energy);
 
-	void add_bot(unsigned char pid,
-				 unsigned char x,
-				 unsigned char y,
-				 unsigned char z,
-				 std::vector<unsigned char> seeds);
+	// void add_bot(unsigned char bid,
+	// 			 unsigned char x,
+	// 			 unsigned char y,
+	// 			 unsigned char z,
+	// 			 std::vector<unsigned char> seeds);
 
-	std::vector<unsigned char> get_state();
-	std::vector<unsigned char> get_bots();
+	//std::vector<unsigned char> get_state();
+	//std::vector<unsigned char> get_bots();
 
 
 	int64_t energy();

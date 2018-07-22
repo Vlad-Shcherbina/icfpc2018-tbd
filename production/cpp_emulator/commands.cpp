@@ -194,7 +194,7 @@ void FusionP::execute(Bot* b, State* S) {
 	Bot* b2 = &(S->bots[index]);
 	// assert b2 has corresponding FusionP command
 	b2->active = false;
-	b->seeds.push_back(b2->pid);
+	b->seeds.push_back(b2->bid);
 	b->seeds.insert(b->seeds.end(), b2->seeds.begin(), b2->seeds.end());
 	b2->seeds = vector<unsigned char>();
 	std::sort(b->seeds.begin(), b->seeds.end());

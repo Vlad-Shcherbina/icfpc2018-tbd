@@ -13,25 +13,36 @@ const int MAXBOTNUMBER = 40;
 
 /*======================== BOT ==========================*/
 
-Bot::Bot(unsigned char pid, Pos position, vector<unsigned char> seeds, bool active)
-: pid(pid)
+Bot::Bot(unsigned char bid, Pos position, vector<unsigned char> seeds, bool active)
+: bid(bid)
 , position(position)
 , seeds(seeds)
 , active(active)
 { }
 
-Bot::Bot(
-	unsigned char pid,
-	unsigned char x,
-	unsigned char y,
-	unsigned char z,
-	std::vector<unsigned char> seeds,
-	bool active)
-: pid(pid)
-, seeds(seeds)
-, active(active)
-, position(Pos(x, y, z))
+Bot::Bot()
+: bid(0)
+, position(Pos(0, 0, 0))
+, seeds(vector<unsigned char>())
+, active(false)
 { }
+
+Bot::Bot(const Bot& other) 
+: bid(other.bid)
+, position(other.position)
+, seeds(other.seeds)
+, active(other.active)
+{ }
+
+Bot& Bot::operator=(const Bot& other) {
+	this->bid = other.bid;
+	this->position = other.position;
+	this->seeds = other.seeds;
+	this->active = other.active;
+	return *this;
+}
+
+
 
 void Bot::set_volatiles(State* S) {
 	if (!command) {
@@ -59,24 +70,28 @@ State::State(unsigned char R) {
 	set_size(R);
 }
 
+
 void State::set_initials() {
 	R = 0;
 	energy = 0;
 	high_harmonics = false;
 	volatile_violation = false;
 	halted = false;
+	set_default_bots();			// maybe should be moved
+}
 
+
+void State::set_default_bots() {
 	Pos p(0, 0, 0);
-	bots.push_back(Bot(0, p, vector<unsigned char>(), false));  // zerober
+	bots.push_back(Bot(0, p, vector<unsigned char>(), false));  // zerobot
 	bots.push_back(Bot(1, p, vector<unsigned char>(), true));
 	vector<unsigned char> seeds;
 	for (unsigned char i = 2; i <= MAXBOTNUMBER; i++) {
 		bots[0].seeds.push_back(i);
 		bots.push_back(Bot(i, p, vector<unsigned char>(), false));
 	}
-
-
 }
+
 
 void State::set_size(unsigned char R) {
 	this->R = R;
@@ -86,6 +101,20 @@ void State::set_size(unsigned char R) {
 	//floating = vector<unsigned char>(bytes, 0);
 	volatiles = vector<unsigned char>(bytes, 0);
 }
+
+
+void State::set_state(unsigned char R,
+					  bool high_harmonics,
+					  int64_t energy,
+					  vector<unsigned char> matrix,
+					  vector<Bot> bots) {
+	set_size(R);
+	this->matrix = std::move(matrix);
+	this->high_harmonics = high_harmonics;
+	this->energy = energy;
+	this->bots = std::move(bots);
+}
+
 
 bool State::getbit(const Pos& p) const {
 	int w = p.x*R*R + p.y*R + p.z;
@@ -207,6 +236,16 @@ void Emulator::set_model(vector<unsigned char> bytes, char dest) {
 }
 
 
+void Emulator::set_state(State S) {
+	this->S = S;
+}
+
+
+State Emulator::get_state() {
+	return this->S;
+}
+
+
 unsigned char Emulator::getcommand() {
 	return trace[tracepointer++];
 }
@@ -244,61 +283,46 @@ int64_t Emulator::energy() {
 }
 
 
-void Emulator::reconstruct_state(
-			unsigned char R,
-			vector<unsigned char> matrix,
-			bool harmonics,
-			int64_t energy
-		)
-{
-	S = State(R);
-	S.matrix = std::move(matrix);
-	S.high_harmonics = harmonics;
-	S.energy = energy;
 
-	// while reconstructing all bots are halted
-	S.bots[1].active = false;
-	S.bots[1].seeds = vector<unsigned char>();
-}
 
-void Emulator::add_bot(unsigned char pid,
-		 unsigned char x,
-		 unsigned char y,
-		 unsigned char z,
-		 vector<unsigned char> seeds)
-{
-	Bot& b = S.bots[pid];
-	b.active = true;
-	b.position = Pos(x, y, z);
-	b.seeds = std::move(seeds);
-}
+// void Emulator::add_bot(unsigned char bid,
+// 		 unsigned char x,
+// 		 unsigned char y,
+// 		 unsigned char z,
+// 		 vector<unsigned char> seeds)
+// {
+// 	Bot& b = S.bots[bid];
+// 	b.active = true;
+// 	b.position = Pos(x, y, z);
+// 	b.seeds = std::move(seeds);
+// }
 
 
 
-vector<unsigned char> Emulator::get_state() {
-	// you'd better never know how it is achieved
-	vector<unsigned char> result;
-	result.push_back(S.R);
-	result.push_back(S.high_harmonics);
-	for (auto x : S.matrix)  result.push_back(x);
-	return result;
-}
+// vector<unsigned char> Emulator::get_state() {
+// 	// you'd better never know how it is achieved
+// 	vector<unsigned char> result;
+// 	result.push_back(S.R);
+// 	result.push_back(S.high_harmonics);
+// 	for (auto x : S.matrix)  result.push_back(x);
+// 	return result;
+// }
 
 
-vector<unsigned char> Emulator::get_bots() {
-	// same here
-	vector<unsigned char> result;
-	for (Bot& b : S.bots) {
-		if (!b.active) continue;
-		result.push_back(b.pid);
-		result.push_back(b.position.x);
-		result.push_back(b.position.y);
-		result.push_back(b.position.z);
-		result.push_back((unsigned char)b.seeds.size());
-		for (auto x : b.seeds) result.push_back(x);
-	}
-	return result;
-}
+// vector<unsigned char> Emulator::get_bots() {
+// 	// same here
+// 	vector<unsigned char> result;
+// 	for (Bot& b : S.bots) {
+// 		if (!b.active) continue;
+// 		result.push_back(b.bid);
+// 		result.push_back(b.position.x);
+// 		result.push_back(b.position.y);
+// 		result.push_back(b.position.z);
+// 		result.push_back((unsigned char)b.seeds.size());
+// 		for (auto x : b.seeds) result.push_back(x);
+// 	}
+// 	return result;
+// }
 
 
 

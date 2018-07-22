@@ -1,72 +1,93 @@
-from production.cpp_emulator.emulator import Emulator as CppEmulator
-from production.emulator import State, Bot, LOW, HIGH
+import production.cpp_emulator.emulator as Cpp
+from production.emulator import Bot, State, LOW, HIGH
 from production.basics import Pos, Diff
 from production.model import Model
 import production.commands as commands
 
 from bitarray import bitarray
 
+MAXBOTNUMBER = 40
 
-def set_state(em, state):
-    m = state.matrix._data.tobytes()
-    em.reconstruct(state.R, m, state.harmonics == HIGH, state.energy)
-    for b in state.bots:
-        em.add_bot(b.bid, b.pos.x, b.pos.y, b.pos.z, b.seeds)
-    return em
+#----------- conversions --------------#
 
+def pos_from_cpp(cpos):
+    return Pos(x=cpos.x, y=cpos.y, z=cpos.z)
 
-def get_bots(em):
-    a = em.get_bots()
-    i = 0
-    bots = []
-    while i < len(a):
-        bid = a[i]
-        p = Pos(a[i+1], a[i+2], a[i+3])
-        sl = a[i+4]
-        i += 5
-        seeds = list(a[i+j] for j in range(sl))
-        i += sl
-        b = Bot(bid = bid, pos = p, seeds = seeds)
-        bots.append(b)
-    return bots
+def pos_to_cpp(pos):
+    return Cpp.Pos(pos.x, pos.y, pos.z)
 
 
-def get_state(em):
-    a = em.get_state()
-    s = State(a[0])
-    s.harmonics = HIGH if a[1] else LOW
-    b = bitarray(endian='little')
-    b.frombytes(bytes(a[2:]))
-    m = Model(s.R)
-    m._data = b
-    s.bots = get_bots(em)
-    s.matrix = m
-    s.energy = em.energy()
+def bot_from_cpp(cb):
+    return Bot(bid=cb.bid, pos=pos_from_cpp(cb.pos), seeds=cb.seeds)
+
+def bot_from_cpp(b):
+    return Cpp.Bot(b.bid, pos_to_cpp(b.pos), b.seeds, True)
+
+
+def state_from_cpp(cs):
+    s = State(cs.R)
+    s.harmonics = HIGH if cs.high_harmonics else LOW
+    s.energy = cs.energy
+    s.matrix = Model(cs.R, bytes(cs.matrix))
+    s.bots = list(bot_from_cpp(cb) for cb in cs.bots if cb.active)
     return s
+
+def state_to_cpp(s):
+    cm = s.matrix._data.tobytes()
+    # cbots = list(Cpp.Bot(i, Cpp.Pos(0, 0, 0), [], False) 
+    #                      for i in range(MAXBOTNUMBER + 1))
+    cbots = list(Cpp.Bot() for i in range(MAXBOTNUMBER + 1))
+    for b in s.bots:
+        cb = Cpp.Bot(b.bid, pos_to_cpp(b.pos), b.seeds, True)
+        cbots[b.bid] = cb
+    cs = Cpp.State()
+    cs.set_state(s.R, s.harmonics == HIGH, s.energy, cm, cbots)
+    return cs
+
+
+def from_cpp(item):
+    if isinstance(item, Cpp.Pos):
+        return pos_from_cpp(item)
+    if isinstance(item, Cpp.Bot):
+        return bot_from_cpp(item)
+    if isinstance(item, Cpp.State):
+        return state_from_cpp(item)
+
+def to_cpp(item):
+    if isinstance(item, Pos):
+        return pos_to_cpp(item)
+    if isinstance(item, Bot):
+        return bot_to_cpp(item)
+    if isinstance(item, State):
+        return state_to_cpp(item)
 
 
 def main_run_interactive():
     import production.utils as utils
 
-    em = CppEmulator()
-    
+    # assuming we have this state
     m = Model(3)
     m._data = bitarray('000100000' + '000000000' + '000000000')
+
     s = State(3)
     s.matrix = m
     s.harmonics = LOW
     s.energy = 30
     s.bots = [Bot(bid = 2, pos = Pos(0, 0, 1), seeds = [3, 4, 5])]
 
-    set_state(em, s)
-
     cmds = [commands.Fill(Diff(1, 1, 0)), commands.SMove(Diff(0, 0, -1))]
+
+    # we can run steps in cpp emulator and get new state
+    em = Cpp.Emulator()
+    em.set_state(state_to_cpp(s))
+
+    # commands are passed encoded
     from itertools import chain
     cmdlist = list(chain.from_iterable(x.compose() for x in cmds))
 
     em.run_commands(cmdlist)
 
-    s = get_state(em)
+    s = state_from_cpp(em.get_state())
     print("\nEnergy: ", s.energy)
     print("Central cell: ", s.matrix[Pos(1, 1, 1)])
     print("Bot position: ", s.bots[0].pos)
@@ -77,7 +98,7 @@ def main_run_file():
     modelfile = str(utils.project_root() / 'julie_scratch' / 'LA014_tgt.mdl')
     tracefile = str(utils.project_root() / 'julie_scratch' / 'LA014.nbt')
 
-    em = CppEmulator()
+    em = Cpp.Emulator()
     em.load_model(modelfile, 't')   # t - target model, s - source or current model
     em.load_trace(tracefile)
     em.run()

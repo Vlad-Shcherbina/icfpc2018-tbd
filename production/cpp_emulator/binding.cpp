@@ -52,26 +52,36 @@ PYBIND11_MODULE(emulator, m) {
 		.def(py::self == py::self)
 		.def(py::self != py::self)
 		.def("__str__", &Pos::__str__)
+		.def_readonly("x", &Pos::x)
+		.def_readonly("y", &Pos::y)
+		.def_readonly("z", &Pos::z)
 	;
 
 	py::class_<Bot> BotClass(m, "Bot");
 	BotClass
-		.def(py::init<unsigned char,
-			          unsigned char,
-			          unsigned char,
-			          unsigned char,
-			          std::vector<unsigned char>,
-			          bool>())
+		.def(py::init<>())
+		.def(py::init<unsigned char, Pos, std::vector<unsigned char>, bool>())
+		.def_readonly("bid", &Bot::bid)
+		.def_readonly("pos", &Bot::position)
+		.def_readonly("seeds", &Bot::seeds)
+		.def_readonly("active", &Bot::active)
 	;
 
 	py::class_<State> StClass(m, "State");
 	StClass
+		.def(py::init<>())
 		.def(py::init<int>())
+
+		.def_readonly("R", &State::R)
+		.def_readonly("high_harmonics", &State::high_harmonics)
+		.def_readonly("bots", &State::bots)
+		.def_readonly("matrix", &State::matrix)
+		.def_readonly("energy", &State::energy)
+
 		//.def("__getitem__", (bool (*)(const Pos&)) &State::getbit)
 		//.def("__setitem__", (void (*)(const Pos&, bool)) &State::setbit)
 		.def("assert_well_formed", &State::assert_well_formed)
-
-		.def_readonly("energy", &State::energy)
+		.def("set_state", &State::set_state)
 	;
 
 	py::class_<Emulator> EmClass(m, "Emulator");
@@ -82,15 +92,18 @@ PYBIND11_MODULE(emulator, m) {
 		.def("load_trace", &Emulator::load_trace)
 		.def("set_trace", &Emulator::set_trace)
 
+		.def("set_state", &Emulator::set_state)
+		.def("get_state", &Emulator::get_state)
+
 		.def("run_step", &Emulator::run_one_step)
 		.def("run", &Emulator::run_all)
 		.def("run_commands", &Emulator::run_given)
 
 		.def("energy", &Emulator::energy)
-		.def("reconstruct", &Emulator::reconstruct_state)
-		.def("add_bot", &Emulator::add_bot)
-		.def("get_state", &Emulator::get_state)
-		.def("get_bots", &Emulator::get_bots)
+		//.def("reconstruct", &Emulator::reconstruct_state)
+		//.def("add_bot", &Emulator::add_bot)
+		//.def("get_state", &Emulator::get_state)
+		//.def("get_bots", &Emulator::get_bots)
 	;
 
 	m.def("region_dimension", (int (*)(const Pos&, const Pos&)) &region_dimension);
