@@ -114,6 +114,9 @@ def view_problem(id):
         ''',
         [id])
     traces = cur.fetchall()
+    best_energy = min(
+        (energy for _, _, _, energy, _, _ in traces if energy is not None),
+        default=-1)
     return flask.render_template_string(VIEW_PROBLEM_TEMPLATE, **locals())
 
 VIEW_PROBLEM_TEMPLATE = '''\
@@ -141,9 +144,21 @@ Extra:
     <tr>
         <td>{{ url_for('view_trace', id=trace_id) | linkify}}</td>
         <td>{{ trace_status }}</td>
-        <td>{{ trace_energy }}</td>
+        <td>
+            {% if best_energy == trace_energy %}
+                <b>{{ trace_energy }}</b>
+            {% else %}
+                {{ trace_energy }}
+            {% endif %}
+        </td>
         <td>{{ trace_t | render_timestamp }}</td>
-        <td>{{ trace_scent }}</td>
+        <td>
+            {% if best_energy == trace_energy %}
+                <b>{{ trace_scent }}</b>
+            {% else %}
+                {{ trace_scent }}
+            {% endif %}
+        </td>
         <td>{{ url_for('view_invocation', id=trace_inv_id) | linkify }}</td>
     </tr>
 {% endfor %}
