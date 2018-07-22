@@ -13,21 +13,21 @@ from production.solver_interface import ProblemType, Solver, SolverResult, Fail
 # single bot to sweep each xz-plane of the bounding box from bottom to top
 # filling the voxel below the bot if necessary, return to the origin,
 # set harmonics to Low, and halt
-def default_assembly(model) -> List[Command]:
+def default_assembly(model_src, model_tgt) -> List[Command]:
 
-    start,finish = bounding_box(model)
+    start,finish = bounding_box(model_tgt)
 
-    return apply_default_strategy(Model(model.R), model, (3,1,1), start)
+    return apply_default_strategy(Model(model_tgt.R), model_tgt, (3,1,1), start)
 
 # Default deassembly solver: compute a bounding box, use a single bot to
 # sweep each xz-plane of the bounding box from top to bottom emptying the
 # voxel below the bot if necessary, return to the origin, halt
-def default_deassembly(model) -> List[Command]:
+def default_deassembly(model_src,model_tgt = None) -> List[Command]:
 
-    finish, start = bounding_box(model)
+    finish, start = bounding_box(model_src)
     start = Pos(finish.x,start.y,finish.z)
 
-    return apply_default_strategy(model, Model(model.R), (3,-1,1), start, False)
+    return apply_default_strategy(model_src, Model(model_src.R), (3,-1,1), start, False)
 
 # Default reassembly solver: compute a bounding box, set harmonics to High, use a
 # single bot to sweep each xz-plane of the bounding box from top to bottom
@@ -193,11 +193,13 @@ class DefaultSolver(Solver):
         result = problem_type == ProblemType.Assemble\
               or problem_type == ProblemType.Disassemble\
               or problem_type == ProblemType.Reassemble
+        return result
 
     def solve(
             self, name: str,
             src_model: Optional[bytes],
             tgt_model: Optional[bytes]) -> SolverResult:
+        m_src = m_tgt = None
         if src_model is not None:
             m_src = Model.parse(src_model)
             strategy = default_deassembly
@@ -208,7 +210,7 @@ class DefaultSolver(Solver):
             strategy = default_reassembly
 
         try:
-            trace = strategy(m)
+            trace = strategy(m_src, m_tgt)
             trace_data = compose_commands(trace)
             return SolverResult(trace_data, extra={})
         except KeyboardInterrupt:
