@@ -1,6 +1,9 @@
-# The difference from defalt_solver is that this version better optimizes
-# "useless" movements where we don't fill anything. Instead of using Bounding
-# Box it goes directly to the next point which should be filled.
+# The first deffirence from defalt_solver is the here we use simple hardcoded
+# parallelization to 4 workers.
+#
+# The second difference is that this version better optimizes "useless"
+# movements where we don't fill anything. Instead of using Bounding Box it goes
+# directly to the next point which should be filled.
 #
 # See snake_fill_gen for details
 
@@ -31,6 +34,10 @@ def sign(x):
 # make long step along the Z coordinate and flip X direction. Similartly with Y
 # and Z cordinates.
 def snake_path_gen(a, b):
+    assert(a.x < b.x)
+    assert(a.y < b.y)
+    assert(a.z < b.z)
+
     yield Diff(0, 1, 0)
     yield Diff(0, 0, 1)
 
@@ -43,10 +50,9 @@ def snake_path_gen(a, b):
     y_dir = 1
     z_dir = 3
 
-    def inside():
-        return (y >= a.x and y <= b.x and
-                x >= a.x and x <= b.x and
-                z >= a.x and z <= b.x)
+    def inside_x(): return x >= a.x and x <= b.x
+    def inside_y(): return y >= a.y and y <= b.y
+    def inside_z(): return z >= a.z and z <= b.z
 
     def flip_x(): nonlocal x_dir; x_dir = -x_dir
     def flip_y(): nonlocal y_dir; y_dir = -y_dir
@@ -59,22 +65,26 @@ def snake_path_gen(a, b):
         while True:
             while True:
                 inc_x()
-                if inside():
+                if inside_x():
                     yield Diff(x_dir, 0, 0)
                 else:
                     flip_x()
                     inc_x() # return back
                     break
+            prev_z = z
             inc_z()
-            if inside():
+            if inside_z():
                 yield Diff(0, 0, z_dir)
             else:
                 flip_z()
-                while not inside(): # slowly return back
-                    z = z + sign(z_dir)
-                break
+                z = z + sign(z_dir)
+                if inside_z():
+                    yield Diff(0, 0, z - prev_z)
+                else:
+                    z = z + 2*sign(z_dir)
+                    break
         inc_y()
-        if inside():
+        if inside_y():
             yield Diff(0, y_dir, 0)
         else:
             flip_y()
@@ -96,6 +106,10 @@ def split_linear_move(diff):
         yield Cmd.SMove(norm * c)
 
 
+def inside_region(p: 'Pos', a: 'Pos', b: 'Pos'):
+    return (a.x <= p.x and p.x <= b.x and
+            a.y <= p.y and p.y <= b.y and
+            a.z <= p.z and p.z <= b.z)
 # Fill the regin [a, b] using optimized default stratagy
 #
 # Returns: commands stream wich is terminated by a final Pos
@@ -123,7 +137,7 @@ def snake_fill_gen(m: 'Model', a: Pos, b: Pos):
 
         fillBelow = False
         for d in [Diff(0, -1, 0), Diff(0, -1, 1), Diff(0, -1, -1)]:
-            if (nextPos + d).is_inside_matrix(m.R) and m[nextPos + d]:
+            if inside_region((nextPos + d), a, b) and m[nextPos + d]:
                 fillBelow = True
         if fillBelow:
             dx = nextPos.x - prevPos.x
@@ -136,7 +150,7 @@ def snake_fill_gen(m: 'Model', a: Pos, b: Pos):
             for x in split_linear_move(Diff(dx, 0, 0)): yield x
 
             for d in [Diff(0, -1, 0), Diff(0, -1, 1), Diff(0, -1, -1)]:
-                if (nextPos + d).is_inside_matrix(m.R) and m[nextPos + d]:
+                if inside_region((nextPos + d), a, b) and m[nextPos + d]:
                     yield Cmd.Fill(d)
                     m[nextPos + d] = False
 
@@ -145,24 +159,95 @@ def snake_fill_gen(m: 'Model', a: Pos, b: Pos):
     yield prevPos
 
 
-def return_home_gen(f: 'Pos', t: 'Pos'):
+def navigate(f: 'Pos', t: 'Pos'):
     # y is last
-    for x in split_linear_move(Diff(-f.x, 0, 0)): yield x
-    for x in split_linear_move(Diff(0, 0, -f.z)): yield x
-    for x in split_linear_move(Diff(0, -f.y, 0)): yield x
+    dx = t.x - f.x
+    dy = t.y - f.y
+    dz = t.z - f.z
+    if dy > 0:
+        for x in split_linear_move(Diff(0, dy, 0)): yield x
+    for x in split_linear_move(Diff(dx, 0, 0)): yield x
+    for x in split_linear_move(Diff(0, 0, dz)): yield x
+    if dy > 0:
+        for x in split_linear_move(Diff(0, dy, 0)): yield x
 
+def merge(gens):
+    iters = [iter(x) for x in gens]
+    pos = [None for x in gens]
+    ok = True
+    while ok:
+        ok = False
+        for i in range(len(iters)):
+            x = next(iters[i], None)
+            if not x:
+                yield Cmd.Wait()
+            elif type(x) == Pos:
+                pos[i] = x
+                yield Cmd.Wait()
+            else:
+                ok = True
+                yield x
+    yield pos
+
+def append(a, b):
+    for x in a: yield x
+    for x in b: yield x
+
+def agent_gen(m: 'Mode', start: 'Pos', a: 'Pos', b: 'Pos'):
+    for x in navigate(start, a):
+        yield x
+
+    for x in snake_fill_gen(m, a, b):
+        yield x
 
 def solve_gen(m: 'Model'):
-    yield Cmd.Flip()
+    yield Cmd.Flip()                  # 0
+    yield Fission(Diff(0, 1, 0), 2)   # 1
+    yield Fission(Diff(1, 0, 0), 1)   # 2
+    yield Fission(Diff(1, 0, 0), 1)   # 2
+
+    a = (m.R - 1) // 2
+    b = m.R - 1
 
     pos = None
-    for x in snake_fill_gen(m, Pos(0, 0, 0), Pos(m.R - 1, m.R - 1, m.R - 1)):
-        if type(x) == Pos:
+
+    def with_delay(n, x): return append([Cmd.Wait() for x in range(n)], x)
+
+    a1 = with_delay(2, agent_gen(m, Pos(0, 0, 0), Pos(0, 0, 0), Pos(a, m.R, a)))
+    a2 = with_delay(1, agent_gen(m, Pos(0, 1, 0), Pos(0, 0, a + 1), Pos(a, m.R, b)))
+    a3 =               agent_gen(m, Pos(1, 1, 0), Pos(a + 1, 0, a + 1), Pos(b, m.R, b))
+    a4 = with_delay(1, agent_gen(m, Pos(1, 0, 0), Pos(a + 1, 0, 0), Pos(b, m.R, a)))
+    for x in merge([a1, a2, a3, a4]):
+        if type(x) == list:
             pos = x
         else:
             yield x
 
-    for x in return_home_gen(pos, Pos(0, 0, 0)): yield x
+    b1 = []
+    b2 = navigate(pos[1], pos[0] + Diff(0, 0, 1))
+    b3 = navigate(pos[2], pos[3] + Diff(0, 0, 1))
+    b4 = []
+    for x in merge([b1, b2, b3, b4]):
+        if type(x) == list:
+            pass
+        else:
+            yield x
+
+    yield Cmd.FusionP(Diff(0, 0, 1));
+    yield Cmd.FusionS(Diff(0, 0, -1));
+    yield Cmd.FusionS(Diff(0, 0, -1));
+    yield Cmd.FusionP(Diff(0, 0, 1));
+
+    for x in merge([[], navigate(pos[3], pos[0] + Diff(1, 0, 0))]):
+        if type(x) == list:
+            pass
+        else:
+            yield x
+
+    yield Cmd.FusionP(Diff(1, 0, 0));
+    yield Cmd.FusionS(Diff(-1, 0, 0));
+
+    for x in navigate(pos[0], Pos(0, 0, 0)): yield x
 
     yield Cmd.Flip()
     yield Cmd.Halt()
@@ -173,7 +258,7 @@ class DefaultSolver2(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Default 2.0'
+        return 'Default 2.1'
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Assemble
@@ -204,6 +289,5 @@ if __name__ == '__main__':
     m    = Model.parse(data)
 
     with open('LA{0:03d}.nbt'.format(task_number), 'wb') as f:
-        # f.write( compose_commands(solve_gen(m)) )
         for cmd in solve_gen(m):
             f.write(bytearray(cmd.compose()))
