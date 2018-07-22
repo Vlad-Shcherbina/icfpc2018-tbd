@@ -1,5 +1,5 @@
 <!--
-  Grabbed from https://icfpcontest2018.github.io/lgtn/exec-trace.html
+  Grabbed from https://icfpcontest2018.github.io/full/exec-trace.html
   and modified to use hardcoded model data.
 -->
 
@@ -10,7 +10,7 @@
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" href="/static/assets/css/style.css?v=fad0f815184a4c51c41b858d1100c63393da3180" media="screen" type="text/css">
+    <link rel="stylesheet" href="/static/assets/css/style.css?v=5663c2365969934f52af3755945f973775d082a2" media="screen" type="text/css">
     <!-- <link rel="stylesheet" href="/static/assets/css/print.css" media="print" type="text/css"> -->
 
     <!--[if lt IE 9]>
@@ -18,15 +18,15 @@
     <![endif]-->
 
     <!-- Begin Jekyll SEO tag v2.5.0 -->
-<title>Execute Trace (Lightning) | ICFP Programming Contest 2018</title>
+<title>Execute Trace (Full) | ICFP Programming Contest 2018</title>
 <meta name="generator" content="Jekyll v3.7.3" />
-<meta property="og:title" content="Execute Trace (Lightning)" />
+<meta property="og:title" content="Execute Trace (Full)" />
 <meta property="og:locale" content="en_US" />
-<link rel="canonical" href="https://icfpcontest2018.github.io/lgtn/exec-trace.html" />
-<meta property="og:url" content="https://icfpcontest2018.github.io/lgtn/exec-trace.html" />
+<link rel="canonical" href="https://icfpcontest2018.github.io/full/exec-trace.html" />
+<meta property="og:url" content="https://icfpcontest2018.github.io/full/exec-trace.html" />
 <meta property="og:site_name" content="ICFP Programming Contest 2018" />
 <script type="application/ld+json">
-{"@type":"WebPage","url":"https://icfpcontest2018.github.io/lgtn/exec-trace.html","headline":"Execute Trace (Lightning)","@context":"http://schema.org"}</script>
+{"@type":"WebPage","url":"https://icfpcontest2018.github.io/full/exec-trace.html","headline":"Execute Trace (Full)","@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -47,17 +47,28 @@
     <div id="content-wrapper">
       <div class="wide-inner clearfix">
         <section id="main-content" style="width: 100%;">
-          <h1 id="execute-trace-lightning">Execute Trace (Lightning)</h1>
+          <h1 id="execute-trace-full">Execute Trace (Full)</h1>
 
 <form>
 
+<input type="hidden" id="full" value="true" />
+
 <p>
-<label for="tgtModelFileIn">Target Model:</label><br />
-<input type="file" accept=".mdl" id="tgtModelFileIn" />
+<label for="srcModelFileIn">Source Model:</label>
+<input type="checkbox" id="srcModelEmpty" />
+<label for="srcModelEmpty">empty</label><br />
+<input type="file" accept=".mdl" id="srcModelFileIn" />
 </p>
 
 <p>
-<label for="traceFileIn">Trace:</label><br />
+<label for="tgtModelFileIn">Target Model:</label>
+<input type="checkbox" id="tgtModelEmpty" />
+<label for="tgtModelEmpty">empty</label><br />
+<input accept=".mdl" type="file" id="tgtModelFileIn" />
+</p>
+
+<p>
+<label for="traceFileIn">Trace:</label>
 <input accept=".nbt" type="file" id="traceFileIn" />
 </p>
 
@@ -122,25 +133,36 @@ var vis = null;
 <script src="/static/assets/js/load-file-utils.js"></script>
 
 <script>
-var tgtModelBData = null;
-var traceBData = null;
+
+var srcModelBData =
+{% if src_data is not none %}
+  new Uint8Array({{ src_data }})
+{% else %}
+  null
+{% endif %};
+
+var tgtModelBData =
+{% if tgt_data is not none %}
+  new Uint8Array({{ tgt_data }})
+{% else %}
+  null
+{% endif %};
+
+var traceBData = new Uint8Array({{ trace_data }});
+
 (function () {
+  var srcModelEmpty = document.getElementById('srcModelEmpty');
+  var tgtModelEmpty = document.getElementById('tgtModelEmpty');
   var execTrace = document.getElementById('execTrace');
   function onStart() {
     document.getElementById('stdout').innerHTML = "";
     if (vis) { vis.setSize(8, 8, 8); };
     execTrace.disabled = true;
   }
-  function onSuccess() {
-    if (tgtModelBData && traceBData) {
-      execTrace.disabled = false;
-    }
+  window.onload = function() {
+    execTrace.disabled = false;
   }
-  tgtModelBData = new Uint8Array({{ model_data }});
-  traceBData = new Uint8Array({{ trace_data }});
-
-  window.onload = onSuccess;
-})()
+})();
 </script>
 
 <script src="/static/assets/js/exec-trace.js"></script>

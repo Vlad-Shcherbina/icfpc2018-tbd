@@ -216,21 +216,27 @@ def visualize_trace(id):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        'SELECT model_id, data '
+        'SELECT problem_id, data '
         'FROM traces WHERE id = %s',
         [id])
-    [model_id, trace_data] = cur.fetchone()
+    [problem_id, trace_data] = cur.fetchone()
     trace_data = zlib.decompress(trace_data)
+    trace_data = list(map(int, trace_data))
 
     cur.execute(
-        'SELECT data '
-        'FROM models WHERE id = %s',
-        [model_id])
-    [model_data] = cur.fetchone()
-    model_data = zlib.decompress(model_data)
+        'SELECT src_data, tgt_data '
+        'FROM problems WHERE id = %s',
+        [problem_id])
+    [src_data, tgt_data] = cur.fetchone()
+    if src_data is not None:
+        src_data = zlib.decompress(src_data)
+        src_data = list(map(int, src_data))
+    if tgt_data is not None:
+        tgt_data = zlib.decompress(tgt_data)
+        tgt_data = list(map(int, tgt_data))
 
     return flask.render_template(
         'visualize_trace.html',
-        model_data=list(map(int, model_data)),
-        trace_data=list(map(int, trace_data)))
-
+        src_data=src_data,
+        tgt_data=tgt_data,
+        trace_data=trace_data)
