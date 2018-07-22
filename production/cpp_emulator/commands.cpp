@@ -78,6 +78,12 @@ Diff Command::get_sld(uint8_t a, uint8_t i) {
 	throw parser_error("Unable to decode trace");
 }
 
+
+Diff Command::get_fd(uint8_t a, uint8_t b, uint8_t c) {
+	return Diff((int)a - 30, (int)b - 30, (int)c - 30);
+}
+
+
 unique_ptr<Command> Command::getnextcommand(Emulator* em) {
 	uint8_t byte = em->getcommand();
 	if (byte == 255) return make_unique<Halt>();
@@ -85,6 +91,7 @@ unique_ptr<Command> Command::getnextcommand(Emulator* em) {
 	if (byte == 253) return make_unique<Flip>();
 	uint8_t tail = byte & 7;
 	if (tail == 3) return make_unique<Fill>(get_nd(byte));
+	if (tail == 2) return make_unique<Void>(get_nd(byte));
 	if (tail == 6) return make_unique<FusionS>(get_nd(byte));
 	if (tail == 7) return make_unique<FusionP>(get_nd(byte));
 
@@ -95,6 +102,13 @@ unique_ptr<Command> Command::getnextcommand(Emulator* em) {
 											   	get_sld(byte>>4, byte2));
 		else		  return make_unique<SMove>(get_lld(byte>>4, byte2));
 	}
+
+	uint8_t byte3 = em->getcommand();
+	uint8_t byte4 = em->getcommand();
+	if (tail == 1)
+		return make_unique<GFill>(get_nd(byte), get_fd(byte2, byte3, byte4));
+	if (tail == 0)
+		return make_unique<GVoid>(get_nd(byte), get_fd(byte2, byte3, byte4));
 	throw parser_error("Unable to decode trace");
 }
 

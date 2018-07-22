@@ -10,14 +10,15 @@ class Emulator;
 
 struct Command {
 	virtual ~Command() = default;
-	virtual void execute(Bot* b, State* S) = 0;
 	virtual void check_preconditions(Bot* b, State* S) = 0;
 	virtual void set_volatiles(Bot* b, State* S) = 0;
+	virtual void execute(Bot* b, State* S) = 0;
 	virtual std::string __str__() = 0;
 
 	static Diff get_nd(uint8_t byte);
 	static Diff get_lld(uint8_t a, uint8_t i);
 	static Diff get_sld(uint8_t a, uint8_t i);
+	static Diff get_fd(uint8_t a, uint8_t b, uint8_t c);
 	static std::unique_ptr<Command> getnextcommand(Emulator* em);
 };
 
