@@ -1,7 +1,7 @@
 from typing import Optional, Set
 from bitarray import bitarray
 
-from production.basics import Pos
+from production.basics import Pos, Region
 
 
 class Model:
@@ -50,6 +50,17 @@ class Model:
                 visit(Pos(x, 0, z))
 
         return visited
+
+    def bounding_box(self) -> Optional[Region]:
+        end = Pos(self.R - 1, self.R - 1, self.R - 1)
+        box = None
+        for pos in Region(Pos(0, 0, 0), end):
+            if self[pos]:
+                if not box:
+                    box = Region(pos, pos)
+                else:
+                    box.expand(pos)
+        return box
 
 
 def main():

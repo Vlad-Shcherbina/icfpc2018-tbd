@@ -37,6 +37,16 @@ class Pos:
         if self.z + 1 < R:
             yield Pos(self.x, self.y, self.z + 1)
 
+    def min(self, other: 'Pos') -> 'Pos':
+        return Pos(min(self.x, other.x),
+                min(self.y, other.y),
+                min(self.z, other.z))
+
+    def max(self, other: 'Pos') -> 'Pos':
+        return Pos(max(self.x, other.x),
+                max(self.y, other.y),
+                max(self.z, other.z))
+
 
 @dataclass(frozen=True)
 class Diff:
@@ -78,10 +88,8 @@ class Region:
     pos_max: Pos
 
     def __init__(self, pos1: Pos, pos2: Pos):
-        self.pos_min = Pos(min(pos1.x, pos2.x), min(pos1.y, pos2.y),
-                min(pos1.z, pos2.z))
-        self.pos_max = Pos(max(pos1.x, pos2.x), max(pos1.y, pos2.y),
-                max(pos1.z, pos2.z))
+        self.pos_min = pos1.min(pos2)
+        self.pos_max = pos1.max(pos2)
 
     def dimension(self):
         return (self.pos_min.x != self.pos_max.x) + \
@@ -93,6 +101,11 @@ class Region:
             for y in range(self.pos_min.y, self.pos_max.y + 1):
                 for z in range(self.pos_min.z, self.pos_max.z + 1):
                     yield Pos(x, y, z)
+
+    def expand(self, pos: Pos):
+        '''Expand region to include the specified position.'''
+        self.pos_min = self.pos_min.min(pos)
+        self.pos_max = self.pos_max.max(pos)
 
 
 def region_dimension(c1: Pos, c2: Pos):
