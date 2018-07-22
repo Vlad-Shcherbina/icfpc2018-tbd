@@ -5,6 +5,7 @@
 #include <vector>
 #include <stdint.h>
 #include <assert.h>
+#include <algorithm>
 
 class Matrix {
 public:
@@ -58,6 +59,26 @@ public:
             work.emplace_back(p.x, p.y, p.z + 1);
         }
         return result;
+    }
+
+    int count_inside_region(Pos p1, Pos p2) const {
+        int x1 = std::min(p1.x, p2.x);
+        int x2 = std::max(p1.x, p2.x);
+        int y1 = std::min(p1.y, p2.y);
+        int y2 = std::max(p1.y, p2.y);
+        int z1 = std::min(p1.z, p2.z);
+        int z2 = std::max(p1.z, p2.z);
+        int cnt = 0;
+        for (int x = x1; x <= x2; x++) {
+            for (int y = y1; y <= y2; y++) {
+                for (int z = z1; z <= z2; z++) {
+                    if (get(Pos(x, y, z))) {
+                        cnt++;
+                    }
+                }
+            }
+        }
+        return cnt;
     }
 
 private:

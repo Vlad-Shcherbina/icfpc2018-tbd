@@ -57,6 +57,8 @@ PYBIND11_MODULE(emulator, m) {
 		.def(py::self != py::self)
 		.def(py::self < py::self)
 		.def("__repr__", &Pos::__repr__)
+		.def("pack", &Pos::pack)
+		.def("unpack", &Pos::unpack)
 		.def_readonly("x", &Pos::x)
 		.def_readonly("y", &Pos::y)
 		.def_readonly("z", &Pos::z)
@@ -69,6 +71,7 @@ PYBIND11_MODULE(emulator, m) {
 		.def("get", &Matrix::get)
 		.def("set", &Matrix::set)
 		.def("grounded_voxels", &Matrix::grounded_voxels)
+		.def("count_inside_region", &Matrix::count_inside_region)
 	;
 
 	// TODO

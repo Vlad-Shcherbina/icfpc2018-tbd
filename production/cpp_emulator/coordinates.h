@@ -2,6 +2,7 @@
 #define __COORDINATES_H_INCLUDED__
 
 #include <string>
+#include <assert.h>
 
 const int SHORT_DISTANCE = 5;
 const int LONG_DISTANCE = 15;
@@ -50,6 +51,20 @@ public:
 	Pos& operator-= (const Diff& d);
 	std::string __repr__() const;
 
+	int pack(int R) const {
+		assert(is_inside(R));
+		return x * R * R + y * R + z;
+	}
+
+	static Pos unpack(int R, int idx) {
+		assert(R <= 250);
+		assert(idx >= 0);
+		assert(idx < R * R * R);
+		return Pos(
+			idx / (R * R),
+			idx / R % R,
+			idx % R);
+	}
 };
 
 
