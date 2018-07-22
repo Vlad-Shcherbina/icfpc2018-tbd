@@ -63,6 +63,7 @@ public:
 
 	bool __getitem__(const Pos& p) const;
 	void __setitem__(const Pos& p, bool value);
+
 };
 
 

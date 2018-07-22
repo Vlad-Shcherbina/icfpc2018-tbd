@@ -113,7 +113,7 @@ PYBIND11_MODULE(emulator, m) {
 	py::class_<Emulator> EmClass(m, "Emulator");
 	EmClass
 		.def(py::init<std::optional<Matrix>, std::optional<Matrix>>())
-//		.def(py::init<const State&>())
+		.def(py::init<const State&>())
 		.def("set_trace", &Emulator::set_trace)
 
 		.def("set_state", &Emulator::set_state)

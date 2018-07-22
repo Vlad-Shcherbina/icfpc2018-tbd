@@ -25,13 +25,14 @@ def bot_from_cpp(b):
     return Cpp.Bot(b.bid, pos_to_cpp(b.pos), b.seeds, True)
 
 
-def state_from_cpp(cs):
-    s = State(cs.R)
-    s.harmonics = HIGH if cs.high_harmonics else LOW
-    s.energy = cs.energy
-    s.matrix = Model(cs.R, bytes(cs.matrix))
-    s.bots = list(bot_from_cpp(cb) for cb in cs.bots if cb.active)
-    return s
+# forget it
+# def state_from_cpp(cs):
+#     s = State(cs.R)
+#     s.harmonics = HIGH if cs.high_harmonics else LOW
+#     s.energy = cs.energy
+#     s.matrix = Model(cs.R, bytes(cs.matrix))
+#     s.bots = list(bot_from_cpp(cb) for cb in cs.bots if cb.active)
+#     return s
 
 
 def state_to_cpp(s):
@@ -50,7 +51,7 @@ def from_cpp(item):
     if isinstance(item, Cpp.Bot):
         return bot_from_cpp(item)
     if isinstance(item, Cpp.State):
-        return state_from_cpp(item)
+        raise NotImplementedError()
 
 def to_cpp(item):
     if isinstance(item, Pos):
@@ -117,9 +118,9 @@ def main_run_interactive():
 
     print("\nSuccessful run: ", not em.aborted)
 
-    s = state_from_cpp(em.get_state())
-    print("Energy: ", s.energy)
-    print("Central cell: ", s.matrix[Pos(1, 1, 1)])
+    cs = em.get_state()
+    print("Energy: ", cs.energy)
+    print("Central cell: ", cs[Cpp.Pos(1, 1, 1)])
     print("Bot position: ", s.bots[0].pos)
 
 
@@ -148,4 +149,4 @@ def main_run_file():
 
 if __name__ == '__main__':
     main_run_file()
-    # main_run_interactive()
+    main_run_interactive()
