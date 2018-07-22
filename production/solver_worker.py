@@ -229,6 +229,7 @@ def main():
                 logging.info(f'problem/{problem_id} goes to worker {worker_index}')
             else:
                 logging.info(f'Skipping problem/{problem_id}')
+            logging.info(f'{len(problem_ids)} remaining')
         else:
             if len(available_workers) == num_workers:
                 break
