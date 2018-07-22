@@ -26,6 +26,8 @@ public:
 	bool operator==(const Diff& other) const;
 	bool operator!=(const Diff& other) const;
 	bool operator<(const Diff& other) const;
+	int operator[](int axis) const;
+	static Diff byaxis(int axis, int value);
 
 	Diff operator+(Diff other) const {
 		return Diff(dx + other.dx, dy + other.dy, dz + other.dz);

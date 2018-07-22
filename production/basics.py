@@ -84,6 +84,21 @@ class Diff:
     def is_far(self):
         return 0 < self.clen() <= 30
 
+    # support for enumerating axes
+    def __getitem__(self, axis: int):
+        if axis == 0: return self.dx
+        if axis == 1: return self.dy
+        if axis == 2: return self.dz
+        assert False, f'Invalid axis {axis}'
+
+    @staticmethod
+    def byaxis(axis: int, value: int = 1):
+        if axis == 0: return Diff(value, 0, 0)
+        if axis == 1: return Diff(0, value, 0)
+        if axis == 2: return Diff(0, 0, value)
+        assert False, f'Invalid axis {axis}'
+
+
 
 @dataclass()
 class Region:

@@ -65,6 +65,24 @@ bool Diff::operator<(const Diff& other) const {
 	return make_tuple(dx, dy, dz) < make_tuple(other.dx, other.dy, other.dz);
 }
 
+int Diff::operator[](int axis) const {
+	switch (axis) {
+		case 0: return dx;
+		case 1: return dy;
+		case 2: return dz;
+		default: throw std::invalid_argument("axis");
+	}
+}
+
+Diff Diff::byaxis(int axis, int value) {
+	switch (axis) {
+		case 0: return Diff(value, 0, 0);
+		case 1: return Diff(0, value, 0);
+		case 2: return Diff(0, 0, value);
+		default: throw std::invalid_argument("axis");
+	}
+}
+
 string Diff::__repr__() const {
 	return "Diff(" + std::to_string(dx) + ", " + std::to_string(dy) + ", " + std::to_string(dz) + ")";
 }

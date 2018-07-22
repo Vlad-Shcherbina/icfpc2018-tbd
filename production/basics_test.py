@@ -1,6 +1,7 @@
-import unittest
+import unittest, pytest
 import production.basics as py_
 import production.cpp_emulator.emulator as cpp_
+
 
 
 class CommonTests:
@@ -58,6 +59,22 @@ class CommonTests:
         assert self.region_dimension(self.Pos(1, 2, 3), self.Pos(1, 2, 3)) == 0
         assert self.region_dimension(self.Pos(1, 2, 3), self.Pos(1, 20, 3)) == 1
         assert self.region_dimension(self.Pos(1, 2, 3), self.Pos(0, 0, 0)) == 3
+
+
+    def test_byaxis(self):
+        r = self.Diff.byaxis(0, 10) + self.Diff.byaxis(1, 20) + self.Diff.byaxis(2, 30)
+        assert r[0] == 10
+        assert r[1] == 20
+        assert r[2] == 30
+
+        with pytest.raises((ValueError, AssertionError)):
+            x = r[-1]
+        with pytest.raises((ValueError, AssertionError)):
+            x = r[4]
+        with pytest.raises((ValueError, AssertionError)):
+            x = self.Diff.byaxis(-1, 10)
+        with pytest.raises((ValueError, AssertionError)):
+            x = self.Diff.byaxis(4, 10)
 
 
 class PyTest(unittest.TestCase, CommonTests):

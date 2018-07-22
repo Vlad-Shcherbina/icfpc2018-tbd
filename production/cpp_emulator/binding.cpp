@@ -44,6 +44,8 @@ PYBIND11_MODULE(emulator, m) {
 		.def_readonly("dx", &Diff::dx)
 		.def_readonly("dy", &Diff::dy)
 		.def_readonly("dz", &Diff::dz)
+		.def("__getitem__", &Diff::operator[], py::is_operator())
+		.def("byaxis", &Diff::byaxis)
 	;
 
 	py::class_<Pos> PosClass(m, "Pos");
@@ -138,7 +140,7 @@ PYBIND11_MODULE(emulator, m) {
 		.def_readonly("nd", &GVoid::nd)
 		.def_readonly("fd", &GVoid::fd)
 	;
-	
+
 
 	py::class_<Bot> BotClass(m, "Bot");
 	BotClass
