@@ -17,5 +17,7 @@ magic_extension(
         'commands.h',
         'logger.h',
         'matrix.h',
+        'debug.h',
+        'pretty_printing.h',
     ],
 )

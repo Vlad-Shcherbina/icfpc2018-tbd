@@ -66,7 +66,7 @@ bool Diff::operator<(const Diff& other) const {
 }
 
 string Diff::__repr__() const {
-	return "[" + std::to_string(dx) + ", " + std::to_string(dy) + ", " + std::to_string(dz) + "]";
+	return "Diff(" + std::to_string(dx) + ", " + std::to_string(dy) + ", " + std::to_string(dz) + ")";
 }
 
 
@@ -129,7 +129,7 @@ Pos& Pos::operator-= (const Diff& d) {
 }
 
 string Pos::__repr__() const {
-	return "[" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + "]";
+	return "Pos(" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + ")";
 }
 
 

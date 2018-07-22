@@ -2,6 +2,7 @@
 #define __COORDINATES_H_INCLUDED__
 
 #include <string>
+#include <ostream>
 #include <assert.h>
 
 const int SHORT_DISTANCE = 5;
@@ -33,11 +34,15 @@ public:
 	std::string __repr__() const;
 };
 
+inline std::ostream& operator<<(std::ostream &out, Diff d) {
+	return out << d.__repr__().c_str();
+}
 
 class Pos {
 public:
 	int x, y, z;
 
+	Pos () : x(0), y(0), z(0) {}
 	Pos (int x, int y, int z);
 	Pos (const Pos& other);
 	bool is_inside(int R) const;
@@ -67,6 +72,9 @@ public:
 	}
 };
 
+inline std::ostream& operator<<(std::ostream &out, Pos d) {
+	return out << d.__repr__().c_str();
+}
 
 int region_dimension(const Pos& a, const Pos& b);
 int region_dimension(const Diff& d);
