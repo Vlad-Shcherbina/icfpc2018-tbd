@@ -193,7 +193,7 @@ def append(a, b):
     for x in a: yield x
     for x in b: yield x
 
-def agent_gen(m: 'Mode', start: 'Pos', a: 'Pos', b: 'Pos'):
+def agent_gen(m: 'Model', start: 'Pos', a: 'Pos', b: 'Pos'):
     for x in navigate(start, a):
         yield x
 
