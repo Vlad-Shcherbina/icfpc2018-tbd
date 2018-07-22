@@ -8,6 +8,7 @@ from bitarray import bitarray
 
 MAXBOTNUMBER = 40
 
+
 #----------- conversions --------------#
 
 def pos_from_cpp(cpos):
@@ -62,12 +63,20 @@ def to_cpp(item):
         return state_to_cpp(item)
 
 
+#----------- examples --------------#
+
 def main_run_interactive():
     import production.utils as utils
 
-    # assuming we have this state
+    # assuming we have left state and expecting right state
+    #   x->
+    # z ...  ...  ...  |  b..  ...  ...
+    # | bo.  ...  ...  |  .o.  .o.  ...
+    # v ...  ...  ...  |  ...  ...  ...
+    #   y ---------->
+
     m = Model(3)
-    m._data = bitarray('000100000' + '000000000' + '000000000')
+    m._data = bitarray('000100000000000000000000000')
 
     s = State(3)
     s.matrix = m
@@ -77,18 +86,37 @@ def main_run_interactive():
 
     cmds = [commands.Fill(Diff(1, 1, 0)), commands.SMove(Diff(0, 0, -1))]
 
+
     # we can run steps in cpp emulator and get new state
+
     em = Cpp.Emulator()
     em.set_state(state_to_cpp(s))
 
+    # if no logfile name given, emulator doesn't log
+    # problemname and solutionname are optional
+
+    from production import utils
+    em.setlogfile(str(utils.project_root() / 'outputs' / 'cpp_emulator.log'))
+    em.setproblemname("some handmade problem")
+    em.setsolutionname("John Doe's ingenious alg")
+
     # commands are passed encoded
+
     from itertools import chain
     cmdlist = list(chain.from_iterable(x.compose() for x in cmds))
 
+    # emulator runs bunch of commands and throws exceptions
+    # if some are invalid or illegal
+
     em.run_commands(cmdlist)
 
+    # current state;
+    # previous state if exception was raised
+
+    print("\nSuccessful run: ", not em.aborted)
+
     s = state_from_cpp(em.get_state())
-    print("\nEnergy: ", s.energy)
+    print("Energy: ", s.energy)
     print("Central cell: ", s.matrix[Pos(1, 1, 1)])
     print("Bot position: ", s.bots[0].pos)
 
@@ -97,10 +125,12 @@ def main_run_file():
     from production import utils
     modelfile = str(utils.project_root() / 'julie_scratch' / 'LA014_tgt.mdl')
     tracefile = str(utils.project_root() / 'julie_scratch' / 'LA014.nbt')
+    logfile = str(utils.project_root() / 'outputs' / 'cpp_emulator.log')
 
     em = Cpp.Emulator()
     em.load_model(modelfile, 't')   # t - target model, s - source or current model
     em.load_trace(tracefile)
+    em.setlogfile(logfile)
     em.run()
 
     print("Energy: ", em.energy())

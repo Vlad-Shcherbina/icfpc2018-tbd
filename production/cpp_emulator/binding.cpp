@@ -10,17 +10,13 @@
 #include "coordinates.h"
 #include "commands.h"
 #include "emulator.h"
+#include "logger.h"
 
 using std::vector;
 using std::string;
 using std::unique_ptr;
 using std::make_unique;
 
-int foo(Pos a) { return a.x + 1; }
-int foo() { return 0; }
-
-
-/*====================== BINDING ========================*/
 
 namespace py = pybind11;
 PYBIND11_MODULE(emulator, m) {
@@ -100,11 +96,13 @@ PYBIND11_MODULE(emulator, m) {
 		.def("run_commands", &Emulator::run_given)
 
 		.def("energy", &Emulator::energy)
-		//.def("reconstruct", &Emulator::reconstruct_state)
-		//.def("add_bot", &Emulator::add_bot)
-		//.def("get_state", &Emulator::get_state)
-		//.def("get_bots", &Emulator::get_bots)
+		.def_readonly("aborted", &Emulator::aborted)
+
+		.def("setproblemname", &Emulator::setproblemname)
+		.def("setsolutionname", &Emulator::setsolutionname)
+		.def("setlogfile", &Emulator::setlogfile)
 	;
 
 	m.def("region_dimension", (int (*)(const Pos&, const Pos&)) &region_dimension);
+
 }

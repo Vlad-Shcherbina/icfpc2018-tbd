@@ -9,6 +9,7 @@
 
 struct Command;
 class State;
+class Logger;
 
 class Bot {
 public:
@@ -36,11 +37,9 @@ public:
 	std::vector<Bot> bots;
 	bool halted;
 
-
 	//std::vector<unsigned char> floating;
 	std::vector<unsigned char> target;
 	std::vector<unsigned char> volatiles;
-	bool volatile_violation;
 
 	State();
 	State(unsigned char R);
@@ -61,7 +60,7 @@ public:
 	bool assert_well_formed();
 
 	int count_active();
-	bool validate_step();
+	void validate_step();
 	void run_commands();
 	void add_passive_energy();
 
@@ -74,7 +73,10 @@ public:
 	int time_step;
 	std::vector<unsigned char> trace;
 	unsigned tracepointer;
+	std::unique_ptr<Logger> logger;
+	bool aborted;
 
+	
 	Emulator();
 
 	void load_model(std::string filename, char dest);
@@ -92,28 +94,17 @@ public:
 	void run_given(std::vector<unsigned char> newtrace);
 	void load(std::string modelfile, std::string tracefile);
 
-	// void reconstruct_state(
-	// 		unsigned char R,
-	// 		std::vector<unsigned char> matrix,
-	// 		bool harmonics,
-	// 		int64_t energy);
-
-	// void add_bot(unsigned char bid,
-	// 			 unsigned char x,
-	// 			 unsigned char y,
-	// 			 unsigned char z,
-	// 			 std::vector<unsigned char> seeds);
-
-	//std::vector<unsigned char> get_state();
-	//std::vector<unsigned char> get_bots();
-
-
 	int64_t energy();
-	int count_active();
+
+	// piping logger options
+	void setproblemname(std::string);
+	void setsolutionname(std::string);
+	void setlogfile(std::string);
+
+
 
 private:
 	std::vector<unsigned char>* choose_matrix(char c);
 };
-
 
 #endif

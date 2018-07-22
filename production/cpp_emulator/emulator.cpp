@@ -2,8 +2,10 @@
 #include <iostream>
 #include <cassert>
 #include <memory>
+#include <cstring>
 #include "emulator.h"
 #include "commands.h"
+#include "logger.h"
 
 using std::vector;
 using std::string;
@@ -43,18 +45,14 @@ Bot& Bot::operator=(const Bot& other) {
 }
 
 
-
 void Bot::set_volatiles(State* S) {
-	if (!command) {
-		// TODO: report
-		assert (false);
-	}
+	if (!command) throw malfunc_error("Active bot without command");
 	(*command).set_volatiles(this, S);
 }
 
 
 void Bot::execute(State* S) {
-	assert (command);
+	if (!command) throw malfunc_error("Active bot without command");
 	(*command).execute(this, S);
 }
 
@@ -75,7 +73,6 @@ void State::set_initials() {
 	R = 0;
 	energy = 0;
 	high_harmonics = false;
-	volatile_violation = false;
 	halted = false;
 	set_default_bots();			// maybe should be moved
 }
@@ -130,14 +127,12 @@ void State::setbit(const Pos& p, bool value) {
 
 bool State::getbit(const Pos& p, const vector<unsigned char>& v) const {
 	int w = p.x*R*R + p.y*R + p.z;
-	// TODO: TEST!
 	return v[w / 8] & (1 << (w % 8));
 }
 
 
 void State::setbit(const Pos& p, bool value, vector<unsigned char>& v) {
 	int w = p.x*R*R + p.y*R + p.z;
-	// TODO: TEST!
 	v[w / 8] ^= (getbit(p, v) != value) << (w % 8);
 }
 
@@ -155,16 +150,10 @@ int State::count_active() {
 }
 
 
-bool State::validate_step() {
+void State::validate_step() {
 	// TODO: check floatings
 	for (auto& x : volatiles) x = 0;
 	for (Bot& b : bots) if (b.active) b.set_volatiles(this);
-	if (volatile_violation) {
-		// TODO: report
-		assert (false);
-	}
-	// TODO: handle returns
-	return true;
 }
 
 
@@ -181,8 +170,11 @@ void State::add_passive_energy() {
 /*====================== EMULATOR =======================*/
 
 Emulator::Emulator() 
-: time_step(0) 
-{ }
+: time_step(0)
+, aborted(false) {
+	logger = std::make_unique<Logger>();
+	logger->em = this;
+}
 
 
 void Emulator::load_trace(string filename) {
@@ -194,6 +186,7 @@ void Emulator::load_trace(string filename) {
 	while (f >> c) trace.push_back(c);
 	f.close();
 	tracepointer = 0;
+	if (logger->solutionname == "") logger->solutionname = filename;
 }
 
 
@@ -208,6 +201,7 @@ vector<unsigned char>* Emulator::choose_matrix(char c) {
 		case 's' : return &S.matrix;
 		case 't' : return &S.target;
 		case 'v' : return &S.volatiles;
+		default  : throw std::runtime_error("Unknown matrix identifier");
 	}
 }
 
@@ -221,11 +215,12 @@ void Emulator::load_model(string filename, char dest) {
 	S.set_size((unsigned)c);
 
 	vector<unsigned char>* m = choose_matrix(dest);
-
 	uint32_t i = 0;
 	while (f >> c) (*m)[i++] = c;
 	f.close();
 
+	if (logger->problemname == "") logger->problemname = filename + " " + dest;
+	// TODO : doesn't work for reassembling
 	assert (S.target.size() == S.matrix.size());
 }
 
@@ -247,6 +242,10 @@ State Emulator::get_state() {
 
 
 unsigned char Emulator::getcommand() {
+	if (tracepointer == trace.size()) {
+		throw emulation_error("End of trace");
+		assert (false);
+	}
 	return trace[tracepointer++];
 }
 
@@ -254,27 +253,40 @@ unsigned char Emulator::getcommand() {
 void Emulator::run_one_step() {
 	time_step++;
 
-	for (Bot& b : S.bots) {
-		if (!b.active) continue;
-		b.command = Command::getnextcommand(this);
-		// std::cout << (*(b.command)).__str__() << "\n";
-	}
+	try {
+		for (Bot& b : S.bots) {
+			if (!b.active) continue;
+			b.command = Command::getnextcommand(this);
+			// std::cout << (*(b.command)).__str__() << "\n";
+		}
 
-	S.validate_step();
-	S.add_passive_energy();
-	S.run_commands();
+		S.validate_step();
+		S.add_passive_energy();
+		S.run_commands();
+	}
+	catch (base_error& e) {
+		logger->logerror(e.what());
+		S.halted = aborted = true;
+		throw e;
+	}
 }
 
 
 void Emulator::run_all() {
+	logger->mode = "auto";
+	logger->start();
 	while (!S.halted) run_one_step();
+	logger->logsuccess(S.energy);
 }
 
 
 void Emulator::run_given(vector<unsigned char> newtrace) {
+	logger->mode = "interactive";
+	logger->start();
 	trace = std::move(newtrace);
 	tracepointer = 0;
-	while (tracepointer < trace.size()) run_one_step();
+	while (tracepointer < trace.size() && !S.halted) run_one_step();
+	logger->logsuccess(S.energy);
 }
 
 
@@ -283,47 +295,8 @@ int64_t Emulator::energy() {
 }
 
 
+//---- Logger stuff ----//
 
-
-// void Emulator::add_bot(unsigned char bid,
-// 		 unsigned char x,
-// 		 unsigned char y,
-// 		 unsigned char z,
-// 		 vector<unsigned char> seeds)
-// {
-// 	Bot& b = S.bots[bid];
-// 	b.active = true;
-// 	b.position = Pos(x, y, z);
-// 	b.seeds = std::move(seeds);
-// }
-
-
-
-// vector<unsigned char> Emulator::get_state() {
-// 	// you'd better never know how it is achieved
-// 	vector<unsigned char> result;
-// 	result.push_back(S.R);
-// 	result.push_back(S.high_harmonics);
-// 	for (auto x : S.matrix)  result.push_back(x);
-// 	return result;
-// }
-
-
-// vector<unsigned char> Emulator::get_bots() {
-// 	// same here
-// 	vector<unsigned char> result;
-// 	for (Bot& b : S.bots) {
-// 		if (!b.active) continue;
-// 		result.push_back(b.bid);
-// 		result.push_back(b.position.x);
-// 		result.push_back(b.position.y);
-// 		result.push_back(b.position.z);
-// 		result.push_back((unsigned char)b.seeds.size());
-// 		for (auto x : b.seeds) result.push_back(x);
-// 	}
-// 	return result;
-// }
-
-
-
-int Emulator::count_active() { return S.count_active(); }
+void Emulator::setproblemname(std::string name) { logger->problemname = name; }
+void Emulator::setsolutionname(std::string name) { logger->solutionname = name; }
+void Emulator::setlogfile(std::string name) { logger->logfile = name; }

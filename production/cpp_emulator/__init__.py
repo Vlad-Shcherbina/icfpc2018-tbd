@@ -2,5 +2,6 @@
 from production.cpp_utils import magic_extension
 magic_extension(
     name='emulator',
-    sources=['binding.cpp', 'emulator.cpp', 'coordinates.cpp', 'commands.cpp'],
+    sources=['binding.cpp', 'emulator.cpp', 'coordinates.cpp', 
+             'commands.cpp', 'logger.cpp'],
     headers=[])
