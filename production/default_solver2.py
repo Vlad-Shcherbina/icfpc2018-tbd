@@ -168,7 +168,7 @@ def navigate(f: 'Pos', t: 'Pos'):
         for x in split_linear_move(Diff(0, dy, 0)): yield x
     for x in split_linear_move(Diff(dx, 0, 0)): yield x
     for x in split_linear_move(Diff(0, 0, dz)): yield x
-    if dy > 0:
+    if dy < 0:
         for x in split_linear_move(Diff(0, dy, 0)): yield x
 
 def merge(gens):
@@ -238,6 +238,7 @@ def solve_gen(m: 'Model'):
     yield Cmd.FusionS(Diff(0, 0, -1));
     yield Cmd.FusionP(Diff(0, 0, 1));
 
+
     for x in merge([[], navigate(pos[3], pos[0] + Diff(1, 0, 0))]):
         if type(x) == list:
             pass
@@ -258,7 +259,7 @@ class DefaultSolver2(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Default 2.1'
+        return 'Default 2.1.1'
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Assemble
