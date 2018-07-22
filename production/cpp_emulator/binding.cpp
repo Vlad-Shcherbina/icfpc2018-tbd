@@ -23,6 +23,10 @@ namespace py = pybind11;
 PYBIND11_MODULE(emulator, m) {
 	m.doc() = "C++ Emulator";
 
+	m.attr("SHORT_DISTANCE") = SHORT_DISTANCE;
+	m.attr("LONG_DISTANCE") = LONG_DISTANCE;
+	m.attr("FAR_DISTANCE") = FAR_DISTANCE;
+
 	py::class_<Diff> DiffClass(m, "Diff");
 	DiffClass
 		.def(py::init<int, int, int>())

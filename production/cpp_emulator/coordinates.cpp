@@ -31,10 +31,10 @@ int Diff::clen() const {
 
 bool Diff::is_adjacent() const { return mlen() == 1; }
 bool Diff::is_near() const { return (clen() == 1) && (mlen() == 1 || mlen() == 2); }
-bool Diff::is_far() const { return (clen() > 0) && (clen() <= 30); }
+bool Diff::is_far() const { return (clen() > 0) && (clen() <= FAR_DISTANCE); }
 bool Diff::is_linear() const { return ((dx == 0) + (dy == 0) + (dz == 0)) == 2; }
-bool Diff::is_short() const { return is_linear() && mlen() <= 5; }
-bool Diff::is_long() const {return is_linear() && mlen() <= 15; }
+bool Diff::is_short() const { return is_linear() && mlen() <= SHORT_DISTANCE; }
+bool Diff::is_long() const {return is_linear() && mlen() <= LONG_DISTANCE; }
 bool Diff::operator==(const Diff& other) const { return dx == other.dx && dy == other.dy && dz == other.dz; }
 bool Diff::operator!=(const Diff& other) const { return !(*this == other); }
 
