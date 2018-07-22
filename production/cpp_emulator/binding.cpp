@@ -50,6 +50,7 @@ PYBIND11_MODULE(emulator, m) {
 		.def("__iadd__", &Pos::operator+=, py::is_operator())
 		.def(py::self == py::self)
 		.def(py::self != py::self)
+		.def(py::self < py::self)
 		.def("__str__", &Pos::__str__)
 		.def_readonly("x", &Pos::x)
 		.def_readonly("y", &Pos::y)

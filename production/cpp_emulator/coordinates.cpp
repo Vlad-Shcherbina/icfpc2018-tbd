@@ -61,7 +61,6 @@ bool Diff::operator!=(const Diff& other) const {
 	return !(*this == other);
 }
 
-
 string Diff::__str__() const {
 	return "[" + std::to_string(dx) + ", " + std::to_string(dy) + ", " + std::to_string(dz) + "]";
 }

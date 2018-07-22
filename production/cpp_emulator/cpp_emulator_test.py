@@ -16,11 +16,10 @@ def test_run_from_file():
     logfilename = str(utils.project_root() / 'outputs' / 'cpp_emulator.log')
 
     mf = open(modelfile, 'rb')
-    R = ord(mf.read(1))
     m = Cpp.Matrix.parse(mf.read())
     mf.close()
 
-    assert m.R == R
+    em = Cpp.Emulator(None, m)      # (source, target)
 
     tf = open(tracefile, 'rb')
     em.set_trace(tf.read())
