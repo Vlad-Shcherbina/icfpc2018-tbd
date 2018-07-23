@@ -20,9 +20,12 @@ def main():
     cur = conn.cursor()
 
     for name in sorted(data_files.full_names()):
+        if not name.startswith('FR'):
+            continue
         logging.info(name)
 
         src_data, tgt_data = data_files.full_problem(name)
+        tgt_data = None
 
         stats = {}
         if src_data is not None:
@@ -43,6 +46,9 @@ def main():
             tgt_data = zlib.compress(tgt_data)
 
         logging.info(stats)
+
+        name = name.replace('FR', 'ZD')
+        logging.info(name)
 
         extra = {}
 

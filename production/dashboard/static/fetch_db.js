@@ -42,7 +42,7 @@ function make_row({id,	name,	has_src,	has_tgt,	stats,	prob_inv_id,	trace_id,	sce
         {text: energy, bold: is_best},
         {text: scent, bold: is_best},
         linkify('inv', trace_inv_id),
-        `${extra.solver_time|0}s+${extra.pyjs_time|0}s`,
+        `${(extra||{}).solver_time|0}s+${(extra||{}).pyjs_time|0}s`,
     ];
     return `<tr>${cols.map(render_td).join('')}</tr>`
 }
