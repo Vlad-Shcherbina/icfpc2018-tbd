@@ -68,13 +68,13 @@ class BottomUpSolver(Solver):
             tgt_model: Optional[bytes]) -> SolverResult:
         assert src_model is None
         m = Model.parse(tgt_model)
-        trace = [cmd for step in up_pass(m) for cmd in step]
+        trace = up_pass(m)
         trace_data = compose_commands(trace)
         return SolverResult(trace_data, extra={})
 
 
 def write_solution(bytetrace, number): # -> IO ()
-    with open('./problemsL/LA{0:03d}.nbt'.format(number), 'wb') as f:
+    with open('./LA{0:03d}.nbt'.format(number), 'wb') as f:
         f.write(bytetrace)
 
 def solve(strategy, model, number): # -> IO ()
