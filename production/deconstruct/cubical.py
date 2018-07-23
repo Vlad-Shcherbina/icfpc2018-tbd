@@ -12,14 +12,30 @@ from production.solver_interface import ProblemType, Solver, SolverResult, Fail
 from production.data_files import *
 from production.pyjs_emulator.run import run
 
-from production.deconstruct.lib import clear_down
-from production.group_programs import move_y
+from production.deconstruct.lib import clear_all
+from production.group_programs import move_x, move_y, move_z, single
+from production.solver_utils import bounding_box
 
 def cubical(model):
-    prog = move_y(19)
-    prog += clear_down(model, 0, 19, 0, 20, 19, 18)
+    (pos1, pos2) = bounding_box(model)
 
-    return prog
+    width  = pos2.x - pos1.x + 1
+    height = pos2.y - pos1.y + 1
+    depth  = pos2.z - pos1.z + 1
+
+    (x_cur, x_next) = (0, pos1.x)
+    (y_cur, y_next) = (0, pos2.y + 1)
+    (z_cur, z_next) = (0, pos1.z)
+
+    prog  = move_x(pos1.x)
+    prog += move_z(pos1.z - 1)
+
+    prog += clear_all(model, pos1.x, 0, pos1.z - 1, width, height, depth)
+
+    prog += move_x(-pos1.x)
+    prog += move_z(-pos1.z + 1)
+
+    return prog + single(Halt())
 
 
 class CubicalDeconstructor(Solver):
@@ -27,7 +43,7 @@ class CubicalDeconstructor(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Cubical 0'
+        return 'Cubical 0.1'
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Disassemble
