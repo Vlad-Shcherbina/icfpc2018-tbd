@@ -41,7 +41,7 @@ class GroupProgram:
 
     # Repeat the same program for a number of groups (**).
     def __pow__(self: "GroupProgram", times: int) -> "GroupProgram":
-        newSeq = map(lambda step: it.chain(*it.repeat(step, times)), self.stepsSequence)
+        newSeq = map(lambda step: it.chain(*it.repeat(list(step), times)), self.stepsSequence)
         return GroupProgram(self.startSize * times, self.endSize * times, newSeq)
 
 
@@ -70,6 +70,13 @@ class GroupProgram:
     @staticmethod
     def empty(*moves: Command) -> "GroupProgram":
         return GroupProgram(0, 0, [])
+
+
+    # Turns the iterable inside the program into a list which makes it safe
+    # to refer to this program multiple times.
+    def frozen(self):
+        return GroupProgram(self.startSize, self.endSize,
+                list(map(list, self.stepsSequence)))
 
 
     def __iter__(self):
