@@ -54,7 +54,7 @@ class CubicalDeconstructor(Solver):
             pass
 
     def scent(self) -> str:
-        return 'Cubical 2.1 @ ' + str(self.gdist) + (' (high)' if self.high else '')
+        return 'Cubical 2.2 @ ' + str(self.gdist) + (' (high)' if self.high else '')
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Disassemble
