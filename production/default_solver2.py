@@ -488,10 +488,10 @@ def solve_gen(m: 'Model', x_cnt: 'int', z_cnt: 'int'):
 
 class DefaultSolver2(Solver):
     def __init__(self, args):
-        assert not args
+        self.w, self.h = map(int, args)
 
     def scent(self) -> str:
-        return 'Default 2.4.2-6x6'
+        return f'Default 2.4.4-{self.w}x{self.h}'
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Assemble
@@ -502,7 +502,7 @@ class DefaultSolver2(Solver):
             tgt_model: Optional[bytes]) -> SolverResult:
         assert src_model is None
         m = Model.parse(tgt_model)
-        trace_data = compose_commands(solve_gen(m, 6, 6))
+        trace_data = compose_commands(solve_gen(m, self.w, self.h))
         return SolverResult(trace_data, extra={})
 
 if __name__ == '__main__':
