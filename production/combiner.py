@@ -7,6 +7,12 @@ from production.solver_interface import ProblemType, Solver, SolverResult, Fail,
 from production.cpp_emulator.emulator import Matrix
 from production import db
 
+_conn = None
+def get_shared_conn():
+    global _conn
+    if _conn is None:
+        _conn = db.get_conn()
+    return _conn
 
 class Combiner(Solver):
     def __init__(self, args):
@@ -22,7 +28,7 @@ class Combiner(Solver):
             self, name: str,
             src_model: Optional[bytes],
             tgt_model: Optional[bytes]) -> SolverResult:
-        conn = db.get_conn()
+        conn = get_shared_conn()
         cur = conn.cursor()
 
         assert name.startswith('FR')

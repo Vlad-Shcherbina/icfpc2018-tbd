@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 from production import db
 from production import utils
 from production import solver_interface
-from production.pyjs_emulator.run import run_full as pyjs_run_full
+from production.pyjs_emulator.run import run_full as pyjs_run_full, EmulatorResult
 from production.all_solvers import ALL_SOLVERS
 from production.combiner import Combiner
 
@@ -97,19 +97,24 @@ def solve(
             scent=solver.scent(), status='FAIL', energy=None, trace=None,
             extra=dict(solver=sr.extra, solver_time=solver_time))
     elif isinstance(sr.trace_data, (bytes, bytearray)):
-        logging.info('Checking with pyjs...')
-        start = time.time()
-        er = pyjs_run_full(src_data, tgt_data, sr.trace_data)
-        pyjs_time = time.time() - start
-        logging.info(f'It took {pyjs_time}')
-
         if isinstance(solver, Combiner):
             # With the combiner we already know that the solution is correct
             # and what it's energy is supposed to be.
             # Maaaaybe, if this assertion never fails, we can
             # skip running pyjs to save time.
-            assert er.energy == sr.extra['expected_energy'], (
-                er.energy, sr.extra['expected_energy'])
+            #
+            # assert er.energy == sr.extra['expected_energy'], (
+            #     er.energy, sr.extra['expected_energy'])
+
+            logging.info('Skip pyjs check for Combiner')
+            pyjs_time = 0
+            er = EmulatorResult(energy=sr.extra['expected_energy'], extra={})
+        else:
+            logging.info('Checking with pyjs...')
+            start = time.time()
+            er = pyjs_run_full(src_data, tgt_data, sr.trace_data)
+            pyjs_time = time.time() - start
+            logging.info(f'It took {pyjs_time}')
 
         if er.energy is None:
             logging.info(f'Check failed: {er.extra}')
