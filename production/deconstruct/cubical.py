@@ -3,7 +3,6 @@ logger = logging.getLogger(__name__)
 import sys
 from io import StringIO
 from typing import List
-import traceback
 
 from production.model import Model
 from production.commands import *
@@ -28,27 +27,20 @@ class CubicalDeconstructor(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'destroy-cubical-0'
+        return 'Cubical 0'
 
     def supports(self, problem_type: ProblemType) -> bool:
-        return problem_type == ProblemType.Assemble
+        return problem_type == ProblemType.Disassemble
 
     def solve(
             self, name: str,
             src_model: Optional[bytes],
             tgt_model: Optional[bytes]) -> SolverResult:
-        assert src_model is None
-        m = Model.parse(tgt_model)
-        try:
-            trace = [cmd for step in up_pass(m) for cmd in step]
-            trace_data = compose_commands(trace)
-            return SolverResult(trace_data, extra={})
-        except KeyboardInterrupt:
-            raise
-        except:
-            exc = StringIO()
-            traceback.print_exc(file=exc)
-            return SolverResult(Fail(), extra=dict(tb=exc.getvalue()))
+        assert tgt_model is None
+        m = Model.parse(src_model)
+        trace = cubical(m)
+        trace_data = compose_commands(trace)
+        return SolverResult(trace_data, extra={})
 
 
 def write_solution(bytetrace, number): # -> IO ()
@@ -60,21 +52,14 @@ def deconstruction_by_id(id):
     (src, tgt) = full_problem('FD{0:03d}'.format(id))
     return src
 
-def solve(strategy, model, number): # -> IO ()
-    commands = strategy(model)
-    trace = compose_commands(commands)
-    logger.info(run(deconstruction_by_id(number), trace))
-    write_solution(trace, number)
-
 def main():
-    from production import data_files
-
     task_number = int(sys.argv[1]) if len(sys.argv) > 1 else 1
+    mbytes = deconstruction_by_id(task_number)
 
-    m = Model.parse(deconstruction_by_id(task_number))
+    solver = CubicalDeconstructor([])
+    res = solver.solve('main', mbytes, None)
 
-
-    solve(cubical, m, task_number)
+    write_solution(res.trace_data, task_number)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(levelname).1s %(asctime)s %(module)10.10s:%(lineno)-4d %(message)s')
