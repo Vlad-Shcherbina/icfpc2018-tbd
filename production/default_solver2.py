@@ -35,9 +35,10 @@ def sign(x):
 # make long step along the Z coordinate and flip X direction. Similartly with Y
 # and Z cordinates.
 def snake_path_gen(a, b):
-    assert(a.x < b.x)
-    assert(a.y < b.y)
-    assert(a.z < b.z)
+    # Well, I didn't check if a.x == b.x works ^_^
+    assert(a.x <= b.x)
+    assert(a.y <= b.y)
+    assert(a.z <= b.z)
 
     yield Diff(0, 1, 0)
     yield Diff(0, 0, 1)
@@ -339,25 +340,25 @@ class State():
         self.grid = all_rows
 
 
-def partition_space(r, x_cnt, z_cnt):
-    x_step = r // x_cnt
-    z_step = r // z_cnt
+def partition_space(a, b, x_cnt, z_cnt):
+    x_step = (b.x - a.x + 1) // x_cnt
+    z_step = (b.z - a.z + 1) // z_cnt
 
     res = []
     for z in range(z_cnt):
         row = []
-        z1 = z_step*z
+        z1 = a.z + z_step*z
         if z != z_cnt - 1:
-            z2 = z_step*(z + 1) - 1
+            z2 = a.z + z_step*(z + 1) - 1
         else:
-            z2 = r -1
+            z2 = b.z
         for x in range(x_cnt):
-            x1 = x_step*x
+            x1 = a.x + x_step*x
             if x != x_cnt - 1:
-                x2 = x_step*(x + 1) - 1
+                x2 = a.x + x_step*(x + 1) - 1
             else:
-                x2 = r - 1
-            row.append((Pos(x1, 0, z1), Pos(x2, r - 1, z2)))
+                x2 = b.x
+            row.append((Pos(x1, 0, z1), Pos(x2, b.y + 1, z2)))
 
         res.append(row)
 
@@ -425,9 +426,13 @@ def merge_bots(bots, pos):
 def solve_gen(m: 'Model', x_cnt: 'int', z_cnt: 'int'):
     (bb_a, bb_b) = bounding_box(m)
 
+    # For narrow models
+    x_cnt = min(x_cnt, bb_b.x - bb_a.x + 1)
+    z_cnt = min(z_cnt, bb_b.z - bb_a.z + 1)
+
     yield Cmd.Flip()
 
-    zones = partition_space(m.R, x_cnt, z_cnt)
+    zones = partition_space(bb_a, bb_b, x_cnt, z_cnt)
 
     # Spawn bots
     #
@@ -485,7 +490,7 @@ class DefaultSolver2(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Default 2.3.1-6x6'
+        return 'Default 2.4-6x6'
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Assemble
