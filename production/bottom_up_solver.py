@@ -66,7 +66,7 @@ class BottomUpSolver(Solver):
         self.high = len(args) > 0 and args[0] == 'high'
 
     def scent(self) -> str:
-        return 'Bottom Up 2.1.1' + (' (high)' if self.high else '')
+        return 'Bottom Up 2.1.2' + (' (high)' if self.high else '')
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Assemble
