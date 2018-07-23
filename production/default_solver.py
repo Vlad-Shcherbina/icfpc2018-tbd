@@ -159,7 +159,7 @@ def apply_default_strategy(model_src, model_tgt, speeds : Tuple[int,int,int], st
     if corner_voxel:
         commands.append(SMove(mind_the_corner))
         z -= 1
-        commands.append(Fill(-mind_the_corner))
+        commands.append(Fill(mind_the_corner * -1))
 
     x,y,z,return_commands = go_to_point(x,y,z,Pos(0,0,0),False)
 
