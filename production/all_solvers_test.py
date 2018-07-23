@@ -3,7 +3,7 @@ from production.solver_worker import solve
 from production import data_files
 
 
-def test_all_successful_solve():
+def test_all_successful_solvers():
     for solver_class in ALL_SOLVERS.values():
         # Wall of shame in code form
         if solver_class.__name__ in ('BottomUpSolver', 'SwarmSolver'): continue
@@ -16,4 +16,4 @@ def test_all_successful_solve():
 
 
 if __name__ == '__main__':
-    test_all_successful_solve()
+    test_all_successful_solvers()

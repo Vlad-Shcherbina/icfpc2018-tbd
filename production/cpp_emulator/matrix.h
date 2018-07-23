@@ -53,7 +53,7 @@ public:
                 return false;
             }
         }
-        int garbage = data.size() * 8 - R * R * R;
+        int garbage = (int)data.size() * 8 - R * R * R;
         if (garbage) {
             int tail = 8 - garbage;
             uint8_t mask = (1 << tail) - 1;
@@ -65,7 +65,7 @@ public:
     }
 
     int num_grounded_voxels() const {
-        return grounded_voxels().size();
+        return (int)grounded_voxels().size();
     }
 
     std::vector<Pos> grounded_voxels() const {

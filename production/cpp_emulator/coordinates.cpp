@@ -1,6 +1,7 @@
 #include "coordinates.h"
 
 #include <tuple>
+#include <vector>
 
 using std::string;
 using std::make_tuple;
@@ -108,6 +109,29 @@ bool Pos::is_inside(int R) const {
 	       z >= 0 && z < R;
 }
 
+std::vector<Pos> Pos::enum_adjacent(int R) const {
+	std::vector<Pos> res;
+	if (x > 0) {
+		res.emplace_back(x - 1, y, z);
+	}
+	if (y > 0) {
+		res.emplace_back(x, y - 1, z);
+	}
+	if (z > 0) {
+		res.emplace_back(x, y, z - 1);
+	}
+	if (x + 1 < R) {
+		res.emplace_back(x + 1, y, z);
+	}
+	if (y + 1 < R) {
+		res.emplace_back(x, y + 1, z);
+	}
+	if (z + 1 < R) {
+		res.emplace_back(x, y, z + 1);
+	}
+	return res;
+}
+
 Diff Pos::operator-(const Pos& other) const {
 	return Diff(x - other.x, y - other.y, z - other.z);
 }
@@ -150,6 +174,9 @@ string Pos::__repr__() const {
 	return "Pos(" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + ")";
 }
 
+int Pos::__hash__() const {
+	return x ^ (y << 8) ^ (z << 16);
+}
 
 /*======================== OTHER ========================*/
 

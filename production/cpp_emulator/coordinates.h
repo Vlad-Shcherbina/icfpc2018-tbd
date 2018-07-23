@@ -2,6 +2,7 @@
 #define __COORDINATES_H_INCLUDED__
 
 #include <string>
+#include <vector>
 #include <ostream>
 #include <assert.h>
 
@@ -33,6 +34,10 @@ public:
 		return Diff(dx + other.dx, dy + other.dy, dz + other.dz);
 	}
 
+	Diff operator*(int value) const {
+		return Diff(dx * value, dy * value, dz * value);
+	}
+
 	std::string __repr__() const;
 };
 
@@ -48,6 +53,7 @@ public:
 	Pos (int x, int y, int z);
 	Pos (const Pos& other);
 	bool is_inside(int R) const;
+	std::vector<Pos> enum_adjacent(int R) const;
 	Diff operator-(const Pos& other) const;
 	Pos operator+(const Diff& d) const;
 	Pos operator-(const Diff& d) const;
@@ -57,6 +63,7 @@ public:
 	Pos& operator+= (const Diff& d);
 	Pos& operator-= (const Diff& d);
 	std::string __repr__() const;
+	int __hash__() const;
 
 	int pack(int R) const {
 		assert(is_inside(R));

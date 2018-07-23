@@ -46,6 +46,7 @@ PYBIND11_MODULE(emulator, m) {
 		.def_readonly("dz", &Diff::dz)
 		.def("__getitem__", &Diff::operator[], py::is_operator())
 		.def("byaxis", &Diff::byaxis)
+		.def("__mul__", &Diff::operator*, py::is_operator())
 	;
 
 	py::class_<Pos> PosClass(m, "Pos");
@@ -53,11 +54,13 @@ PYBIND11_MODULE(emulator, m) {
 		.def(py::init<int, int, int>())
 		.def(py::self - py::self)
 		.def("is_inside_matrix", &Pos::is_inside)
+		.def("enum_adjacent", &Pos::enum_adjacent)
 		.def("__add__", &Pos::operator+, py::is_operator())
 		.def("__iadd__", &Pos::operator+=, py::is_operator())
 		.def(py::self == py::self)
 		.def(py::self != py::self)
 		.def(py::self < py::self)
+		.def("__hash__", &Pos::__hash__)
 		.def("__repr__", &Pos::__repr__)
 		.def("pack", &Pos::pack)
 		.def("unpack", &Pos::unpack)

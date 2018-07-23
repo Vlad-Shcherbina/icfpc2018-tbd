@@ -60,7 +60,7 @@ def apply_default_strategy(model_src, model_tgt, speeds : Tuple[int,int,int], st
     corner_voxel = reassembly and model_src[starting_point]
     mind_the_corner = Diff(0,0,1) if corner_voxel else Diff(0,0,0)
 
-    x,y,z,commands = go_to_point(0,0,0, (starting_point + Diff(0,offset,0)) + (-mind_the_corner))
+    x,y,z,commands = go_to_point(0,0,0, (starting_point + Diff(0,offset,0)) + mind_the_corner * -1)
     if corner_voxel:
         commands.append(Void(mind_the_corner))
         commands.append(SMove(mind_the_corner))

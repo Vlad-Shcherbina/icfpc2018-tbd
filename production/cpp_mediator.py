@@ -11,20 +11,6 @@ MAXBOTNUMBER = 40
 
 #----------- conversions --------------#
 
-def pos_from_cpp(cpos):
-    return Pos(x=cpos.x, y=cpos.y, z=cpos.z)
-
-def pos_to_cpp(pos):
-    return Cpp.Pos(pos.x, pos.y, pos.z)
-
-
-def diff_from_cpp(cdiff):
-    return Diff(dx=cdiff.dx, dy=cdiff.dy, dz=cdiff.dz)
-
-def diff_to_cpp(diff):
-    return Cpp.Diff(diff.dx, diff.dy, diff.dz)
-
-
 def bot_from_cpp(cb):
     return Bot(bid=cb.bid, pos=pos_from_cpp(cb.pos), seeds=cb.seeds)
 
@@ -36,7 +22,7 @@ def state_to_cpp(s):
     rawdata = bytes([s.R]) + s.matrix._data.tobytes()
     cbots = list(Cpp.Bot(i) for i in range(MAXBOTNUMBER + 1))
     for b in s.bots:
-        cb = Cpp.Bot(b.bid, pos_to_cpp(b.pos), b.seeds, True)
+        cb = Cpp.Bot(b.bid, b.pos, b.seeds, True)
         cbots[b.bid] = cb
     cm = Cpp.Matrix.parse(rawdata)      # source matrix
     return Cpp.State(cm, None, s.harmonics == HIGH, s.energy, cbots)
@@ -69,22 +55,19 @@ def cmd_from_cpp(ccmd):
     if isinstance(ccmd, Cpp.Flip):
         return commands.Flip()
     if isinstance(ccmd, Cpp.SMove):
-        return commands.SMove(diff_from_cpp(ccmd.lld))
+        return commands.SMove(ccmd.lld)
     if isinstance(ccmd, Cpp.LMove):
-        return commands.LMove(diff_from_cpp(ccmd.sld1), 
-                              diff_from_cpp(ccmd.sld2))
+        return commands.LMove(ccmd.sld1, ccmd.sld2)
     if isinstance(ccmd, Cpp.Fission):
-        return commands.Fission(diff_from_cpp(ccmd.nd), ccmd.m)
+        return commands.Fission(ccmd.nd, ccmd.m)
     if isinstance(ccmd, Cpp.Fill):
-        return commands.Fill(diff_from_cpp(ccmd.nd))
+        return commands.Fill(ccmd.nd)
     if isinstance(ccmd, Cpp.Void):
-        return commands.Void(diff_from_cpp(ccmd.nd))
+        return commands.Void(ccmd.nd)
     if isinstance(ccmd, Cpp.GFill):
-        return commands.GFill(diff_from_cpp(ccmd.nd), 
-                              diff_from_cpp(ccmd.fd))
+        return commands.GFill(ccmd.nd, ccmd.fd)
     if isinstance(ccmd, Cpp.GVoid):
-        return commands.GVoid(diff_from_cpp(ccmd.nd), 
-                              diff_from_cpp(ccmd.fd))
+        return commands.GVoid(ccmd.nd, ccmd.fd)
     assert False, ccmd
 
 
@@ -96,22 +79,20 @@ def cmd_to_cpp(cmd):
     if isinstance(cmd, commands.Flip):
         return Cpp.Flip()
     if isinstance(cmd, commands.SMove):
-        return Cpp.SMove(diff_to_cpp(cmd.lld))
+        return Cpp.SMove(cmd.lld)
     if isinstance(cmd, commands.LMove):
-        return Cpp.LMove(diff_to_cpp(cmd.sld1),
-                         diff_to_cpp(cmd.sld2))
+        return Cpp.LMove(cmd.sld1,
+                         cmd.sld2)
     if isinstance(cmd, commands.Fission):
-        return Cpp.Fission(diff_to_cpp(cmd.nd), cmd.m)
+        return Cpp.Fission(cmd.nd, cmd.m)
     if isinstance(cmd, commands.Fill):
-        return Cpp.Fill(diff_to_cpp(cmd.nd))
+        return Cpp.Fill(cmd.nd)
     if isinstance(cmd, commands.Void):
-        return Cpp.Void(diff_to_cpp(cmd.nd))
+        return Cpp.Void(cmd.nd)
     if isinstance(cmd, commands.GFill):
-        return Cpp.GFill(diff_to_cpp(cmd.nd),
-                         diff_to_cpp(cmd.fd))
+        return Cpp.GFill(cmd.nd, cmd.fd)
     if isinstance(cmd, commands.GVoid):
-        return Cpp.GVoid(diff_to_cpp(cmd.nd),
-                         diff_to_cpp(cmd.fd))
+        return Cpp.GVoid(cmd.nd, cmd.fd)
     assert False, cmd
 
 #----------- examples --------------#

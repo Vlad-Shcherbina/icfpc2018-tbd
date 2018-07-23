@@ -5,7 +5,7 @@ from math import floor
 import logging
 logger = logging.getLogger(__name__)
 
-from production.basics import MAX_BOTS, JUMP_LONG, Pos, Diff
+from production.basics import JUMP_LONG, Pos, Diff
 from production.commands import *
 from production.model import Model
 from production.orchestrate import parallel, sequential, wait_for
