@@ -110,6 +110,8 @@ def inside_region(p: 'Pos', a: 'Pos', b: 'Pos'):
     return (a.x <= p.x and p.x <= b.x and
             a.y <= p.y and p.y <= b.y and
             a.z <= p.z and p.z <= b.z)
+
+
 # Fill the regin [a, b] using optimized default stratagy
 #
 # Returns: commands stream wich is terminated by a final Pos
@@ -166,8 +168,8 @@ def navigate(f: 'Pos', t: 'Pos'):
     dz = t.z - f.z
     if dy > 0:
         for x in split_linear_move(Diff(0, dy, 0)): yield x
-    for x in split_linear_move(Diff(dx, 0, 0)): yield x
     for x in split_linear_move(Diff(0, 0, dz)): yield x
+    for x in split_linear_move(Diff(dx, 0, 0)): yield x
     if dy < 0:
         for x in split_linear_move(Diff(0, dy, 0)): yield x
 
@@ -175,22 +177,31 @@ def navigate_pos(f: 'Pos', t: 'Pos'):
     return add_pos(t, navigate(f, t))
 
 def merge(gens):
+    saw_pos = False
     iters = [iter(x) for x in gens]
-    pos = [None for x in gens]
-    ok = True
+    pos   = [None for x in gens]
+    ok    = True
+    buff  = []
     while ok:
         ok = False
         for i in range(len(iters)):
             x = next(iters[i], None)
             if not x:
-                yield Cmd.Wait()
-            elif type(x) == Pos:
-                pos[i] = x
-                yield Cmd.Wait()
+                buff.append( Cmd.Wait() )
             else:
                 ok = True
-                yield x
-    yield pos
+                if type(x) == Pos:
+                    saw_pos = True
+                    pos[i] = x
+                    buff.append( Cmd.Wait() )
+                else:
+                    ok = True
+                    buff.append( x )
+        if ok:
+            for x in buff: yield x
+            buff = []
+    if saw_pos:
+        yield pos
 
 def append(a, b):
     for x in a: yield x
@@ -208,10 +219,15 @@ def sequence(a, nxt):
 
 def rm_pos(g):
     for x in g:
-        if type(x) == Pos or type(x) == list:
+        if type(x) == Pos or type(x) == list or type(x) == dict:
             pass
         else:
             yield x
+
+def print_gen(g):
+    for x in g:
+        print(x)
+        yield x
 
 def add_pos(pos, g):
     for x in rm_pos(g): yield x
@@ -230,71 +246,225 @@ def go_to_start(dest):
 
     return go
 
-def solve_gen(m: 'Model'):
-    yield Cmd.Flip()                  # 0
-    yield Fission(Diff(0, 1, 0), 2)   # 1
-    yield Fission(Diff(1, 0, 0), 1)   # 2
-    yield Fission(Diff(1, 0, 0), 1)   # 2
+def auto_str(cls):
+    def __str__(self):
+        return '%s(%s)' % (
+            type(self).__name__,
+            ', '.join('%s=%s' % item for item in vars(self).items())
+        )
+    cls.__str__ = __str__
+    return cls
 
-    c = (m.R - 1) // 2
-    r = m.R
+@auto_str
+class Bot():
+    def __init__(self, id, pos, seeds):
+        self.state = None
+        self.id = id
+        self.seeds = seeds
+        self.pos = pos
 
-    def with_delay(n, x): return append([Cmd.Wait() for x in range(n)], x)
+    def spawn_keep(self, diff, give_seeds):
+        x = len(self.seeds) - give_seeds - 1
+        return self.spawn(diff, x)
 
-    p = [ Pos(0, 0, 0)
-        , Pos(0, 1, 0)
-        , Pos(1, 1, 0)
-        , Pos(1, 0, 0)]
+    def spawn(self, diff, give_seeds):
+        bot = Bot(self.seeds.pop(0), self.pos + diff, self.seeds[:give_seeds])
+        self.seeds = self.seeds[give_seeds:]
+        cmd = Fission(diff, len(bot.seeds))
 
-    s = [ Pos(0,     0, 0)
-        , Pos(0,     0, c + 1)
-        , Pos(c + 1, 0, c + 1)
-        , Pos(c + 1, 0, 0)]
+        self.state.add_move(self, cmd)
+        self.state.add_bot(bot)
 
-    d = [ Pos(c,     r, c)
-        , Pos(c,     r, r - 1)
-        , Pos(r - 1, r, r - 1)
-        , Pos(r - 1, r, c)]
+        return bot.id
 
-    c1 = with_delay(2, agent_gen(m, p[0], s[0], d[0]))
-    c2 = with_delay(1, agent_gen(m, p[1], s[1], d[1]))
-    c3 =               agent_gen(m, p[2], s[2], d[2])
-    c4 = with_delay(1, agent_gen(m, p[3], s[3], d[3]))
+    def cmd(self, cmd):
+        self.state.add_move(self, cmd)
 
-    c1 = sequence(c1, go_to_start(s[0]))
-    c2 = sequence(c2, go_to_start(s[1]))
-    c3 = sequence(c3, go_to_start(s[2]))
-    c4 = sequence(c4, go_to_start(s[3]))
+@auto_str
+class State():
+    def __init__(self, bots):
+        self.bots = {}
+        self.next_bots = {}
+        for x in bots:
+            self.bots[x.id] = x
+            x.state = self
+        self._clear()
 
+    def __getitem__(self, id) -> bool:
+        return self.bots.get(id) or self.next_bots.get(id)
+
+    def add_bot(self, bot):
+        bot.state = self
+        self.next_bots[bot.id] = bot
+
+    def add_move(self, bot, cmd):
+        assert(type(self.moves[bot.id]) == Cmd.Wait)
+        self.moves[bot.id] = cmd
+
+    def _clear(self):
+        self.moves = {}
+        for i in self.next_bots:
+            x = self.next_bots[i]
+            self.bots[x.id] = x
+        self.next_bots = {}
+        for i in self.bots:
+            self.moves[i] = Cmd.Wait()
+
+    def step(self):
+        for k in sorted( self.moves.keys() ):
+            yield self.moves[k]
+        self._clear()
+
+    @staticmethod
+    def initial_state(total_seeds):
+        bots = [Bot(1, Pos(0, 0, 0), [x + 2 for x in range(total_seeds)])]
+        return State(bots)
+
+    # assuming initial state
+    def spawn_bots(self, x, y):
+        row = [1]
+        p = 1
+        for i in range(x - 1):
+            p = self[p].spawn_keep(Diff(1, 0, 0), y - 1)
+            row.append(p)
+            yield from self.step()
+
+        all_rows = [row]
+        for j in range(y - 1):
+            row = [self[i].spawn_keep(Diff(0, 1, 0), 0) for i in row]
+            all_rows.append(row)
+            yield from self.step()
+
+        self.grid = all_rows
+
+
+def partition_space(r, x_cnt, z_cnt):
+    x_step = r // x_cnt
+    z_step = r // z_cnt
+
+    res = []
+    for z in range(z_cnt):
+        row = []
+        z1 = z_step*z
+        if z != z_cnt - 1:
+            z2 = z_step*(z + 1) - 1
+        else:
+            z2 = r -1
+        for x in range(x_cnt):
+            x1 = x_step*x
+            if x != x_cnt - 1:
+                x2 = x_step*(x + 1) - 1
+            else:
+                x2 = r - 1
+            row.append((Pos(x1, 0, z1), Pos(x2, r, z2)))
+
+        res.append(row)
+
+    return res
+
+def with_delay(n, x):
+    return append([Cmd.Wait() for x in range(n)], x)
+
+def merge_tasks(tasks):
+    keys = sorted( tasks.keys() )
     pos = None
-    for x in merge([c1, c2, c3, c4]):
-        if type(x) == list:
+    for x in merge([tasks[x] for x in keys]):
+        if type(x) == list or type(x) == Pos:
+            pos = x
+        else:
+            yield x
+    if not pos:
+        return
+
+    res = {}
+    for (id, pos) in zip(keys, pos):
+        res[id] = pos
+    yield res
+
+def merge_line(bots, pos, delta):
+    tasks1 = {}
+    for i in bots:
+        tasks1[i] = []
+
+    for i in range(0, len(bots) - 1, 2):
+        a = bots[i]
+        b = bots[i + 1]
+        tasks1[b] = navigate(pos[b], pos[a] + delta)
+
+    yield tasks1
+
+    # Issue fussion commands
+    tasks = {}
+    for i in bots:
+        tasks[i] = []
+
+    new_bots = []
+    for i in range(0, len(bots) - 1, 2):
+        a = bots[i]
+        b = bots[i + 1]
+        tasks[a] = [Cmd.FusionP(delta)]
+        tasks[b] = [Cmd.FusionS(delta * (-1))]
+
+        new_bots.append(a)
+        del pos[b]
+
+    if len(bots) % 2:
+        new_bots.append(bots[-1])
+        tasks[bots[-1]] = [Cmd.Wait()]
+    yield tasks
+
+    if len(new_bots) > 1:
+        yield from merge_line(new_bots, pos, delta)
+
+
+def merge_bots(bots, pos):
+    pass
+
+
+def solve_gen(m: 'Model', x_cnt: 'int', z_cnt: 'int'):
+    yield Cmd.Flip()
+
+    zones = partition_space(m.R, x_cnt, z_cnt)
+
+    # State is used to spawn bots and to provide initial coords and ids
+    st = State.initial_state(39)
+    yield from st.spawn_bots(x_cnt, z_cnt)
+    bots = st.grid
+
+    tasks = {}
+    for z in range(z_cnt):
+        for x in range(x_cnt):
+            id     = bots[z][x]
+            bot    = st[ bots[z][x] ]
+            (a, b) = zones[z][x]
+            d = (x_cnt + z_cnt) - (bot.pos.x + bot.pos.y)
+            tasks[id] = sequence( with_delay(d, agent_gen(m, bot.pos, a, b))
+                                , go_to_start(a))
+
+    for x in merge_tasks(tasks):
+        if type(x) == dict:
             pos = x
         else:
             yield x
 
-    # Merge 1
-    merge1 = [ []
-             , navigate(pos[1], pos[0] + Diff(0, 0, 1))
-             , navigate(pos[2], pos[3] + Diff(0, 0, 1))
-             , []]
-    for x in rm_pos( merge(merge1) ):
-        yield x
+    # Combine rows
+    t = []
+    for i in range(len(bots)):
+        t.append( [x for x in merge_line(bots[i], pos, Diff(1, 0, 0))] )
 
-    yield Cmd.FusionP(Diff(0, 0, 1));
-    yield Cmd.FusionS(Diff(0, 0, -1));
-    yield Cmd.FusionS(Diff(0, 0, -1));
-    yield Cmd.FusionP(Diff(0, 0, 1));
+    for i in range(len(t[0])):
+        tasks = {}
+        for j in range(len(bots)):
+            tasks.update(t[j][i])
+        yield from merge_tasks(tasks)
 
-    for x in rm_pos( merge([[], navigate(pos[3], pos[0] + Diff(1, 0, 0))]) ):
-        yield x
+    # Combine col
+    col = [x[0] for x in bots]
+    for t in merge_line(col, pos, Diff(0, 0, 1)):
+        yield from merge_tasks(t)
 
-    # Merge 2
-    yield Cmd.FusionP(Diff(1, 0, 0));
-    yield Cmd.FusionS(Diff(-1, 0, 0));
-
-    # Go home
-    for x in navigate(pos[0], Pos(0, 0, 0)): yield x
+    # Return home
+    for x in navigate(pos[1], Pos(0, 0, 0)): yield x
 
     yield Cmd.Flip()
     yield Cmd.Halt()
@@ -305,7 +475,7 @@ class DefaultSolver2(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Default 2.2'
+        return 'Default 2.3-6x6'
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Assemble
@@ -316,7 +486,7 @@ class DefaultSolver2(Solver):
             tgt_model: Optional[bytes]) -> SolverResult:
         assert src_model is None
         m = Model.parse(tgt_model)
-        trace_data = compose_commands(solve_gen(m))
+        trace_data = compose_commands(solve_gen(m, 6, 6))
         return SolverResult(trace_data, extra={})
 
 if __name__ == '__main__':
@@ -326,6 +496,6 @@ if __name__ == '__main__':
     data = data_files.lightning_problem(name)
     m    = Model.parse(data)
 
-    with open('LA{0:03d}.nbt'.format(task_number), 'wb') as f:
-        for cmd in solve_gen(m):
+    with open('out.nbt'.format(task_number), 'wb') as f:
+        for cmd in solve_gen(m, 6, 6):
             f.write(bytearray(cmd.compose()))
