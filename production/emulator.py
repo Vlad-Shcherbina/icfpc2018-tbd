@@ -25,7 +25,7 @@ class State:
         self.matrix = Model(R)
         self.harmonics = LOW
         self.energy = 0
-        self.bots = []  # TODO
+        self.bots = [Bot(1, Pos(0, 0, 0), list(range(39)))]  # TODO
 
     def __setitem__(self, pos: Pos, value):
         assert value == 0 or value == 1

@@ -56,15 +56,21 @@ def navigate(f: 'Pos', t: 'Pos'):
     )
 
 
-def navigate_near_voxel(voxel: 'Pos'):
+def nearby_voxel(voxel: 'Pos'):
     '''
-    Navigate to a voxel near enough to the requested voxel so that `Fill`ing it is possible
+    Compute a voxel near enough to the requested voxel so that `Fill`ing it is possible
     but not *on* the requested voxel (as a bot cannot `Fill` the voxel it is occupying).
 
     Right now, just the voxel's top neighbor. This will most likely need to change, as that voxel
-    may already be full.
+    may already be full or may have another bot there. Can actually be any voxel within a near
+    coordinate difference (nd) of the requested one.
     '''
     
     #TODO: detect a voxel near the requested one that is not occupied by an already-filled
     #      voxel or another bot
-    return navigate(voxel + Diff(0, 1, 0))
+
+    return voxel + Diff(0, 1, 0)
+
+
+def navigate_near_voxel(current_position: 'Pos', voxel: 'Pos'):
+    return navigate(current_position, nearby_voxel(voxel))
