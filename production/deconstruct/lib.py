@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 from typing import Tuple
 
 from production.basics import Diff, Pos
@@ -76,6 +78,7 @@ def clear_tower(model, x, y, z, width, height, depth) -> GroupProgram:
 # It will spawn 7 more bots and remove a hyperrectangle of given dimensions
 # in front and below it.
 def clear_cube_below(model, x, y, z, width, height, depth) -> GroupProgram:
+    logging.debug("Cube at x=%d y=%d z=%d, %d x %d x %d", x,y,z,width,height,depth)
     assert width <= G_DIST + 1 and height <= G_DIST + 1 and depth <= G_DIST + 1
     # assert depth > 1
     # assert width > 1
@@ -145,6 +148,7 @@ def spawn_down(model, x, y, z):
 # Program for 1 bot. Makes it go down to given depth, drilling
 # the path where necessary.
 def drill_down(model, x, y, z, depth) -> GroupProgram:
+    logging.debug("drill: %d %d %d - %d", x,y,z, depth)
     prog = single()
 
     while depth > 0:
@@ -158,5 +162,6 @@ def drill_down(model, x, y, z, depth) -> GroupProgram:
             else:
                 step += 1
         prog += move_y(-1 * step)
+        y -= step
         depth -= step
     return prog
