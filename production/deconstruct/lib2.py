@@ -58,7 +58,7 @@ def distribute_roots(x, y, z, full_w, last_w, seeds):
     if full_w == 1 and last_w == 0: return single()
 
     return +single(Fission(Diff(-1,0,0),6)) + \
-           (+single(Fission(Diff(1,0,0),seeds-7-1)) // single()) + \
+           (+single(Fission(Diff(1,0,0),max(seeds-7-1,0))) // single()) + \
            (-(single(FusionP(Diff(-1,0,0))) // single(FusionS(Diff(1,0,0)))) // (move_x(G_DIST) + distribute_roots(x+G_DIST, y, z, full_w - 1, last_w, seeds-7-1)))
 
 def collapse_roots(full_w, last_w):
