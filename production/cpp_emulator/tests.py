@@ -109,6 +109,8 @@ def test_safe_to_change():
 
     assert cpp.safe_to_change(m, Pos(0, 0, 1))
     assert m == m0
+    assert cpp.safe_to_change(m, Pos(2, 0, 1))
+    assert m == m0
     assert cpp.safe_to_change(m, Pos(0, 1, 1))
     assert m == m0
     assert not cpp.safe_to_change(m, Pos(0, 1, 0))

@@ -144,6 +144,9 @@ optional<pair<Pos, vector<shared_ptr<Command>>>> path_to_nearest_of(
 
 bool safe_to_change(Matrix &m, Pos pos) {
     if (!m.get(pos)) {
+        if (pos.y == 0) {
+            return true;
+        }
         for (Diff d : DIRS) {
             Pos p = pos + d;
             if (p.is_inside(m.R) && m.get(p)) {
