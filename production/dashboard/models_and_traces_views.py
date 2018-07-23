@@ -48,9 +48,10 @@ LIST_PROBLEMS_TEMPLATE = '''\
 <script src='/static/merge_equal_td.js'></script>
 <script src="/static/fetch_db.js"></script>
 <h3>All problems</h3>
+<div id='desc'></div>
 <table id='t'>
 </table>
-<script>fetch_db('/problems.json?prefix={{ prefix }}', '#t')</script>
+<script>fetch_db('/problems.json?prefix={{ prefix }}', '#t', '#desc')</script>
 
 <script>
 </script>
