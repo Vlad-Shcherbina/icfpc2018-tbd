@@ -82,37 +82,6 @@ Diff Command::get_fd(uint8_t a, uint8_t b, uint8_t c) {
 }
 
 
-unique_ptr<Command> Command::getnextcommand(Emulator* em) {
-	uint8_t byte = em->getcommand();
-	if (byte == 255) return make_unique<Halt>();
-	if (byte == 254) return make_unique<Wait>();
-	if (byte == 253) return make_unique<Flip>();
-	uint8_t tail = byte & 7;
-	if (tail == 3) return make_unique<Fill>(get_nd(byte));
-	if (tail == 2) return make_unique<Void>(get_nd(byte));
-	if (tail == 6) return make_unique<FusionS>(get_nd(byte));
-	if (tail == 7) return make_unique<FusionP>(get_nd(byte));
-
-	uint8_t byte2 = em->getcommand();
-	if (tail == 5) return make_unique<Fission>(get_nd(byte), byte2);
-	if (tail == 4) {
-		if (byte & 8) return make_unique<LMove>(get_sld(byte>>6, byte2>>4),
-											   	get_sld(byte>>4, byte2));
-		else		  return make_unique<SMove>(get_lld(byte>>4, byte2));
-	}
-
-	uint8_t byte3 = em->getcommand();
-	uint8_t byte4 = em->getcommand();
-	if (tail == 1)
-		return make_unique<GFill>(get_nd(byte), get_fd(byte2, byte3, byte4));
-	if (tail == 0)
-		return make_unique<GVoid>(get_nd(byte), get_fd(byte2, byte3, byte4));
-	// TODO : log
-	assert (false);
-	throw parser_error("Unable to decode trace");
-}
-
-
 /*==================== COMMAND LIST =====================*/
 
 

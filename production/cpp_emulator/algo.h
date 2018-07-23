@@ -9,5 +9,5 @@
 #include <utility>
 #include <optional>
 
-std::optional<std::pair<Pos, std::vector<std::unique_ptr<Command>>>> path_to_nearest_of(
+std::optional<std::pair<Pos, std::vector<std::shared_ptr<Command>>>> path_to_nearest_of(
     const Matrix &obstacles, Pos src, std::vector<Pos> dsts);

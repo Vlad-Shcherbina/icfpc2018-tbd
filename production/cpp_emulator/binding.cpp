@@ -79,64 +79,64 @@ PYBIND11_MODULE(emulator, m) {
 	;
 
 	// TODO
-	py::class_<Command>(m, "Command")
+	py::class_<Command, std::shared_ptr<Command>>(m, "Command")
 	;
-	py::class_<Halt>(m, "Halt")
+	py::class_<Halt, std::shared_ptr<Halt>, Command>(m, "Halt")
 		.def(py::init<>())
 		.def("__repr__", &Halt::__repr__)
 	;
-	py::class_<Wait>(m, "Wait")
+	py::class_<Wait, std::shared_ptr<Wait>, Command>(m, "Wait")
 		.def(py::init<>())
 		.def("__repr__", &Wait::__repr__)
 	;
-	py::class_<Flip>(m, "Flip")
+	py::class_<Flip, std::shared_ptr<Flip>, Command>(m, "Flip")
 		.def(py::init<>())
 		.def("__repr__", &Flip::__repr__)
 	;
-	py::class_<SMove>(m, "SMove")
+	py::class_<SMove, std::shared_ptr<SMove>, Command>(m, "SMove")
 		.def(py::init<Diff>())
 		.def("__repr__", &SMove::__repr__)
 		.def_readonly("lld", &SMove::lld)
 	;
-	py::class_<LMove>(m, "LMove")
+	py::class_<LMove, std::shared_ptr<LMove>, Command>(m, "LMove")
 		.def(py::init<Diff, Diff>())
 		.def("__repr__", &LMove::__repr__)
 		.def_readonly("sld1", &LMove::sld1)
 		.def_readonly("sld2", &LMove::sld2)
 	;
-	py::class_<FusionP>(m, "FusionP")
+	py::class_<FusionP, std::shared_ptr<FusionP>, Command>(m, "FusionP")
 		.def(py::init<Diff>())
 		.def("__repr__", &FusionP::__repr__)
 		.def_readonly("nd", &FusionP::nd)
 	;
-	py::class_<FusionS>(m, "FusionS")
+	py::class_<FusionS, std::shared_ptr<FusionS>, Command>(m, "FusionS")
 		.def(py::init<Diff>())
 		.def("__repr__", &FusionS::__repr__)
 		.def_readonly("nd", &FusionS::nd)
 	;
-	py::class_<Fission>(m, "Fission")
+	py::class_<Fission, std::shared_ptr<Fission>, Command>(m, "Fission")
 		.def(py::init<Diff, unsigned>())
 		.def("__repr__", &Fission::__repr__)
 		.def_readonly("nd", &Fission::nd)
 		.def_readonly("m", &Fission::m)
 	;
-	py::class_<Fill>(m, "Fill")
+	py::class_<Fill, std::shared_ptr<Fill>, Command>(m, "Fill")
 		.def(py::init<Diff>())
 		.def("__repr__", &Fill::__repr__)
 		.def_readonly("nd", &Fill::nd)
 	;
-	py::class_<Void>(m, "Void")
+	py::class_<Void, std::shared_ptr<Void>, Command>(m, "Void")
 		.def(py::init<Diff>())
 		.def("__repr__", &Void::__repr__)
 		.def_readonly("nd", &Void::nd)
 	;
-	py::class_<GFill>(m, "GFill")
+	py::class_<GFill, std::shared_ptr<GFill>, Command>(m, "GFill")
 		.def(py::init<Diff, Diff>())
 		.def("__repr__", &GFill::__repr__)
 		.def_readonly("nd", &GFill::nd)
 		.def_readonly("fd", &GFill::fd)
 	;
-	py::class_<GVoid>(m, "GVoid")
+	py::class_<GVoid, std::shared_ptr<GVoid>, Command>(m, "GVoid")
 		.def(py::init<Diff, Diff>())
 		.def("__repr__", &GVoid::__repr__)
 		.def_readonly("nd", &GVoid::nd)
@@ -189,6 +189,10 @@ PYBIND11_MODULE(emulator, m) {
 
 		.def("energy", &Emulator::energy)
 		.def_readonly("aborted", &Emulator::aborted)
+
+		.def("step_is_complete", &Emulator::step_is_complete)
+	    .def("check_command", &Emulator::check_command)
+    	.def("add_command", &Emulator::add_command)
 
 		.def("setproblemname", &Emulator::setproblemname)
 		.def("setsolutionname", &Emulator::setsolutionname)

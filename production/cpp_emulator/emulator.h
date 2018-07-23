@@ -17,7 +17,7 @@ public:
 	uint8_t bid;
 	Pos position;
 	std::vector<uint8_t> seeds;
-	std::unique_ptr<Command> command;
+	std::shared_ptr<Command> command;
 	bool active;
 
 	Bot();
@@ -77,7 +77,7 @@ class Emulator {
 public:
 	State S;
 	int time_step;
-	std::vector<uint8_t> trace;
+	std::vector<std::shared_ptr<Command>> trace;
 	unsigned tracepointer;
 	std::unique_ptr<Logger> logger;
 	bool aborted;
@@ -85,16 +85,20 @@ public:
 	Emulator(std::optional<Matrix> src, std::optional<Matrix> tgt);
 	Emulator(const State& S);
 
-	void set_trace(std::vector<uint8_t> bytes);
+	void set_trace(std::vector<std::shared_ptr<Command>> newtrace);
 	void set_state(State S);				// TODO: take ownership
 	State get_state();
 
-	uint8_t getcommand();
 	void run_one_step();
 	void run_full();
-	void run_commands(std::vector<uint8_t> newtrace);
+	void run_commands(std::vector<std::shared_ptr<Command>> newtrace);
 
 	int64_t energy();
+
+	// command-by-command emulation
+    bool step_is_complete();
+    std::string check_command();
+    void add_command(std::shared_ptr<Command>);
 
 	// piping logger options
 	void setproblemname(std::string);

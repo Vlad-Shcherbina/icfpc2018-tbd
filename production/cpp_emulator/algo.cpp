@@ -51,16 +51,16 @@ vector<Diff> enum_move_diffs(const Matrix& m, Pos start) {
     return result;
 }
 
-unique_ptr<Command> recover_move_command(const Matrix &m, Pos src, Pos dst) {
+shared_ptr<Command> recover_move_command(const Matrix &m, Pos src, Pos dst) {
     for (Diff lld : enum_linear_diffs(m, src, LONG_DISTANCE)) {
         if (src + lld == dst) {
-            return make_unique<SMove>(lld);
+            return make_shared<SMove>(lld);
         }
     }
     for (Diff sld1 : enum_linear_diffs(m, src, SHORT_DISTANCE)) {
         for (Diff sld2 : enum_linear_diffs(m, src + sld1, SHORT_DISTANCE)) {
             if (src + sld1 + sld2 == dst) {
-                return make_unique<LMove>(sld1, sld2);
+                return make_shared<LMove>(sld1, sld2);
             }
         }
     }
@@ -95,10 +95,10 @@ void bfs(const Matrix &m, Pos start, function<bool (Pos, const map<Pos, Pos>&)> 
     }
 }
 
-vector<unique_ptr<Command>> recover_path(
+vector<shared_ptr<Command>> recover_path(
         const map<Pos, Pos>& prev, const Matrix &m, Pos start, Pos finish) {
     Pos p = finish;
-    vector<unique_ptr<Command>> result;
+    vector<shared_ptr<Command>> result;
     while (p != start) {
         Pos p1 = prev.at(p);
         result.push_back(recover_move_command(m, p1, p));
@@ -108,9 +108,9 @@ vector<unique_ptr<Command>> recover_path(
     return result;
 }
 
-optional<pair<Pos, vector<unique_ptr<Command>>>> path_to_nearest_of(
+optional<pair<Pos, vector<shared_ptr<Command>>>> path_to_nearest_of(
     const Matrix &obstacles, Pos src, vector<Pos> dsts) {
-    optional<pair<Pos, vector<unique_ptr<Command>>>> result;
+    optional<pair<Pos, vector<shared_ptr<Command>>>> result;
     sort(begin(dsts), end(dsts));
     bfs(obstacles, src, [&](Pos p, const map<Pos, Pos> &prev) {
         if (binary_search(begin(dsts), end(dsts), p)) {

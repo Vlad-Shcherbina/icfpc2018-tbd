@@ -1,4 +1,6 @@
 import production.cpp_emulator.emulator as Cpp
+import production.cpp_mediator as cppm
+import production.commands as commands
 from production import utils
 
 # from production.emulator import Bot, State, LOW, HIGH
@@ -21,9 +23,12 @@ def test_run_from_file():
 
     em = Cpp.Emulator(None, m)      # (source, target)
 
+    errmsg = ""
     tf = open(tracefile, 'rb')
-    em.set_trace(tf.read())
+    cmds = commands.parse_commands(tf.read(), errmsg)
     tf.close()
+    commandlist = list(map(cppm.cmd_to_cpp, cmds))
+    em.set_trace(commandlist)
 
     em.setlogfile(logfilename)
     em.run()

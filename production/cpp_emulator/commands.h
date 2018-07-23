@@ -28,7 +28,6 @@ struct Command {
 	static Diff get_lld(uint8_t a, uint8_t i);
 	static Diff get_sld(uint8_t a, uint8_t i);
 	static Diff get_fd(uint8_t a, uint8_t b, uint8_t c);
-	static std::unique_ptr<Command> getnextcommand(Emulator* em);
 };
 
 struct Halt : Command {

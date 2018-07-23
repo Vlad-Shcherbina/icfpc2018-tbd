@@ -10,6 +10,7 @@
 using std::vector;
 using std::string;
 using std::unique_ptr;
+using std::shared_ptr;
 
 const int MAXBOTNUMBER = 40;
 
@@ -228,6 +229,7 @@ Emulator::Emulator(std::optional<Matrix> src, std::optional<Matrix> tgt)
 : S(src, tgt)
 , time_step(0)
 , aborted(false)
+, tracepointer(0)
 {
 	logger = std::make_unique<Logger>();
 	logger->em = this;
@@ -238,13 +240,14 @@ Emulator::Emulator(const State& S)
 : S(S.matrix, S.target, S.high_harmonics, S.energy, S.bots)
 , time_step(0)
 , aborted(false)
+, tracepointer(0)
 {
 	logger = std::make_unique<Logger>();
 	logger->em = this;
 }
 
 
-void Emulator::set_trace(vector<unsigned char> bytes) {
+void Emulator::set_trace(vector<shared_ptr<Command>> bytes) {
 	trace = bytes;
 	tracepointer = 0;
 }
@@ -260,24 +263,19 @@ State Emulator::get_state() {
 }
 
 
-unsigned char Emulator::getcommand() {
-	if (tracepointer == trace.size()) {
-		// TODO : log
-		assert (false);
-		throw emulation_error("End of trace");
-	}
-	return trace[tracepointer++];
-}
-
-
 void Emulator::run_one_step() {
 	time_step++;
 
 	try {
 		for (Bot& b : S.bots) {
 			if (!b.active) continue;
-			b.command = Command::getnextcommand(this);
-			// std::cout << (*(b.command)).__repr__() << "\n";
+           	if (tracepointer == trace.size()) {
+                // TODO : log
+                assert (false);
+                throw emulation_error("End of trace");
+            }
+            b.command = trace[tracepointer++];
+			std::cout << (*(b.command)).__repr__() << "\n";
 		}
 
 		S.validate_preconditions();
@@ -303,13 +301,27 @@ void Emulator::run_full() {
 }
 
 
-void Emulator::run_commands(vector<unsigned char> newtrace) {
+void Emulator::run_commands(vector<shared_ptr<Command>> newtrace) {
 	logger->mode = "interactive";
 	logger->start();
 	trace = newtrace;
 	tracepointer = 0;
 	while ((tracepointer < trace.size()) && !S.halted) run_one_step();
 	logger->logsuccess(S.energy);
+}
+
+
+bool Emulator::step_is_complete() {
+       return (unsigned)S.count_active() <= (trace.size() - tracepointer);
+}
+
+std::string Emulator::check_command() {
+       // TODO
+       return "";
+}
+
+void Emulator::add_command(shared_ptr<Command> cmd) {
+       trace.push_back(cmd);
 }
 
 

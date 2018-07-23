@@ -160,17 +160,14 @@ def main_run_interactive():
     em.setproblemname("some handmade problem")
     em.setsolutionname("John Doe's ingenious alg")
 
-    # commands are passed encoded
-
-    from itertools import chain
-    cmdlist = list(chain.from_iterable(x.compose() for x in cmds))
+    for c in map(cmd_to_cpp, cmds):
+        em.add_command(c)
 
     # emulator runs bunch of commands and throws exceptions
     # if some are invalid or illegal
 
     try:
-        print(len(cmdlist))
-        em.run_commands(cmdlist)
+        em.run_step()
     except Cpp.SimulatorException as e:
         print(e)
 
@@ -198,9 +195,12 @@ def main_run_file():
 
     em = Cpp.Emulator(None, m)      # (source, target)
 
+    error = ""
     tf = open(tracefile, 'rb')
-    em.set_trace(tf.read())
+    cmds = commands.parse_commands(tf.read(), error)
     tf.close()
+    cmdlist = list(map(cmd_to_cpp, cmds))
+    em.set_trace(cmdlist)
 
     em.setlogfile(logfile)
     em.run()
@@ -215,6 +215,5 @@ def main_simple_cmd_check():
     print("PyCommand -> CppCommand -> PyCommand gives initial: ", x == z, "\n")
 
 if __name__ == '__main__':
-    main_run_file()
+    # main_run_file()
     main_run_interactive()
-
