@@ -81,6 +81,7 @@ def clear_cube_below(model, x, y, z, width, height, depth) -> GroupProgram:
     logging.debug("Cube at x=%d y=%d z=%d, %d x %d x %d", x,y,z,width,height,depth)
     assert width <= G_DIST + 1 and height <= G_DIST + 1 and depth <= G_DIST + 1
     # assert depth > 1
+    # assert height > 1
     # assert width > 1
 
     # THIS IS A STUPID HACK FOR ABOVE (see also prog_fini)
@@ -96,6 +97,10 @@ def clear_cube_below(model, x, y, z, width, height, depth) -> GroupProgram:
         prog_init += move_x(-1)
         prog_fini += move_x(+1)
         x -= 1
+    if height == 1:
+        height += 1
+        prog_init += move_y(+1)
+        y += 1
 
     prog7  = move_z(depth) + spawn_down(model, x + (width-1), y, z + (depth+1)) + \
              (single() // drill_down(model, x + (width-1), y-1, z + (depth+1), height-1))

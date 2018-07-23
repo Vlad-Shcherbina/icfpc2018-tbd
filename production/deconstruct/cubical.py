@@ -49,7 +49,7 @@ class CubicalDeconstructor(Solver):
         self.high = len(args) > 0 and args[0] == 'high'
 
     def scent(self) -> str:
-        return 'Cubical 0.1.1' + (' (high)' if self.high else '')
+        return 'Cubical 0.1.2' + (' (high)' if self.high else '')
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Disassemble
@@ -66,7 +66,7 @@ class CubicalDeconstructor(Solver):
 
 
 def write_solution(bytetrace, number): # -> IO ()
-    with open('./problemsF/FD{0:03d}.nbt'.format(number), 'wb') as f:
+    with open('./FD{0:03d}.nbt'.format(number), 'wb') as f:
         f.write(bytetrace)
 
 
