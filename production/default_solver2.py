@@ -171,6 +171,9 @@ def navigate(f: 'Pos', t: 'Pos'):
     if dy < 0:
         for x in split_linear_move(Diff(0, dy, 0)): yield x
 
+def navigate_pos(f: 'Pos', t: 'Pos'):
+    return add_pos(t, navigate(f, t))
+
 def merge(gens):
     iters = [iter(x) for x in gens]
     pos = [None for x in gens]
@@ -193,6 +196,27 @@ def append(a, b):
     for x in a: yield x
     for x in b: yield x
 
+def sequence(a, nxt):
+    pos = None
+    for x in a:
+        if type(x) == Pos:
+            pos = x
+        else:
+            yield x
+    b = nxt(pos)
+    for x in b: yield x
+
+def rm_pos(g):
+    for x in g:
+        if type(x) == Pos or type(x) == list:
+            pass
+        else:
+            yield x
+
+def add_pos(pos, g):
+    for x in rm_pos(g): yield x
+    yield pos
+
 def agent_gen(m: 'Model', start: 'Pos', a: 'Pos', b: 'Pos'):
     for x in navigate(start, a):
         yield x
@@ -200,54 +224,76 @@ def agent_gen(m: 'Model', start: 'Pos', a: 'Pos', b: 'Pos'):
     for x in snake_fill_gen(m, a, b):
         yield x
 
+def go_to_start(dest):
+    def go(src):
+        return navigate_pos(src, Pos(dest.x, src.y, dest.z))
+
+    return go
+
 def solve_gen(m: 'Model'):
     yield Cmd.Flip()                  # 0
     yield Fission(Diff(0, 1, 0), 2)   # 1
     yield Fission(Diff(1, 0, 0), 1)   # 2
     yield Fission(Diff(1, 0, 0), 1)   # 2
 
-    a = (m.R - 1) // 2
-    b = m.R - 1
-
-    pos = None
+    c = (m.R - 1) // 2
+    r = m.R
 
     def with_delay(n, x): return append([Cmd.Wait() for x in range(n)], x)
 
-    a1 = with_delay(2, agent_gen(m, Pos(0, 0, 0), Pos(0, 0, 0), Pos(a, m.R, a)))
-    a2 = with_delay(1, agent_gen(m, Pos(0, 1, 0), Pos(0, 0, a + 1), Pos(a, m.R, b)))
-    a3 =               agent_gen(m, Pos(1, 1, 0), Pos(a + 1, 0, a + 1), Pos(b, m.R, b))
-    a4 = with_delay(1, agent_gen(m, Pos(1, 0, 0), Pos(a + 1, 0, 0), Pos(b, m.R, a)))
-    for x in merge([a1, a2, a3, a4]):
+    p = [ Pos(0, 0, 0)
+        , Pos(0, 1, 0)
+        , Pos(1, 1, 0)
+        , Pos(1, 0, 0)]
+
+    s = [ Pos(0,     0, 0)
+        , Pos(0,     0, c + 1)
+        , Pos(c + 1, 0, c + 1)
+        , Pos(c + 1, 0, 0)]
+
+    d = [ Pos(c,     r, c)
+        , Pos(c,     r, r - 1)
+        , Pos(r - 1, r, r - 1)
+        , Pos(r - 1, r, c)]
+
+    c1 = with_delay(2, agent_gen(m, p[0], s[0], d[0]))
+    c2 = with_delay(1, agent_gen(m, p[1], s[1], d[1]))
+    c3 =               agent_gen(m, p[2], s[2], d[2])
+    c4 = with_delay(1, agent_gen(m, p[3], s[3], d[3]))
+
+    c1 = sequence(c1, go_to_start(s[0]))
+    c2 = sequence(c2, go_to_start(s[1]))
+    c3 = sequence(c3, go_to_start(s[2]))
+    c4 = sequence(c4, go_to_start(s[3]))
+
+    pos = None
+    for x in merge([c1, c2, c3, c4]):
         if type(x) == list:
             pos = x
         else:
             yield x
 
-    b1 = []
-    b2 = navigate(pos[1], pos[0] + Diff(0, 0, 1))
-    b3 = navigate(pos[2], pos[3] + Diff(0, 0, 1))
-    b4 = []
-    for x in merge([b1, b2, b3, b4]):
-        if type(x) == list:
-            pass
-        else:
-            yield x
+    # Merge 1
+    merge1 = [ []
+             , navigate(pos[1], pos[0] + Diff(0, 0, 1))
+             , navigate(pos[2], pos[3] + Diff(0, 0, 1))
+             , []]
+    for x in rm_pos( merge(merge1) ):
+        yield x
 
     yield Cmd.FusionP(Diff(0, 0, 1));
     yield Cmd.FusionS(Diff(0, 0, -1));
     yield Cmd.FusionS(Diff(0, 0, -1));
     yield Cmd.FusionP(Diff(0, 0, 1));
 
+    for x in rm_pos( merge([[], navigate(pos[3], pos[0] + Diff(1, 0, 0))]) ):
+        yield x
 
-    for x in merge([[], navigate(pos[3], pos[0] + Diff(1, 0, 0))]):
-        if type(x) == list:
-            pass
-        else:
-            yield x
-
+    # Merge 2
     yield Cmd.FusionP(Diff(1, 0, 0));
     yield Cmd.FusionS(Diff(-1, 0, 0));
 
+    # Go home
     for x in navigate(pos[0], Pos(0, 0, 0)): yield x
 
     yield Cmd.Flip()
@@ -259,7 +305,7 @@ class DefaultSolver2(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Default 2.1.1'
+        return 'Default 2.2'
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Assemble
