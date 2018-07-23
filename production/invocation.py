@@ -3,7 +3,7 @@ import os
 import getpass
 import time
 import subprocess
-
+import platform
 
 def get_this_invocation():
     argv = sys.argv[:]
@@ -12,7 +12,7 @@ def get_this_invocation():
     result = dict(
         version=get_version(),
         argv=argv,
-        user=getpass.getuser(),
+        user=f"{getpass.getuser()}@{platform.node()}",
         start_time=time.time(),
     )
     return result
