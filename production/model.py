@@ -46,8 +46,13 @@ class Model:
                     if self[Pos(x,y,z)]:
                         filled.add(Pos(x,y,z))
         return filled
+    
+    def is_filled(self, voxel):
+        return self[voxel]
 
-
+    def is_empty(self, voxel):
+        return not self.is_filled(voxel)
+    
     def grounded_voxels(self) -> Set[Pos]:
         visited = set()
 

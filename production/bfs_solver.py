@@ -1,71 +1,39 @@
 import production.model as M
 import production.commands as Cmd
 import sys
+from io import StringIO
+from itertools import chain
+
 from production.model import Model
 from production.basics import (Diff, Pos)
 from production import data_files
 from production.solver_interface import ProblemType, Solver, SolverResult, Fail
 from production.solver_utils import *
-
-
-def direction(diff) -> 'Diff':
-    return Diff(sign(diff.dx), sign(diff.dy), sign(diff.dz))
-
-
-def sign(x):
-    if x > 0:
-        return 1
-    elif x < 0:
-        return -1
-    elif x == 0:
-        return 0
+from production.model_helpers import floor_contact, filled_neighbors
+from production.search import breadth_first_search
+from production.navigation import navigate_near_voxel
 
     
-def solve_gen(m: 'Model'):
-    a = (m.R - 1) // 2
-    b = m.R - 1
+def fill(voxel):
+    navigate_near_voxel(current_pos, voxel)
+    Cmd.Fill(voxel)
+    
+    
+def solve_gen(model: 'Model'):
+    commands = iter([])
 
-    pos = None
+    def add_commands(new_commamnds):
+        commands = chain(comands, new_commands)
+    
+    voxels_to_fill = breadth_first_search(floor_contact(model), filled_neighbors(model))
 
-    def with_delay(n, x): return append([Cmd.Wait() for x in range(n)], x)
+    for voxel in voxels_to_fill:
+        add_commands(fill(voxel))
 
-    a1 = with_delay(2, agent_gen(m, Pos(0, 0, 0), Pos(0, 0, 0), Pos(a, m.R, a)))
-    a2 = with_delay(1, agent_gen(m, Pos(0, 1, 0), Pos(0, 0, a + 1), Pos(a, m.R, b)))
-    a3 =               agent_gen(m, Pos(1, 1, 0), Pos(a + 1, 0, a + 1), Pos(b, m.R, b))
-    a4 = with_delay(1, agent_gen(m, Pos(1, 0, 0), Pos(a + 1, 0, 0), Pos(b, m.R, a)))
-    for x in merge([a1, a2, a3, a4]):
-        if type(x) == list:
-            pos = x
-        else:
-            yield x
-
-    b1 = []
-    b2 = navigate(pos[1], pos[0] + Diff(0, 0, 1))
-    b3 = navigate(pos[2], pos[3] + Diff(0, 0, 1))
-    b4 = []
-    for x in merge([b1, b2, b3, b4]):
-        if type(x) == list:
-            pass
-        else:
-            yield x
-
-    yield Cmd.FusionP(Diff(0, 0, 1));
-    yield Cmd.FusionS(Diff(0, 0, -1));
-    yield Cmd.FusionS(Diff(0, 0, -1));
-    yield Cmd.FusionP(Diff(0, 0, 1));
-
-    for x in merge([[], navigate(pos[3], pos[0] + Diff(1, 0, 0))]):
-        if type(x) == list:
-            pass
-        else:
-            yield x
-
-    yield Cmd.FusionP(Diff(1, 0, 0));
-    yield Cmd.FusionS(Diff(-1, 0, 0));
-
+    add_commands(finish())
+        
+def finish():
     for x in navigate(pos[0], Pos(0, 0, 0)): yield x
-
-    yield Cmd.Flip()
     yield Cmd.Halt()
 
 
