@@ -14,10 +14,10 @@ class SwarmSolver(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Swarm 0.5 3x3x3 up'
+        return 'Swarm 0.7 3x3x3 up'
 
     def supports(self, problem_type: ProblemType) -> bool:
-        return True
+        return problem_type != ProblemType.Disassemble  # no competing with cubical
 
     def solve(
             self, name: str,

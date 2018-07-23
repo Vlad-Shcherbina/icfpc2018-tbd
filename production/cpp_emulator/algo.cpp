@@ -178,9 +178,9 @@ bool safe_to_change(const Matrix &mat, Pos pos) {
             }
         }
     }
-    // if (can_safely_remove_center(hz)) {
-    //     return true;
-    // }
+    if (can_safely_remove_center(hz)) {
+        return true;
+    }
 
     m.set(pos, false);
     if (m.num_full == m.num_grounded_voxels()) {
@@ -188,9 +188,6 @@ bool safe_to_change(const Matrix &mat, Pos pos) {
         return true;
     } else {
         m.set(pos, true);
-        if (can_safely_remove_center(hz)) {
-            debug(vector<bool>(hz, hz + 27));
-        }
         return false;
     }
 }
