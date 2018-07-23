@@ -38,7 +38,7 @@ def up_pass(model, high=False):
 
 
     if high:
-        prog += single(Flip())
+        prog += single(Flip()) // (single() ** (max_bots - 1))
 
     # Print each strip layer by layer in parallel
     print_prog = empty()
@@ -49,7 +49,7 @@ def up_pass(model, high=False):
     prog += print_prog
 
     if high:
-        prog += single(Flip())
+        prog += single(Flip()) // (single() ** (max_bots - 1))
 
     prog += fusion_unfill_right(strips)
 
