@@ -111,21 +111,21 @@ def fusion_unfill_right(strips):
 # Assumption: all bots are at z = 1. # TODO: relax this
 # Assumption: first bot it at x = 0.
 # Assumption: bots are spaced by distances in `strips`.
-def print_layer_below(model, i, strips, last):
+def print_layer_below(model, i, z, strips, depth, last):
     prog = empty()
     lbound = 0
     for strip in strips:
         rbound = lbound + strip
-        prog //= print_strip_below(model, i, lbound, rbound, last)
+        prog //= print_strip_below(model, i, z, lbound, rbound, depth, last)
         lbound = rbound
     return prog
 
 # Prints part of the model layer with y = i which lies at
 # Single-bot program.
 # lbound <= x < rbound
-def print_strip_below(model, i, lbound, rbound, last_layer):
+def print_strip_below(model, i, lbound, z0, rbound, depth, last_layer):
     prog = single()
-    for z in range(1, model.R - 1):
+    for z in range(z0, z0 + depth):
         if model[Pos(lbound,i,z)]:
             prog += single(Fill(Diff(0,-1,0)))
         for x in range(lbound + 1, rbound):
@@ -134,18 +134,18 @@ def print_strip_below(model, i, lbound, rbound, last_layer):
                 prog += single(Fill(Diff(0,-1,0)))
         prog += move_x(-1 * (rbound - lbound - 1))
         prog += single(SMove(Diff(0,0,1))) # TODO: optimise this part, make an L move
-    prog += move_z(-1 * (model.R - 2 + last_layer))
+    prog += move_z(-1 * (depth + last_layer * z0))
     return prog
 
 
 # Prints an orthotope (right rectangular prism), i.e. a part of the model
 # starting from where the bot stands currentlty and extending right and up.
 # Assumption: bot is at y = 1, z = 1
-def print_hyperrectangle(model, x, width, height):
+def print_hyperrectangle(model, x, z, width, height, depth):
     prog = single()
     for i in range(height):
         last = i == height - 1
-        prog += print_strip_below(model, i, x, x + width, last)
+        prog += print_strip_below(model, i, x, z, x + width, depth, last)
         if not last:
             prog += single(SMove(Diff(0,1,0)))
     return prog

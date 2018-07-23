@@ -22,27 +22,35 @@ def up_pass(model, high=False):
     if high:
         prog += single(Flip())
 
-    # Up 1 and forward 1
-    prog += single(LMove(Diff(0,1,0), Diff(0,0,1)))
+    (pos1, pos2) = bounding_box(model)
+    width  = pos2.x - pos1.x + 1
+    height = pos2.y + 1
+    depth  = pos2.z - pos1.z + 1
+
+    prog += move_x(pos1.x)
+    x = pos1.x
+    prog += move_y(1)
+    prog += move_z(pos1.z)
+    z = pos1.z
+
+    max_bots = min(20, width)
 
     # Fission into a line
-    (steps_distr, strips) = fission_fill_right(list(range(2, 21)), model.R)
+    (steps_distr, strips) = fission_fill_right(list(range(2, max_bots + 1)), width)
     prog += steps_distr
 
-    (_, pos_high) = bounding_box(model)
-    height = pos_high.y + 1
-
-    # Print layer by layer
+    # Print each strip layer by layer in parallel
     print_prog = empty()
-    x = 0
     for strip in strips:
-        print_prog //= print_hyperrectangle(model, x, strip, height)
+        print_prog //= print_hyperrectangle(model, x, z, strip, height, depth)
         x += strip
 
     prog += print_prog
 
     prog += fusion_unfill_right(strips)
-    prog += move_y(-1 * height)
+
+    prog += move_x(-pos1.x)
+    prog += move_y(-height)
 
     if high:
         prog += single(Flip())
@@ -74,11 +82,11 @@ class BottomUpSolver(Solver):
 
 
 def write_solution(bytetrace, number): # -> IO ()
-    with open('./LA{0:03d}.nbt'.format(number), 'wb') as f:
+    with open('./FA{0:03d}.nbt'.format(number), 'wb') as f:
         f.write(bytetrace)
 
 def solve(strategy, model, number): # -> IO ()
-    commands = strategy(model)
+    commands = strategy(model, high=True)
     trace = compose_commands(commands)
     logger.info(run(lightning_problem_by_id(number), trace))
     write_solution(trace, number)
