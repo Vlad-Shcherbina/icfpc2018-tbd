@@ -138,9 +138,8 @@ def apply_default_strategy(model_src, model_tgt, speeds : Tuple[int,int,int], st
         if y == y_finish+int(y_speed > 0):
             break
 
-
         if reassembly:
-            if model_tgt[Pos(x,y+y_speed,z)]:
+            if model_src[Pos(x,y+y_speed,z)]:
                 commands.append(Void(Diff(0,y_speed,0)))
 
         commands.append(SMove(Diff(0,y_speed,0)))
@@ -209,7 +208,7 @@ class DefaultSolver(Solver):
     def scent(self) -> str:
         # note that 'Default 2.0' (and perhaps higher)
         # are already taken by default_solver2.py :(
-        return 'Default 1.4'
+        return 'Default 1.4.1'
 
     def supports(self, problem_type: ProblemType) -> bool:
         result = \
