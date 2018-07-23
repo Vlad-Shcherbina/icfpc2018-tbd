@@ -66,6 +66,13 @@ def solve(
         solver: solver_interface.Solver, name: str,
         src_data: Optional[bytes], tgt_data: Optional[bytes],
         pyjs_validate: bool = False) -> Result:
+
+    # check again to simplify things for users
+    if not solver.supports(solver_interface.ProblemType.from_name(name)):
+        return Result(
+            scent=solver.scent(), status='PASS', energy=None, trace=None,
+            extra={})
+
     logging.info('Solving...')
     start = time.time()
     try:
