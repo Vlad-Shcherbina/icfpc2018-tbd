@@ -17,16 +17,12 @@ public:
 	uint8_t bid;
 	Pos position;
 	std::vector<uint8_t> seeds;
-	std::shared_ptr<Command> command;
 	bool active;
 
 	Bot();
 	Bot(const Bot&);
 	Bot& operator=(const Bot&);
 	Bot(uint8_t bid, Pos position, std::vector<uint8_t> seeds, bool active);
-	std::string check_preconditions(State* field);
-	std::vector<Pos> get_volatiles(State* field);
-	void execute(State* field);
 };
 
 
@@ -56,12 +52,12 @@ public:
 	bool assert_well_formed();
 
 	int count_active();
-	void validate_preconditions();
-	bool validate_volatiles();
+	std::string validate_command(Bot* b, std::shared_ptr<Command> cmd);
 	// void validate_state();
 	// void validate_floating();
-	void run();
 	void add_passive_energy();
+
+	void run();
 
 	bool __getitem__(const Pos& p) const;
 	void __setitem__(const Pos& p, bool value);
@@ -81,13 +77,18 @@ public:
 	unsigned tracepointer;
 	std::unique_ptr<Logger> logger;
 	bool aborted;
-	
+
 	Emulator(std::optional<Matrix> src, std::optional<Matrix> tgt);
 	Emulator(const State& S);
 
 	void set_trace(std::vector<std::shared_ptr<Command>> newtrace);
-	void set_state(State S);				// TODO: take ownership
+	void set_state(State S);
 	State get_state();
+
+    bool step_is_complete();
+    std::string check_command(std::shared_ptr<Command>);
+    void add_command(std::shared_ptr<Command>);
+    std::string check_add_command(std::shared_ptr<Command>);
 
 	void run_one_step();
 	void run_full();
@@ -95,15 +96,20 @@ public:
 
 	int64_t energy();
 
-	// command-by-command emulation
-    bool step_is_complete();
-    std::string check_command();
-    void add_command(std::shared_ptr<Command>);
 
 	// piping logger options
 	void setproblemname(std::string);
 	void setsolutionname(std::string);
 	void setlogfile(std::string);
+
+private:
+	unsigned unchecked;
+	unsigned botindex;		// bots starting from bots[botindex] have no checked trace
+	Bot* nextbot();
+
+	void reset_assumptions();
+	void validate_one_step();
+
 };
 
 #endif

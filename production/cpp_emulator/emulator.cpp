@@ -46,36 +46,6 @@ Bot& Bot::operator=(const Bot& other) {
 }
 
 
-string Bot::check_preconditions(State* S) {
-	if (!command) {
-			// TODO: log
-			assert (false);
-			throw malfunc_error("Active bot without command");
-	}
-	return (*command).check_preconditions(this, S);
-}
-
-
-std::vector<Pos> Bot::get_volatiles(State* S) {
-	if (!command) {
-		// TODO : log
-		assert (false);
-		throw malfunc_error("Active bot without command");
-	}
-	return (*command).get_volatiles(this, S);
-}
-
-
-void Bot::execute(State* S) {
-	if (!command) {
-		// TODO : log
-		assert (false);
-		throw malfunc_error("Active bot without command");
-	}
-	(*command).execute(this, S);
-}
-
-
 /*======================== STATE ========================*/
 
 State::State(std::optional<Matrix> src, std::optional<Matrix> tgt)
@@ -165,39 +135,23 @@ int State::count_active() {
 }
 
 
-bool State::validate_volatiles() {
-	volatiles = vector<Pos>();
-	for (Bot& b : bots) if (b.active) {
-		vector<Pos> v = b.get_volatiles(this);
-		for (Pos& p1 : v)
-			for (Pos& p2 : volatiles)
-				if (p1 == p2) return false;
-		volatiles.insert(volatiles.end(), v.begin(), v.end());
-	}
-	return true;
+string State::validate_command(Bot* b, shared_ptr<Command> cmd) {
+	assert (b != nullptr && cmd != nullptr);
+	string msg = cmd->check_preconditions(b, this);
+	if (!msg.empty()) return msg;
+
+	vector<Pos> v = cmd->get_volatiles(b, this);
+	for (Pos& p1 : v)
+		for (Pos& p2 : volatiles)
+			if (p1 == p2) return "Bot actions interfere";
+	volatiles.insert(volatiles.end(), v.begin(), v.end());
+	return "";
 }
 
 
-void State::validate_preconditions() {
-	for (Bot& b : bots) if (b.active) {
-		string s = b.check_preconditions(this);
-		if (!s.empty()) {
-			//logger->logerror(s);
-			std::cout << "Preconditions failed: " << s << "\n";
-			assert (false);
-		}
-	}
-
-	if (!validate_volatiles()) {
-		// TODO: log
-		assert (false);
-	}
-}
-
-
-void State::run() {
-	for (Bot& b : bots) if (b.active) b.execute(this);
-}
+// void State::run() {
+// 	for (Bot& b : bots) if (b.active) b.execute(this);
+// }
 
 
 void State::add_passive_energy() {
@@ -228,11 +182,12 @@ void State::__setitem__(const Pos& p, bool value) {
 Emulator::Emulator(std::optional<Matrix> src, std::optional<Matrix> tgt)
 : S(src, tgt)
 , time_step(0)
-, aborted(false)
 , tracepointer(0)
+, aborted(false)
 {
 	logger = std::make_unique<Logger>();
 	logger->em = this;
+	reset_assumptions();
 }
 
 
@@ -241,9 +196,12 @@ Emulator::Emulator(const State& S)
 , time_step(0)
 , aborted(false)
 , tracepointer(0)
+, unchecked(0)
+, botindex(0)
 {
 	logger = std::make_unique<Logger>();
 	logger->em = this;
+	reset_assumptions();
 }
 
 
@@ -263,33 +221,79 @@ State Emulator::get_state() {
 }
 
 
+bool Emulator::step_is_complete() {
+    return (unsigned)S.count_active() <= (trace.size() - tracepointer);
+}
+
+
+string Emulator::check_command(std::shared_ptr<Command> cmd) {
+	if (step_is_complete()) 
+		return "Cannot validate before perfoming current step";
+
+	// if there are unchecked previous commands
+	while (unchecked < trace.size()) {
+		string msg = S.validate_command(nextbot(), trace[unchecked]);
+		if (!msg.empty()) 
+			return "Trace already contains invalid commands";
+		unchecked++;
+	}
+
+	return S.validate_command(nextbot(), cmd);
+}
+
+
+void Emulator::add_command(shared_ptr<Command> cmd) {
+    trace.push_back(cmd);
+}
+
+
+string Emulator::check_add_command(std::shared_ptr<Command> cmd) {
+    string msg = check_command(cmd);
+    if (msg.empty()) {
+    	add_command(cmd);
+    	unchecked++;
+    	assert (unchecked == trace.size());
+    }
+    return msg;
+}
+
+
+void Emulator::validate_one_step() {
+	unsigned temppointer = tracepointer;
+	for (Bot& b : S.bots) {
+		if (!b.active) continue;
+       	if (temppointer == trace.size()) {
+            // TODO : log
+        	std::cout << "End of trace" << "\n";
+            assert (false);
+        }
+        shared_ptr<Command> cmd = trace[temppointer++];
+        // std::cout << (*(b.command)).__repr__() << "\n";
+
+        string msg = S.validate_command(&b, cmd);
+        if (!msg.empty()) {
+        	// TODO log
+        	std::cout << msg << "\n";
+        	assert (false);
+        }
+	}
+	// TODO: validate group operations
+}
+
+
 void Emulator::run_one_step() {
 	time_step++;
+	validate_one_step();
 
-	try {
-		for (Bot& b : S.bots) {
-			if (!b.active) continue;
-           	if (tracepointer == trace.size()) {
-                // TODO : log
-                assert (false);
-                throw emulation_error("End of trace");
-            }
-            b.command = trace[tracepointer++];
-			std::cout << (*(b.command)).__repr__() << "\n";
-		}
+	S.add_passive_energy();
+	for (Bot& b : S.bots) {
+		if (!b.active) continue;
+		shared_ptr<Command> cmd = trace[tracepointer++];
+		cmd->execute(&b, &S);
+	}
 
-		S.validate_preconditions();
-		S.add_passive_energy();
-		S.run();
-		// S.validate_state()
-	}
-	catch (base_error& e) {
-		logger->logerror(e.what());
-		S.halted = aborted = true;
-		// TODO : log
-		assert (false);
-		throw e;
-	}
+	// S.validate_state()
+	reset_assumptions();
 }
 
 
@@ -311,22 +315,24 @@ void Emulator::run_commands(vector<shared_ptr<Command>> newtrace) {
 }
 
 
-bool Emulator::step_is_complete() {
-       return (unsigned)S.count_active() <= (trace.size() - tracepointer);
-}
-
-std::string Emulator::check_command() {
-       // TODO
-       return "";
-}
-
-void Emulator::add_command(shared_ptr<Command> cmd) {
-       trace.push_back(cmd);
-}
-
-
 int64_t Emulator::energy() {
 	return S.energy;
+}
+
+
+void Emulator::reset_assumptions() {
+	unchecked = 0;
+	botindex = 0;
+	S.volatiles = vector<Pos>();
+}
+
+
+Bot* Emulator::nextbot() {
+	while (botindex < S.bots.size())
+		if (S.bots[botindex++].active)
+			return &S.bots[botindex - 1];
+	botindex = 0;
+	return nullptr;
 }
 
 
