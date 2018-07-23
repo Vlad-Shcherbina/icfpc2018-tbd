@@ -15,6 +15,7 @@ from production.basics import (Diff, Pos)
 from production import data_files
 from production.solver_interface import ProblemType, Solver, SolverResult, Fail
 from production.solver_utils import *
+from production.solver_utils import bounding_box
 
 
 def direction(diff) -> 'Diff':
@@ -240,9 +241,9 @@ def agent_gen(m: 'Model', start: 'Pos', a: 'Pos', b: 'Pos'):
     for x in snake_fill_gen(m, a, b):
         yield x
 
-def go_to_start(dest):
+def go_to_start(a, b):
     def go(src):
-        return navigate_pos(src, Pos(dest.x, src.y, dest.z))
+        return navigate_pos(src, Pos(a.x, b.y + 1, a.z))
 
     return go
 
@@ -356,7 +357,7 @@ def partition_space(r, x_cnt, z_cnt):
                 x2 = x_step*(x + 1) - 1
             else:
                 x2 = r - 1
-            row.append((Pos(x1, 0, z1), Pos(x2, r, z2)))
+            row.append((Pos(x1, 0, z1), Pos(x2, r - 1, z2)))
 
         res.append(row)
 
@@ -422,15 +423,20 @@ def merge_bots(bots, pos):
 
 
 def solve_gen(m: 'Model', x_cnt: 'int', z_cnt: 'int'):
+    (bb_a, bb_b) = bounding_box(m)
+
     yield Cmd.Flip()
 
     zones = partition_space(m.R, x_cnt, z_cnt)
 
+    # Spawn bots
+    #
     # State is used to spawn bots and to provide initial coords and ids
     st = State.initial_state(39)
     yield from st.spawn_bots(x_cnt, z_cnt)
     bots = st.grid
 
+    # Navigate solve, and go to safe position for merging
     tasks = {}
     for z in range(z_cnt):
         for x in range(x_cnt):
@@ -439,13 +445,17 @@ def solve_gen(m: 'Model', x_cnt: 'int', z_cnt: 'int'):
             (a, b) = zones[z][x]
             d = (x_cnt + z_cnt) - (bot.pos.x + bot.pos.y)
             tasks[id] = sequence( with_delay(d, agent_gen(m, bot.pos, a, b))
-                                , go_to_start(a))
+                                , go_to_start(a, bb_b))
 
     for x in merge_tasks(tasks):
         if type(x) == dict:
             pos = x
         else:
             yield x
+
+    #
+    # Merging
+    #
 
     # Combine rows
     t = []
@@ -475,7 +485,7 @@ class DefaultSolver2(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Default 2.3-6x6'
+        return 'Default 2.3.1-6x6'
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Assemble
