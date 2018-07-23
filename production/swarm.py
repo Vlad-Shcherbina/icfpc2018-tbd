@@ -57,13 +57,11 @@ class SwarmSolver(Solver):
                         total_diff_size += 1
                         if cur_model[p]:
                             cur_model[p] = False
-                            sz2 = sz - 1
-                        else:
+                            if cur_model.num_grounded_voxels() == sz - 1:
+                                diff.append(p)
                             cur_model[p] = True
-                            sz2 = sz + 1
-                        if cur_model.num_grounded_voxels() == sz2:
+                        else:
                             diff.append(p)
-                        cur_model[p] = not cur_model[p]
             if total_diff_size % 100 == 0:
                 logger.info(f'total diff {total_diff_size}')
             assert diff
