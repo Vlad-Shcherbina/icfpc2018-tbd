@@ -208,7 +208,7 @@ def main():
             SELECT problem_id AS trace_problem_id FROM traces WHERE scent = %s
         ) AS my_traces
         ON trace_problem_id = problems.id
-        WHERE (problems.name LIKE 'F%%') OR (problems.name LIKE 'Z%%') AND trace_problem_id IS NULL
+        WHERE ((problems.name LIKE 'F%%') OR (problems.name LIKE 'Z%%')) AND trace_problem_id IS NULL
           AND (problems.stats->>'R')::integer <= %s
         ''', [solver.scent(), args.max_size])
 
