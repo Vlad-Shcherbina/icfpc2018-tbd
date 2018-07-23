@@ -14,7 +14,7 @@ class SwarmSolver(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Swarm 0.1'
+        return 'Swarm 0.2'
 
     def supports(self, problem_type: ProblemType) -> bool:
         return True
@@ -42,7 +42,25 @@ class SwarmSolver(Solver):
         bot_pos = Pos(0, 0, 0)
 
         while cur_model != tgt_model:
-            sz = cur_model.num_grounded_voxels()
+            changed = False
+            for nd in cpp.enum_near_diffs():
+                p = bot_pos + nd
+                if not p.is_inside(R):
+                    continue
+                if cur_model[p] == tgt_model[p]:
+                    continue
+                if not cpp.safe_to_change(cur_model, p):
+                    continue
+                if cur_model[p]:
+                    trace.append(cpp.Void(nd))
+                    cur_model[p] = False
+                else:
+                    trace.append(cpp.Fill(nd))
+                    cur_model[p] = True
+                changed = True
+                break
+            if changed:
+                continue
 
             diff = []
             total_diff_size = 0
@@ -53,14 +71,9 @@ class SwarmSolver(Solver):
                         if cur_model[p] == tgt_model[p]:
                            continue
                         total_diff_size += 1
-                        if cur_model[p]:
-                            cur_model[p] = False
-                            if cur_model.num_grounded_voxels() == sz - 1:
-                                diff.append(p)
-                            cur_model[p] = True
-                        else:
+                        if cpp.safe_to_change(cur_model, p):
                             diff.append(p)
-            if total_diff_size % 100 == 0:
+            if total_diff_size % 50 < 3:
                 logger.info(f'total diff {total_diff_size}')
             assert diff
 
@@ -76,19 +89,6 @@ class SwarmSolver(Solver):
                 trace.append(cmd)
                 bot_pos += cmd.move_offset()
             assert bot_pos == target
-
-            for nd in cpp.enum_near_diffs():
-                p = bot_pos + nd
-                if p not in diff:
-                    continue
-                if cur_model[p]:
-                    trace.append(cpp.Void(nd))
-                    cur_model[p] = False
-                else:
-                    trace.append(cpp.Fill(nd))
-                    cur_model[p] = True
-                break # TODO articulation point recheck
-
 
         # get back
         p = cpp.path_to_nearest_of(cur_model, bot_pos, [Pos(0, 0, 0)])

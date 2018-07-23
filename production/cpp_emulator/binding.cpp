@@ -64,6 +64,7 @@ PYBIND11_MODULE(emulator, m) {
 		.def("__repr__", &Pos::__repr__)
 		.def("pack", &Pos::pack)
 		.def("unpack", &Pos::unpack)
+		.def("is_inside", &Pos::is_inside)
 		.def_readonly("x", &Pos::x)
 		.def_readonly("y", &Pos::y)
 		.def_readonly("z", &Pos::z)
