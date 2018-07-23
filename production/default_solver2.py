@@ -424,14 +424,15 @@ def merge_bots(bots, pos):
     pass
 
 
-def solve_gen(m: 'Model', x_cnt: 'int', z_cnt: 'int'):
+def solve_gen(m: 'Model', x_cnt: 'int', z_cnt: 'int', low):
     (bb_a, bb_b) = bounding_box(m)
 
     # For narrow models
     x_cnt = min(x_cnt, (bb_b.x - bb_a.x + 1) // 2)
     z_cnt = min(z_cnt, (bb_b.z - bb_a.z + 1) // 2)
 
-    yield Cmd.Flip()
+    if not low:
+        yield Cmd.Flip()
 
     zones = partition_space(bb_a, bb_b, x_cnt, z_cnt)
 
@@ -482,16 +483,27 @@ def solve_gen(m: 'Model', x_cnt: 'int', z_cnt: 'int'):
     # Return home
     for x in navigate(pos[1], Pos(0, 0, 0)): yield x
 
-    yield Cmd.Flip()
+    if not low:
+        yield Cmd.Flip()
     yield Cmd.Halt()
 
 
 class DefaultSolver2(Solver):
     def __init__(self, args):
-        self.w, self.h = map(int, args)
+        if len(args) == 2:
+            self.w, self.h = map(int, args)
+            self.low = False
+        else:
+            assert len(args) == 3
+            assert args[2] == 'low'
+            self.low = True
+            self.w, self.h = map(int, args[:2])
 
     def scent(self) -> str:
-        return f'Default 2.4.4-{self.w}x{self.h}'
+        result = f'Default 2.4.4-{self.w}x{self.h}'
+        if self.low:
+            result += ' (low)'
+        return result
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Assemble
@@ -502,7 +514,7 @@ class DefaultSolver2(Solver):
             tgt_model: Optional[bytes]) -> SolverResult:
         assert src_model is None
         m = Model.parse(tgt_model)
-        trace_data = compose_commands(solve_gen(m, self.w, self.h))
+        trace_data = compose_commands(solve_gen(m, self.w, self.h, low=self.low))
         return SolverResult(trace_data, extra={})
 
 if __name__ == '__main__':
@@ -513,5 +525,5 @@ if __name__ == '__main__':
     m    = Model.parse(data)
 
     with open('out.nbt'.format(task_number), 'wb') as f:
-        for cmd in solve_gen(m, 6, 6):
+        for cmd in solve_gen(m, 6, 6, low=False):
             f.write(bytearray(cmd.compose()))
