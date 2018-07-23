@@ -68,6 +68,7 @@ vector<Diff> enum_move_diffs(const Matrix& m, Pos start) {
             }
         }
     }
+    sort(begin(result), end(result), [](Diff d1, Diff d2) { return d1.dy > d2.dy; });
     return result;
 }
 
@@ -168,20 +169,18 @@ bool safe_to_change(const Matrix &mat, Pos pos) {
         return false;
     }
 
-    // appears to be buggy
-    /*
     bool hz[27];
     for (int dx = -1; dx <= 1; dx++) {
         for (int dy = -1; dy <= 1; dy++) {
             for (int dz = -1; dz <= 1; dz++) {
                 Pos p = pos + Diff(dx, dy, dz);
-                hz[9 * (dx + 1) + 3 * (dy + 1) + (dz + 1)] = p.is_inside(m.R) && m.get(p);
+                hz[9 * (dx + 1) + 3 * (dy + 1) + (dz + 1)] = p.y < 0 || p.is_inside(m.R) && m.get(p);
             }
         }
     }
-    if (can_safely_remove_center(hz)) {
-        return true;
-    }*/
+    // if (can_safely_remove_center(hz)) {
+    //     return true;
+    // }
 
     m.set(pos, false);
     if (m.num_full == m.num_grounded_voxels()) {
@@ -189,6 +188,9 @@ bool safe_to_change(const Matrix &mat, Pos pos) {
         return true;
     } else {
         m.set(pos, true);
+        if (can_safely_remove_center(hz)) {
+            debug(vector<bool>(hz, hz + 27));
+        }
         return false;
     }
 }
@@ -249,9 +251,35 @@ int cubic_num_components(bool bytes[27]) {
     return count;
 }
 
+int cubic_num_components2(bool q[27]) {
+    bool data[27];
+    copy(q, q + 27, data);
+    int result = 0;
+    for (int i = 0; i < 27; i++) {
+        if (!data[i]) {
+            continue;
+        }
+        result++;
+        Pos p = Pos::unpack(3, i);
+        vector<Pos> work = {p};
+        while (!work.empty()) {
+            Pos p = work.back();
+            work.pop_back();
+            if (!p.is_inside(3) || !data[p.pack(3)]) {
+                continue;
+            }
+            data[p.pack(3)] = false;
+            for (Diff d : DIRS) {
+                work.push_back(p + d);
+            }
+        }
+    }
+    return result;
+}
+
 bool can_safely_remove_center(bool bytes[27]) {
     if (!bytes[13]) return true;
-    int components = cubic_num_components(bytes);
+    int components = cubic_num_components2(bytes);
     bytes[13] = false;
-    return cubic_num_components(bytes) == components;
+    return cubic_num_components2(bytes) == components;
 }

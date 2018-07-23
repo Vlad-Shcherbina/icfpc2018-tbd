@@ -14,7 +14,7 @@ class SwarmSolver(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Swarm 0.4'
+        return 'Swarm 0.5 3x3x3 up'
 
     def supports(self, problem_type: ProblemType) -> bool:
         return True
@@ -43,7 +43,6 @@ class SwarmSolver(Solver):
         logger.info(f'R = {R}')
 
         while cur_model != tgt_model:
-            logger.info(bot_pos)
             changed = False
             for nd in cpp.enum_near_diffs():
                 p = bot_pos + nd
