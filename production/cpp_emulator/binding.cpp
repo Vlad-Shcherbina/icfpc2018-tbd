@@ -197,6 +197,7 @@ PYBIND11_MODULE(emulator, m) {
 
 		.def("energy", &Emulator::energy)
 		.def_readonly("aborted", &Emulator::aborted)
+		.def("src_matches_tgt", &Emulator::src_matches_tgt)
 
 		.def("steptrace_is_complete", &Emulator::steptrace_is_complete)
 	    .def("check_command", &Emulator::check_command)

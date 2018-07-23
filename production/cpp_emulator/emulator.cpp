@@ -336,6 +336,11 @@ void Emulator::run_commands(vector<shared_ptr<Command>> newtrace) {
 }
 
 
+bool Emulator::src_matches_tgt() {
+	return S.matrix == S.target;
+}
+
+
 int64_t Emulator::energy() {
 	return S.energy;
 }

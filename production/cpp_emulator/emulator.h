@@ -95,6 +95,8 @@ public:
 	void run_full();
 	void run_commands(std::vector<std::shared_ptr<Command>> newtrace);
 
+	bool src_matches_tgt();
+
 	int64_t energy();
 
 
