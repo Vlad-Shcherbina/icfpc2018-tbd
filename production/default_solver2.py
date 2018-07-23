@@ -350,13 +350,13 @@ def partition_space(a, b, x_cnt, z_cnt):
         row = []
         z1 = round(a.z + z_step*z)
         if z != z_cnt - 1:
-            z2 = round(a.z + z_step*(z + 1) - 1)
+            z2 = round(a.z + z_step*(z + 1)) - 1
         else:
             z2 = b.z
         for x in range(x_cnt):
             x1 = round(a.x + x_step*x)
             if x != x_cnt - 1:
-                x2 = round(a.x + x_step*(x + 1) - 1)
+                x2 = round(a.x + x_step*(x + 1)) - 1
             else:
                 x2 = b.x
             row.append((Pos(x1, 0, z1), Pos(x2, b.y + 1, z2)))
