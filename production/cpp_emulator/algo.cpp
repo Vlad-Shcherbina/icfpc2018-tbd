@@ -128,12 +128,12 @@ vector<shared_ptr<Command>> recover_path(
     return result;
 }
 
-optional<pair<Pos, vector<shared_ptr<Command>>>> path_to_nearest_of(
-    const Matrix &obstacles, Pos src, vector<Pos> dsts) {
+
+std::optional<std::pair<Pos, std::vector<std::shared_ptr<Command>>>> path_to_nearest_pred(
+    const Matrix &obstacles, Pos src, std::function<bool(Pos)> pred) {
     optional<pair<Pos, vector<shared_ptr<Command>>>> result;
-    sort(begin(dsts), end(dsts));
     bfs(obstacles, src, [&](Pos p, const map<Pos, Pos> &prev) {
-        if (binary_search(begin(dsts), end(dsts), p)) {
+        if (pred(p)) {
             result = make_pair(p, recover_path(prev, obstacles, src, p));
             return false;
         }
@@ -142,7 +142,19 @@ optional<pair<Pos, vector<shared_ptr<Command>>>> path_to_nearest_of(
     return result;
 }
 
-bool safe_to_change(Matrix &m, Pos pos) {
+optional<pair<Pos, vector<shared_ptr<Command>>>> path_to_nearest_of(
+    const Matrix &obstacles, Pos src, vector<Pos> dsts) {
+    optional<pair<Pos, vector<shared_ptr<Command>>>> result;
+    sort(begin(dsts), end(dsts));
+    return path_to_nearest_pred(obstacles, src, [&](Pos pos) {
+        return binary_search(begin(dsts), end(dsts), pos);
+    });
+}
+
+
+bool safe_to_change(const Matrix &mat, Pos pos) {
+    Matrix &m = const_cast<Matrix&>(mat);
+
     if (!m.get(pos)) {
         if (pos.y == 0) {
             return true;
@@ -163,4 +175,25 @@ bool safe_to_change(Matrix &m, Pos pos) {
         m.set(pos, true);
         return false;
     }
+}
+
+std::optional<std::pair<Pos, std::vector<std::shared_ptr<Command>>>> path_to_nearest_safe_change_point(
+        const Matrix &obstacles, Pos start, const Matrix &src, const Matrix &dst) {
+    auto nds = enum_near_diffs();
+    return path_to_nearest_pred(obstacles, start, [&](Pos pos) {
+        for (Diff nd : nds) {
+            Pos p = pos + nd;
+            if (!p.is_inside(src.R)) {
+                continue;
+            }
+            if (src.get(p) == dst.get(p)) {
+                continue;
+            }
+            if (!safe_to_change(src, p)) {
+                continue;
+            }
+            return true;
+        }
+        return false;
+    });
 }

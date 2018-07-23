@@ -62,25 +62,7 @@ class SwarmSolver(Solver):
             if changed:
                 continue
 
-            diff = []
-            total_diff_size = 0
-            for x in range(R):
-                for y in range(R):
-                    for z in range(R):
-                        p = Pos(x, y, z)
-                        if cur_model[p] == tgt_model[p]:
-                           continue
-                        total_diff_size += 1
-                        if cpp.safe_to_change(cur_model, p):
-                            diff.append(p)
-            if total_diff_size % 50 < 3:
-                logger.info(f'total diff {total_diff_size}')
-            assert diff
-
-            targets = list(cpp.near_neighbors(R, diff).keys())
-
-            obstacles = Matrix(cur_model)
-            p = cpp.path_to_nearest_of(obstacles, bot_pos, targets)
+            p = cpp.path_to_nearest_safe_change_point(cur_model, bot_pos, cur_model, tgt_model)
             if p is None:
                 return SolverResult(Pass(), extra=dict(msg='no reachable targets'))
 
