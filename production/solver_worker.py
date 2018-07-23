@@ -161,6 +161,10 @@ def parse_args():
     # optional
     parser.add_argument('-j', '--jobs', metavar='N', help=f'number of worker threads (default: all {cores} cores)',
             type=int, default=cores)
+    parser.add_argument('-r', '--max-size', metavar='R', help='Limit the size of the considered problems to at most R',
+            type=int, default=999)
+    parser.add_argument('-n', '--dry-run', help='Do not submit solutions to the database',
+            action='store_true')
     # positional
     parser.add_argument('solver', help='solver to use', choices=ALL_SOLVERS.keys())
     parser.add_argument('solver_args', metavar='ARG', help='argument for the solver', nargs='*')
@@ -188,13 +192,14 @@ def main():
         ) AS my_traces
         ON trace_problem_id = problems.id
         WHERE problems.name LIKE 'F%%' AND trace_problem_id IS NULL
-        ''', [solver.scent()])
+          AND (problems.stats->>'R')::integer <= %s
+        ''', [solver.scent(), args.max_size])
 
     problem_ids = []
     for id, name in cur:
         if solver.supports(solver_interface.ProblemType.from_name(name)):
             problem_ids.append(id)
-    logging.info(f'Problems to solve: {problem_ids}')
+    logging.info(f'{len(problem_ids)} problems to solve: {problem_ids}')
 
     # to reduce collisions when multiple solvers are working in parallel
     random.shuffle(problem_ids)
@@ -250,8 +255,11 @@ def main():
                 f'Got trace for problem/{output_entry.problem_id}, '
                 f'energy={output_entry.result.energy} '
                 f'from worker {output_entry.worker_index}')
-            put_trace(conn, output_entry.problem_id, output_entry.result)
-            conn.commit()
+            if args.dry_run:
+                logging.info(f'Skip saving because dry-run')
+            else:
+                put_trace(conn, output_entry.problem_id, output_entry.result)
+                conn.commit()
 
     logging.info('All done, joining workers...')
     for iq in input_queues:
