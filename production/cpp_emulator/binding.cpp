@@ -74,6 +74,7 @@ PYBIND11_MODULE(emulator, m) {
 		.def("__getitem__", &Matrix::get)
 		.def("__setitem__", &Matrix::set)
 		.def(py::self == py::self)
+		.def("num_grounded_voxels", &Matrix::num_grounded_voxels)
 		.def("grounded_voxels", &Matrix::grounded_voxels)
 		.def("count_inside_region", &Matrix::count_inside_region)
 	;
@@ -97,12 +98,14 @@ PYBIND11_MODULE(emulator, m) {
 		.def(py::init<Diff>())
 		.def("__repr__", &SMove::__repr__)
 		.def_readonly("lld", &SMove::lld)
+		.def("move_offset", &Halt::move_offset)
 	;
 	py::class_<LMove, std::shared_ptr<LMove>, Command>(m, "LMove")
 		.def(py::init<Diff, Diff>())
 		.def("__repr__", &LMove::__repr__)
 		.def_readonly("sld1", &LMove::sld1)
 		.def_readonly("sld2", &LMove::sld2)
+		.def("move_offset", &Halt::move_offset)
 	;
 	py::class_<FusionP, std::shared_ptr<FusionP>, Command>(m, "FusionP")
 		.def(py::init<Diff>())
@@ -201,6 +204,8 @@ PYBIND11_MODULE(emulator, m) {
 
 	m.def("region_dimension", (int (*)(const Pos&, const Pos&)) &region_dimension);
 
+	m.def("enum_near_diffs", &enum_near_diffs);
+	m.def("near_neighbors", &near_neighbors);
 	m.def("path_to_nearest_of", &path_to_nearest_of);
 
 	static py::exception<base_error> base_exc(m, "SimulatorException");

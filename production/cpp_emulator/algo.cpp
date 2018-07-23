@@ -15,6 +15,35 @@
 
 using namespace std;
 
+vector<Diff> enum_near_diffs() {
+    vector<Diff> result;
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                Diff d(dz, dy, dz);
+                if (d.is_near()) {
+                    result.push_back(d);
+                }
+            }
+        }
+    }
+    return result;
+}
+
+map<Pos, int> near_neighbors(int R, const vector<Pos> &ps) {
+    map<Pos, int> result;
+    auto nds = enum_near_diffs();
+    for (Diff d : nds) {
+        for (Pos p : ps) {
+            Pos p2 = p + d;
+            if (p2.is_inside(R)) {
+                result[p + d]++;
+            }
+        }
+    }
+    return result;
+}
+
 const Diff DIRS[] = {
     Diff(1, 0, 0),
     Diff(-1, 0, 0),

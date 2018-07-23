@@ -56,6 +56,10 @@ public:
         return true;
     }
 
+    int num_grounded_voxels() const {
+        return grounded_voxels().size();
+    }
+
     std::vector<Pos> grounded_voxels() const {
         Matrix visited(R);
         std::vector<Pos> result;

@@ -3,6 +3,7 @@ from production.default_solver import DefaultSolver
 from production.bottom_up_solver import BottomUpSolver
 from production.pillar_solver import PillarSolver
 from production.default_solver2 import DefaultSolver2
+from production.swarm import SwarmSolver
 
 ALL_SOLVERS = {
     'their_default': TheirDefaultSolver,
@@ -10,4 +11,5 @@ ALL_SOLVERS = {
     'default2': DefaultSolver2,
     'bottom_up': BottomUpSolver,
     'pillar': PillarSolver,
+    'swarm': SwarmSolver,
 }
