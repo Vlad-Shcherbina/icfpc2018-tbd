@@ -231,16 +231,9 @@ class DefaultSolver(Solver):
         if src_model is not None and tgt_model is not None:
             strategy = default_reassembly
 
-        try:
-            trace = strategy(m_src, m_tgt)
-            trace_data = compose_commands(trace)
-            return SolverResult(trace_data, extra={})
-        except KeyboardInterrupt:
-            raise
-        except:
-            exc = StringIO()
-            traceback.print_exc(file=exc)
-            return SolverResult(Fail(), extra=dict(tb=exc.getvalue()))
+        trace = strategy(m_src, m_tgt)
+        trace_data = compose_commands(trace)
+        return SolverResult(trace_data, extra={})
 
 
 def write_solution(bytetrace, number): # -> IO ()

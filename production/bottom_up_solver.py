@@ -68,16 +68,9 @@ class BottomUpSolver(Solver):
             tgt_model: Optional[bytes]) -> SolverResult:
         assert src_model is None
         m = Model.parse(tgt_model)
-        try:
-            trace = [cmd for step in up_pass(m) for cmd in step]
-            trace_data = compose_commands(trace)
-            return SolverResult(trace_data, extra={})
-        except KeyboardInterrupt:
-            raise
-        except:
-            exc = StringIO()
-            traceback.print_exc(file=exc)
-            return SolverResult(Fail(), extra=dict(tb=exc.getvalue()))
+        trace = [cmd for step in up_pass(m) for cmd in step]
+        trace_data = compose_commands(trace)
+        return SolverResult(trace_data, extra={})
 
 
 def write_solution(bytetrace, number): # -> IO ()

@@ -316,17 +316,8 @@ class DefaultSolver2(Solver):
             tgt_model: Optional[bytes]) -> SolverResult:
         assert src_model is None
         m = Model.parse(tgt_model)
-        try:
-            trace_data = compose_commands(solve_gen(m))
-
-            return SolverResult(trace_data, extra={})
-        except KeyboardInterrupt:
-            raise
-        except:
-            exc = StringIO()
-            traceback.print_exc(file=exc)
-            return SolverResult(Fail(), extra=dict(tb=exc.getvalue()))
-
+        trace_data = compose_commands(solve_gen(m))
+        return SolverResult(trace_data, extra={})
 
 if __name__ == '__main__':
     task_number = int(sys.argv[1]) if len(sys.argv) > 1 else 1
