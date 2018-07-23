@@ -150,3 +150,7 @@ optional<pair<Pos, vector<shared_ptr<Command>>>> path_to_nearest_of(
     });
     return result;
 }
+
+bool safe_to_change(Matrix &matrix, Pos pos) {
+    
+}

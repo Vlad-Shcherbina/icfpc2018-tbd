@@ -22,9 +22,12 @@ def test_matrix():
 
     m0 = Matrix(m)
     assert m0 == m
+    assert m.num_full == 559
     m[Pos(m.R // 2, 1, 1)] = True
+    assert m.num_full == 560
     assert m0 != m
     m[Pos(m.R // 2, 4, 8)] = False
+    assert m.num_full == 559
 
     for y in reversed(range(m.R)):
         s = []

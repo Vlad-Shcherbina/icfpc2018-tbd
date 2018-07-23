@@ -9,6 +9,7 @@
 
 class Matrix {
 public:
+    int num_full = 0;
     int R;
 private:
     std::vector<uint8_t> data;
@@ -31,9 +32,16 @@ public:
     void set(const Pos& p, bool value) {
         assert(p.is_inside(R));
     	int w = p.x*R*R + p.y*R + p.z;
-	    data[w / 8] &= ~(1 << (w % 8));
-        if (value) {
-            data[w / 8] |= 1 << (w % 8);
+        if (data[w / 8] & (1 << (w % 8))) {
+            if (!value) {
+                num_full--;
+                data[w / 8] &= ~(1 << (w % 8));
+            }
+        } else {
+            if (value) {
+                num_full++;
+                data[w / 8] |= 1 << (w % 8);
+            }
         }
     }
 
@@ -111,5 +119,14 @@ private:
     Matrix(const std::vector<uint8_t> &raw)
         : R(raw.at(0)), data(raw.begin() + 1, raw.end()) {
         assert((int)data.size() == (R * R * R + 7) / 8);
+        for (int x = 0; x < R; x++) {
+            for (int y = 0; y < R; y++) {
+                for (int z = 0; z < R; z++) {
+                    if (get(Pos(x, y, z))) {
+                        num_full++;
+                    }
+                }
+            }
+        }
     }
 };

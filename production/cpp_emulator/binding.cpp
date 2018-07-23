@@ -70,6 +70,7 @@ PYBIND11_MODULE(emulator, m) {
 		.def(py::init<int>())
 		.def(py::init<const Matrix&>())
 		.def("parse", &Matrix::parse)
+		.def_readonly("num_full", &Matrix::num_full)
 		.def_readonly("R", &Matrix::R)
 		.def("__getitem__", &Matrix::get)
 		.def("__setitem__", &Matrix::set)
