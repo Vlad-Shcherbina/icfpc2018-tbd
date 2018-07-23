@@ -7,9 +7,8 @@ import flask
 from production.dashboard import app, get_conn
 from production.dashboard.flask_utils import memoized_render_template_string
 
-
-@app.route('/problems')
-def list_problems():
+@app.route('/problems.json')
+def list_problems_json():
     prefix = flask.request.args.get('prefix', '')
 
     conn = get_conn()
@@ -17,77 +16,43 @@ def list_problems():
     cur.execute('''
         SELECT
             problems.id, problems.name,
-            problems.src_data IS NOT NULL, problems.tgt_data IS NOT NULL,
-            problems.stats, problems.invocation_id,
-            traces.id, traces.scent, traces.status, traces.energy, traces.invocation_id,
-            traces.data IS NOT NULL
+            problems.src_data IS NOT NULL as has_src, problems.tgt_data IS NOT NULL as has_tgt,
+            problems.stats, problems.invocation_id as prob_inv_id,
+            traces.id as trace_id, traces.scent, traces.status, traces.energy, traces.invocation_id as trace_inv_id,
+            traces.data IS NOT NULL as has_data, traces.extra
         FROM problems
         LEFT OUTER JOIN traces ON traces.problem_id = problems.id
         WHERE problems.name LIKE %s
         ORDER BY problems.id DESC, traces.id DESC
     ''', [prefix + '%'])
-    rows = cur.fetchall()
-    best_by_problem = defaultdict(lambda: float('+inf'))
-    for [problem_id, _, _, _, _, _, _, _, _,  energy, _, _] in rows:
-        if energy is not None:
-            best_by_problem[problem_id] = min(best_by_problem[problem_id], energy)
+    return json.dumps({
+        "columns": [column[0] for column in cur.description],
+        "data": list(cur)
+    })
+
+    return flask.render_template_string(LIST_PROBLEMS_TEMPLATE, **locals())
+
+@app.route('/problems')
+def list_problems():
+    prefix = flask.request.args.get('prefix', '')
 
     return memoized_render_template_string(LIST_PROBLEMS_TEMPLATE, **locals())
 
 LIST_PROBLEMS_TEMPLATE = '''\
 {% extends "base.html" %}
 {% block body %}
+<script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+<script src='/static/merge_equal_td.js'></script>
+<script src="/static/fetch_db.js"></script>
 <h3>All problems</h3>
 <table id='t'>
-{% for problem_id, problem_name, has_src, has_tgt, problem_stats, problem_inv_id,
-       trace_id, trace_scent, trace_status, trace_energy, trace_inv_id,
-       trace_has_data in rows %}
-    <tr>
-        <td>{{ url_for('view_invocation', id=problem_inv_id) | linkify }}</td>
-        <td>
-            {{ url_for('view_problem', id=problem_id) | linkify }}
-            {% if has_src %}
-                (<a href="{{ url_for('visualize_model', id=problem_id, which='src')}}"
-                 >vis src</a>)
-            {% endif %}
-            {% if has_tgt %}
-                (<a href="{{ url_for('visualize_model', id=problem_id, which='tgt')}}"
-                 >vis tgt</a>)
-            {% endif %}
-        </td>
-        <td>{{ problem_name }}</td>
-        <td>{{ problem_stats }}</td>
-        {% if trace_id is not none %}
-            <td>
-                {{ url_for('view_trace', id=trace_id) | linkify }}
-                {% if trace_has_data %}
-                    (<a href="{{ url_for('visualize_trace', id=trace_id)}}">vis</a>)
-                {% endif %}
-            </td>
-            <td>{{ trace_status }}</td>
-            <td>
-                {% if best_by_problem[problem_id] == trace_energy %}
-                    <b>{{ trace_energy }}</b>
-                {% else %}
-                    {{ trace_energy }}
-                {% endif %}
-            </td>
-            <td>
-                {% if best_by_problem[problem_id] == trace_energy %}
-                    <b>{{ trace_scent }}</b>
-                {% else %}
-                    {{ trace_scent }}
-                {% endif %}
-            </td>
-            <td>{{ url_for('view_invocation', id=trace_inv_id) | linkify }}</td>
-        {% endif %}
-    </tr>
-{% endfor %}
 </table>
+<script>fetch_db('/problems.json?prefix={{ prefix }}', '#t')</script>
 
-<script src='/static/merge_equal_td.js'></script>
 <script>
-    mergeEqualTd(document.getElementById('t'), [[0], [1, 2, 3], [4]]);
 </script>
 {% endblock %}
 '''
