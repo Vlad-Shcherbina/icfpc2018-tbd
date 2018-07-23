@@ -85,12 +85,9 @@ public:
             }
             visited.set(p, true);
             result.push_back(p);
-            work.emplace_back(p.x - 1, p.y, p.z);
-            work.emplace_back(p.x + 1, p.y, p.z);
-            work.emplace_back(p.x, p.y - 1, p.z);
-            work.emplace_back(p.x, p.y + 1, p.z);
-            work.emplace_back(p.x, p.y, p.z - 1);
-            work.emplace_back(p.x, p.y, p.z + 1);
+            for (Diff d : DIRS) {
+                work.push_back(p + d);
+            }
         }
         return result;
     }

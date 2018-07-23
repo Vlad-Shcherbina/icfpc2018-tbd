@@ -44,15 +44,6 @@ map<Pos, int> near_neighbors(int R, const vector<Pos> &ps) {
     return result;
 }
 
-const Diff DIRS[] = {
-    Diff(1, 0, 0),
-    Diff(-1, 0, 0),
-    Diff(0, 1, 0),
-    Diff(0, -1, 0),
-    Diff(0, 0, 1),
-    Diff(0, 0, -1),
-};
-
 vector<Diff> enum_linear_diffs(const Matrix& m, Pos start, int max_dist) {
     vector<Diff> result;
     for (Diff dir : DIRS) {

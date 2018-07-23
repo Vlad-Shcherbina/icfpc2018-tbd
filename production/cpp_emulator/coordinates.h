@@ -81,4 +81,13 @@ inline std::ostream& operator<<(std::ostream &out, Pos d) {
 int region_dimension(const Pos& a, const Pos& b);
 int region_dimension(const Diff& d);
 
+const Diff DIRS[] = {
+    Diff(1, 0, 0),
+    Diff(-1, 0, 0),
+    Diff(0, 1, 0),
+    Diff(0, -1, 0),
+    Diff(0, 0, 1),
+    Diff(0, 0, -1),
+};
+
 #endif
