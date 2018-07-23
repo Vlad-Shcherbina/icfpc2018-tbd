@@ -12,7 +12,7 @@ from production.solver_interface import ProblemType, Solver, SolverResult, Fail
 from production.data_files import *
 from production.pyjs_emulator.run import run
 
-from production.deconstruct.lib2 import clear_all_squads
+from production.deconstruct.lib2 import clear_all_squads, set_gdist
 from production.group_programs import move_x, move_y, move_z, single
 from production.solver_utils import bounding_box
 
@@ -46,10 +46,15 @@ def cubical(model, high=False):
 
 class CubicalDeconstructor(Solver):
     def __init__(self, args):
-        self.high = len(args) > 0 and args[0] == 'high'
+        self.high = 'high' in args
+        self.gdist = 30
+        try:
+            self.gdist = int(args[0])
+        except:
+            pass
 
     def scent(self) -> str:
-        return 'Cubical 2.0' + (' (high)' if self.high else '')
+        return 'Cubical 2.0 @ ' + str(self.gdist) + (' (high)' if self.high else '')
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Disassemble
@@ -60,6 +65,7 @@ class CubicalDeconstructor(Solver):
             tgt_model: Optional[bytes]) -> SolverResult:
         assert tgt_model is None
         m = Model.parse(src_model)
+        set_gdist(self.gdist)
         trace = cubical(m, high=self.high)
         trace_data = compose_commands(trace)
         return SolverResult(trace_data, extra={})
@@ -78,7 +84,7 @@ def main():
     task_number = int(sys.argv[1]) if len(sys.argv) > 1 else 1
     mbytes = deconstruction_by_id(task_number)
 
-    solver = CubicalDeconstructor(["high"])
+    solver = CubicalDeconstructor([20, "high"])
     res = solver.solve('main', mbytes, None)
 
     write_solution(res.trace_data, task_number)

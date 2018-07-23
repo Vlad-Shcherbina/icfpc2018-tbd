@@ -14,12 +14,14 @@ G_DIST = 30
 CUBES = 5
 SQUAD_W = (G_DIST + 1) * CUBES
 
+def set_gdist(new):
+    global G_DIST
+    G_DIST = new
 
 # Program for 1 bot located at x,y,z.
 # It will spawn the given number of cubes (and take part in one itself)
 # which will line up to the right and clean things up
 def clear_all_squads(model, x, y, z, width, height, depth) -> GroupProgram:
-    logging.debug("Model %d x %d x %d", width,height,depth)
     deltax = 0
     prog = single()
     while width > 0:
@@ -36,7 +38,6 @@ def clear_all_squads(model, x, y, z, width, height, depth) -> GroupProgram:
 
 def execute_squad(model, x, y, z, width, height, depth, seeds):
     assert width <= SQUAD_W
-    logging.debug("Start squad at %d %d %d; (%d x %d x %d)", x,y,z,width,height,depth)
 
     (full_w, last_w) = divmod(width, G_DIST + 1)
     # HACK HACK HACK
@@ -69,7 +70,6 @@ def collapse_roots(full_w, last_w):
 
 
 def erase_layers(model, x, y, z, full_w, last_w, full_h, last_h, depth):
-    logging.debug("erase layers at %d %d %d; full_h=%d, last_h=%d; %d", x,y,z,full_h,last_h,depth)
     if full_h == 0:
         if last_h != 0:
             return erase_layer(model, x, y, z, full_w, last_w, last_h, depth)
@@ -100,20 +100,19 @@ def erase_rows(model, x, y, z, full_w, last_w, height, full_d, last_d):
         return prog
 
 def erase_row(model, x, y, z, full_w, last_w, height, depth):
-    logging.debug("erase row at %d %d %d; full_w=%d, last_w=%d; %d x %d", x,y,z,full_w,last_w,height,depth)
-
     # SAME UGLY HACK
-    prog_init = single()
-    prog_fini = single()
+    cubes = full_w + (1 if last_w else 0)
+    prog_init = single() ** cubes
+    prog_fini = single() ** cubes
     if depth == 1:
         depth += 1
-        prog_init += move_z(-1)
-        prog_fini += move_z(+1)
+        prog_init += move_z(-1) ** cubes
+        prog_fini += move_z(+1) ** cubes
         z -= 1
     if height == 1:
         height += 1
-        prog_init += move_y(+1)
-        prog_fini += move_y(-1)
+        prog_init += move_y(+1) ** cubes
+        prog_fini += move_y(-1) ** cubes
         y += 1
 
 

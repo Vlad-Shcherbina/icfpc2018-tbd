@@ -5,7 +5,8 @@ from production.pillar_solver import PillarSolver
 from production.default_solver2 import DefaultSolver2
 from production.swarm import SwarmSolver
 from production.bfs_solver import BFSSolver
-from production.deconstruct.cubical import CubicalDeconstructor
+import production.deconstruct.cubical as cubical
+import production.deconstruct.cubical2 as cubical2
 from production.combiner import Combiner
 
 ALL_SOLVERS = {
@@ -16,6 +17,7 @@ ALL_SOLVERS = {
     'pillar': PillarSolver,
     'swarm': SwarmSolver,
     'bfs': BFSSolver,
-    'cubical': CubicalDeconstructor,
+    'cubical': cubical.CubicalDeconstructor,
+    'cubical2': cubical2.CubicalDeconstructor,
     'combiner': Combiner,
 }
