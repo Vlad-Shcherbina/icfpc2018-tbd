@@ -25,6 +25,7 @@ from production import utils
 from production import solver_interface
 from production.pyjs_emulator.run import run_full as pyjs_run_full
 from production.all_solvers import ALL_SOLVERS
+from production.combiner import Combiner
 
 Json = dict
 
@@ -101,6 +102,15 @@ def solve(
         er = pyjs_run_full(src_data, tgt_data, sr.trace_data)
         pyjs_time = time.time() - start
         logging.info(f'It took {pyjs_time}')
+
+        if isinstance(solver, Combiner):
+            # With the combiner we already know that the solution is correct
+            # and what it's energy is supposed to be.
+            # Maaaaybe, if this assertion never fails, we can
+            # skip running pyjs to save time.
+            assert er.energy == sr.extra['expected_energy'], (
+                er.energy, sr.extra['expected_energy'])
+
         if er.energy is None:
             logging.info(f'Check failed: {er.extra}')
             return Result(

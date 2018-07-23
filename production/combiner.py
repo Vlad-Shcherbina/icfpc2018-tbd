@@ -4,7 +4,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from production.solver_interface import ProblemType, Solver, SolverResult, Fail, Pass
-
+from production.cpp_emulator.emulator import Matrix
 from production import db
 
 
@@ -28,10 +28,11 @@ class Combiner(Solver):
         assert name.startswith('FR')
 
         traces = {}
+        energies = {}
         for part in ['ZD', 'ZA']:
             cur.execute('''
                 SELECT
-                    traces.data
+                    traces.data, energy
                 FROM problems
                 JOIN traces
                 ON traces.problem_id = problems.id
@@ -42,8 +43,12 @@ class Combiner(Solver):
             rows = cur.fetchall()
             if not rows:
                 return SolverResult(Pass())
-            [[trace]] = rows
+            [[trace, energy]] = rows
             traces[part] = zlib.decompress(trace)
+            energies[part] = energy
 
+        R = Matrix.parse(src_model).R
         assert traces['ZD'][-1] == 255
-        return SolverResult(traces['ZD'][:-1] + traces['ZA'])
+        return SolverResult(
+            traces['ZD'][:-1] + traces['ZA'],
+            dict(expected_energy=energies['ZD'] - 3 * R**3 - 20 + energies['ZA']))
