@@ -13,6 +13,7 @@
 #include "emulator.h"
 #include "logger.h"
 #include "algo.h"
+#include "tests.h"
 
 using std::vector;
 using std::string;
@@ -216,6 +217,8 @@ PYBIND11_MODULE(emulator, m) {
 	m.def("path_to_nearest_of", &path_to_nearest_of);
 	m.def("path_to_nearest_safe_change_point", &path_to_nearest_safe_change_point);
 	m.def("safe_to_change", &safe_to_change);
+
+	m.def("run_tests", &run_tests);
 
 	static py::exception<base_error> base_exc(m, "SimulatorException");
 	py::register_exception_translator([](std::exception_ptr p) {

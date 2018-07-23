@@ -23,4 +23,5 @@ std::optional<std::pair<Pos, std::vector<std::shared_ptr<Command>>>> path_to_nea
 
 bool safe_to_change(const Matrix &matrix, Pos pos);
 
+int cubic_num_components(bool bytes[27]);
 bool can_safely_remove_center(bool[27]);

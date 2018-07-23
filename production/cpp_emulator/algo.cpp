@@ -199,6 +199,13 @@ std::optional<std::pair<Pos, std::vector<std::shared_ptr<Command>>>> path_to_nea
 }
 
 
+void _join_roots(uint8_t * pools, uint8_t a, uint8_t b) {
+    while (pools[a] != a) a = pools[a];
+    while (pools[b] != b) b = pools[b];
+    pools[b] = a;
+
+}
+
 int cubic_num_components(bool bytes[27]) {
     uint8_t pools[27];
     for (uint8_t i = 0; i < 27; i++) {
@@ -208,39 +215,21 @@ int cubic_num_components(bool bytes[27]) {
     for(uint8_t x = 0; x < 3; x++) {
         for (uint8_t y = 0; y < 3; y++) {
             for (uint8_t z = 0; z < 3; z++) {
-                uint8_t root_a = x * 9 + y * 3 + z;
-                if (!bytes[root_a]) continue;
-                
-                while(pools[root_a] != root_a) root_a = pools[root_a];
-                
-                for (uint8_t dx = 0; dx < 2; dx++) {
-                    if (x + dx > 2) continue;
+                uint8_t root = x * 9 + y * 3 + z;
+                if (!bytes[root]) continue;
 
-                    for (uint8_t dy = 0; dy < 2; dy++) {
-                        if (y + dy > 2) continue;
-
-                        for (uint8_t dz = 0; dz < 2; dz++) {
-                            if (z + dz > 2) continue;
-                            if (dx + dy + dz == 0 || dx + dy + dz == 3) continue;
-                            uint8_t root_b = (x+dx) * 9 + (y+dy) * 3 + (z+dz);
-                            if (!bytes[(x+dx) * 9 + (y+dy) * 3 + (z+dz)]) continue;
-
-                            while(pools[root_b] != root_b) root_b = pools[root_b];
-                            if (root_a == root_b) continue;
-                            pools[root_b] = root_a;
-
-                        }
-                    }
-                }
+                if (x != 2 && bytes[root+9]) 
+                    _join_roots(pools, root, root+9);
+                if (y != 2 && bytes[root+3])
+                    _join_roots(pools, root, root+3);
+                if (z != 2 && bytes[root+1]) 
+                    _join_roots(pools, root, root+1);
             }
         }
     }
 
     int count = 0;
-    for (uint8_t i = 0; i < 27; i++) {
-        if (pools[i] == i) count++;
-    }
-    std::cout << " " << count << "\n";
+    for (uint8_t i = 0; i < 27; i++) if (pools[i] == i) count++;
     return count;
 }
 

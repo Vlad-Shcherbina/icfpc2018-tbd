@@ -10,6 +10,8 @@ from production import utils
 # from bitarray import bitarray
 
 
+def test_cpp_functions():
+    assert Cpp.run_tests()
 
 
 def test_run_from_file():
@@ -37,3 +39,4 @@ def test_run_from_file():
 
 if __name__ == '__main__':
     test_run_from_file()
+    test_cpp_functions()

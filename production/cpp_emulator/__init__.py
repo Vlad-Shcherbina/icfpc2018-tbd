@@ -9,6 +9,7 @@ magic_extension(
         'coordinates.cpp',
         'commands.cpp',
         'logger.cpp',
+        'tests.cpp'
     ],
     headers=[
         'algo.h',
@@ -19,5 +20,6 @@ magic_extension(
         'matrix.h',
         'debug.h',
         'pretty_printing.h',
+        'tests.h'
     ],
 )
