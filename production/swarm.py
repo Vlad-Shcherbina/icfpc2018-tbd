@@ -2,7 +2,7 @@ from typing import Optional
 import logging
 logger = logging.getLogger(__name__)
 
-from production.solver_interface import ProblemType, Solver, SolverResult, Fail
+from production.solver_interface import ProblemType, Solver, SolverResult, Fail, Pass
 from production.cpp_emulator.emulator import Pos, Diff, Matrix
 from production.cpp_emulator import emulator as cpp
 from production.cpp_mediator import cmd_from_cpp
@@ -14,7 +14,7 @@ class SwarmSolver(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Swarm 0.0'
+        return 'Swarm 0.1'
 
     def supports(self, problem_type: ProblemType) -> bool:
         return True
@@ -35,8 +35,6 @@ class SwarmSolver(Solver):
         logger.info((src_model, tgt_model))
 
         R = src_model.R
-        if R > 20:
-            return SolverResult(Fail(), extra=dict(msd='too large'))
 
         cur_model = Matrix(src_model)
 
