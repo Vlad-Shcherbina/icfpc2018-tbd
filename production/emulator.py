@@ -1,7 +1,7 @@
 from typing import List, Set, Callable, Tuple
 from dataclasses import dataclass
 
-from production.basics import Pos, Diff
+from production.basics import Pos, Diff, enum_region_cells
 from production.commands import *
 from production.model import Model
 
@@ -29,8 +29,11 @@ class State:
 
     def __setitem__(self, pos: Pos, value):
         assert value == 0 or value == 1
-        self.matrix[pos.x][pos.y][pos.z] = value
+        self.matrix[pos] = value
 
+    def __getitem__(self, pos: Pos):
+        return self.matrix[pos]
+        
     def assert_well_formed(self):
         if self.harmonics == LOW:
             grounded = self.matrix.grounded_voxels()
@@ -113,7 +116,7 @@ def process_command(state, bot, cmd) -> Tuple[Set[Pos], Callable[..., None]]:
             raise PreconditionError()
         vol = set(enum_region_cells(c, c1))
         for p in vol:
-            if stat[p] != 0:
+            if state[p] != 0:
                 raise PreconditionError()
         def effect():
             bot.pos = c1
@@ -131,7 +134,7 @@ def process_command(state, bot, cmd) -> Tuple[Set[Pos], Callable[..., None]]:
             raise PreconditionError()
         vol = set(enum_region_cells(c, c1)) + set(enum_region_cells(c1, c2))
         for p in vol:
-            if stat[p] != 0:
+            if state[p] != 0:
                 raise PreconditionError()
         def effect():
             bot.pos = c2
@@ -144,7 +147,7 @@ def process_command(state, bot, cmd) -> Tuple[Set[Pos], Callable[..., None]]:
         c1 = c + cmd.nd
         if not c1.is_inside_matrix(state.R):
             raise PreconditionError()
-        if stat[c1] != 0:
+        if state[c1] != 0:
             raise PreconditionError()
         if len(bot.seeds) < m + 1:
             raise PreconditionError()

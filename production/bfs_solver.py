@@ -12,8 +12,7 @@ from production.solver_interface import ProblemType, Solver, SolverResult, Fail
 from production.solver_utils import *
 from production.model_helpers import floor_contact, filled_neighbors
 from production.search import breadth_first_search
-from production.navigation import navigate_near_voxel
-    
+from production.navigation import navigate_near_voxel, navigate
 
 
 class BFSSolver(Solver):
@@ -62,9 +61,11 @@ class BFSSolver(Solver):
         for voxel in voxels_to_fill:
             current_position = self.state.bots[0].pos
             self.add_commands(navigate_near_voxel(current_position, voxel))
-            self.add_commands([Cmd.Fill(voxel)])
+            current_position = self.state.bots[0].pos
+            self.add_commands([Cmd.Fill(voxel - current_position)])
 
-        self.add_commands(finish())
+        self.add_commands(self.finish())
+        return self.commands
         
 if __name__ == '__main__':
     task_number = int(sys.argv[1]) if len(sys.argv) > 1 else 1
