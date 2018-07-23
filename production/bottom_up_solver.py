@@ -19,9 +19,6 @@ from production.pyjs_emulator.run import run
 def up_pass(model, high=False):
     prog = single()
 
-    if high:
-        prog += single(Flip())
-
     (pos1, pos2) = bounding_box(model)
     width  = pos2.x - pos1.x + 1
     height = pos2.y + 1
@@ -39,6 +36,10 @@ def up_pass(model, high=False):
     (steps_distr, strips) = fission_fill_right(list(range(2, max_bots + 1)), width)
     prog += steps_distr
 
+
+    if high:
+        prog += single(Flip())
+
     # Print each strip layer by layer in parallel
     print_prog = empty()
     for strip in strips:
@@ -47,13 +48,13 @@ def up_pass(model, high=False):
 
     prog += print_prog
 
+    if high:
+        prog += single(Flip())
+
     prog += fusion_unfill_right(strips)
 
     prog += move_x(-pos1.x)
     prog += move_y(-height)
-
-    if high:
-        prog += single(Flip())
 
     prog += single(Halt())
 
@@ -65,7 +66,7 @@ class BottomUpSolver(Solver):
         self.high = len(args) > 0 and args[0] == 'high'
 
     def scent(self) -> str:
-        return 'Bottom Up 2.1' + (' (high)' if self.high else '')
+        return 'Bottom Up 2.1.1' + (' (high)' if self.high else '')
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Assemble
