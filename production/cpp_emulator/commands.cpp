@@ -17,13 +17,14 @@ int min(int x, int y) { return x < y ? x : y; }
 int max(int x, int y) { return x > y ? x : y; }
 
 
-vector<Pos> get_region(const Pos& a, const Pos& b) {
+vector<Pos> get_region(const Pos& a, const Pos& b, vector<Pos> exclude) {
 	Pos p (0, 0, 0);
 	vector<Pos> result;
 	for (p.x = min(a.x, b.x); p.x <= max(a.x, b.x); p.x++)
 		for (p.y = min(a.y, b.y); p.y <= max(a.y, b.y); p.y++)
 			for (p.z = min(a.z, b.z); p.z <= max(a.z, b.z); p.z++)
-				result.push_back(p);
+				if (std::find(exclude.begin(), exclude.end(), p) == exclude.end())
+					result.push_back(p);
 	return result;
 }
 
@@ -94,9 +95,7 @@ string Halt::check_preconditions(Bot* b, State* S) {
 }
 
 
-vector<Pos> Halt::get_volatiles(Bot* b, State* S) {
-	return { b->position };
-}
+vector<Pos> Halt::get_volatiles(Bot* b, State* S) { return {}; }
 
 
 void Halt::execute(Bot* b, State* S) {
@@ -112,9 +111,7 @@ string Halt::__repr__() { return "halt"; }
 string Wait::check_preconditions(Bot* b, State* S) { return ""; }
 
 
-vector<Pos> Wait::get_volatiles(Bot* b, State* S) {
-	return { b->position };
-}
+vector<Pos> Wait::get_volatiles(Bot* b, State* S) { return {}; }
 
 
 void Wait::execute(Bot* b, State* S) {}
@@ -128,9 +125,7 @@ string Wait::__repr__() { return "wait"; }
 string Flip::check_preconditions(Bot* b, State* S) { return ""; }
 
 
-vector<Pos> Flip::get_volatiles(Bot* b, State* S) {
-	return { b->position };
-}
+vector<Pos> Flip::get_volatiles(Bot* b, State* S) { return {}; }
 
 
 void Flip::execute(Bot* b, State* S) {
@@ -163,7 +158,7 @@ string SMove::check_preconditions(Bot* b, State* S) {
 
 
 vector<Pos> SMove::get_volatiles(Bot* b, State* S) {
-	return get_region(b->position, b->position + lld);
+	return get_region(b->position, b->position + lld, { b->position });
 }
 
 
@@ -204,8 +199,8 @@ string LMove::check_preconditions(Bot* b, State* S) {
 vector<Pos> LMove::get_volatiles(Bot* b, State* S) {
 	Pos step1 = b->position + sld1;
 	Pos step2 = step1 + sld2;
-	vector<Pos> v1 = get_region(b->position, step1);
-	vector<Pos> v2 = get_region(step1, step2);
+	vector<Pos> v1 = get_region(b->position, step1, { b->position });
+	vector<Pos> v2 = get_region(step1, step2, { step1 });
 	v1.insert(v1.end(), v2.begin(), v2.end());
 	return v1;
 }
@@ -244,9 +239,7 @@ string FusionP::check_preconditions(Bot* b, State* S) {
 }
 
 
-vector<Pos> FusionP::get_volatiles(Bot* b, State* S) {
-	return { b->position };
-}
+vector<Pos> FusionP::get_volatiles(Bot* b, State* S) { return {}; }
 
 
 void FusionP::execute(Bot* b, State* S) {
@@ -294,9 +287,7 @@ string FusionS::check_preconditions(Bot* b, State* S) {
 }
 
 
-vector<Pos> FusionS::get_volatiles(Bot* b, State* S) {
-	return { b->position };
-}
+vector<Pos> FusionS::get_volatiles(Bot* b, State* S) { return {}; }
 
 
 void FusionS::execute(Bot* b, State* S) {
@@ -334,7 +325,7 @@ string Fission::check_preconditions(Bot* b, State* S) {
 
 
 vector<Pos> Fission::get_volatiles(Bot* b, State* S) {
-	return { b->position, b->position + nd };
+	return { b->position + nd };
 }
 
 
@@ -376,7 +367,7 @@ string Fill::check_preconditions(Bot* b, State* S) {
 
 
 vector<Pos> Fill::get_volatiles(Bot* b, State* S) {
-	return { b->position, b->position + nd };
+	return { b->position + nd };
 }
 
 
@@ -414,7 +405,7 @@ string Void::check_preconditions(Bot* b, State* S) {
 
 
 vector<Pos> Void::get_volatiles(Bot* b, State* S) {
-	return { b->position, b->position + nd };
+	return { b->position + nd };
 }
 
 
@@ -456,9 +447,7 @@ string GFill::check_preconditions(Bot* b, State* S) {
 
 
 vector<Pos> GFill::get_volatiles(Bot* b, State* S) {
-	vector<Pos> result = get_region(b->position + nd, b->position + nd + fd);
-	result.push_back(b->position);
-	return result;
+	return get_region(b->position + nd, b->position + nd + fd, {});
 }
 
 
@@ -495,7 +484,7 @@ string GVoid::check_preconditions(Bot* b, State* S) {
 
 
 vector<Pos> GVoid::get_volatiles(Bot* b, State* S) {
-	vector<Pos> result = get_region(b->position + nd, b->position + nd + fd);
+	vector<Pos> result = get_region(b->position + nd, b->position + nd + fd, {});
 	result.push_back(b->position);
 	return result;
 }

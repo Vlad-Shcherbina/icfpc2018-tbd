@@ -345,8 +345,8 @@ void Emulator::reset_assumptions() {
 	unchecked = tracepointer;
 	botindex = 0;
 	S.volatiles = vector<Pos>();
-	//for (Bot& b : S.bots) 
-	//	if (b.active()) volatiles.push_back(b.position);
+	for (Bot& b : S.bots)
+		if (b.active) S.volatiles.push_back(b.position);
 }
 
 
