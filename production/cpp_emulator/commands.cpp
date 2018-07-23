@@ -200,7 +200,9 @@ vector<Pos> LMove::get_volatiles(Bot* b, State* S) {
 	Pos step1 = b->position + sld1;
 	Pos step2 = step1 + sld2;
 	vector<Pos> v1 = get_region(b->position, step1, { b->position });
-	vector<Pos> v2 = get_region(step1, step2, { step1 });
+	v1.push_back(b->position);
+	vector<Pos> v2 = get_region(step1, step2, v1);
+	v1.pop_back();
 	v1.insert(v1.end(), v2.begin(), v2.end());
 	return v1;
 }
