@@ -68,6 +68,46 @@ def projection_front(m):
     return [ [any([m[Pos(x,y,z)] for z in range(m.R)]) for y in range(m.R)] for x in range(m.R) ]
 
 
+def direction(diff) -> 'Diff':
+    return Diff(sign(diff.dx), sign(diff.dy), sign(diff.dz))
+
+def sign(x):
+    if x > 0:
+        return 1
+    elif x < 0:
+        return -1
+    elif x == 0:
+        return 0
+
+def navigate(f: 'Pos', t: 'Pos'):
+    # y is last
+    dx = t.x - f.x
+    dy = t.y - f.y
+    dz = t.z - f.z
+    if dy > 0:
+        for x in split_linear_move(Diff(0, dy, 0)): yield x
+    for x in split_linear_move(Diff(dx, 0, 0)): yield x
+    for x in split_linear_move(Diff(0, 0, dz)): yield x
+    if dy < 0:
+        for x in split_linear_move(Diff(0, dy, 0)): yield x
+
+def split_move(diff):
+    yield split_linear_move(Diff(0,0,diff.dz))
+    yield split_linear_move(Diff(0,diff.dy,0))
+    yield split_linear_move(Diff(diff.dx,0,0))
+
+def split_linear_move(diff):
+    if diff.mlen() == 0:
+        return
+    assert(diff.is_linear())
+
+    l = abs(diff.mlen())
+    norm = direction(diff)
+    while l > 0:
+        c = min(l, 15)
+        l -= c
+        yield SMove(norm * c)
+
 ####
 # Fission / fusion
 ####
