@@ -167,6 +167,22 @@ bool safe_to_change(const Matrix &mat, Pos pos) {
         }
         return false;
     }
+
+    // appears to be buggy
+    /*
+    bool hz[27];
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                Pos p = pos + Diff(dx, dy, dz);
+                hz[9 * (dx + 1) + 3 * (dy + 1) + (dz + 1)] = p.is_inside(m.R) && m.get(p);
+            }
+        }
+    }
+    if (can_safely_remove_center(hz)) {
+        return true;
+    }*/
+
     m.set(pos, false);
     if (m.num_full == m.num_grounded_voxels()) {
         m.set(pos, true);
