@@ -6,6 +6,8 @@
 #include "emulator.h"
 #include "commands.h"
 #include "logger.h"
+#include "debug.h"
+#include "pretty_printing.h"
 
 using std::vector;
 using std::string;
@@ -23,8 +25,8 @@ Bot::Bot(uint8_t bid, Pos position, vector<uint8_t> seeds, bool active)
 , active(active)
 { }
 
-Bot::Bot()
-: bid(0)
+Bot::Bot(uint8_t bid)
+: bid(bid)
 , position(Pos(0, 0, 0))
 , seeds(vector<uint8_t>())
 , active(false)
@@ -116,7 +118,7 @@ void State::set_default_bots() {
 	bots.push_back(Bot(1, p, vector<uint8_t>(), true));
 	vector<uint8_t> seeds;
 	for (uint8_t i = 2; i <= MAXBOTNUMBER; i++) {
-		bots[0].seeds.push_back(i);
+		bots[1].seeds.push_back(i);
 		bots.push_back(Bot(i, p, vector<uint8_t>(), false));
 	}
 }
@@ -135,16 +137,17 @@ int State::count_active() {
 }
 
 
-string State::validate_command(Bot* b, shared_ptr<Command> cmd) {
+string State::validate_command(Bot* b, shared_ptr<Command> cmd, bool save) {
 	assert (b != nullptr && cmd != nullptr);
 	string msg = cmd->check_preconditions(b, this);
 	if (!msg.empty()) return msg;
 
 	vector<Pos> v = cmd->get_volatiles(b, this);
 	for (Pos& p1 : v)
-		for (Pos& p2 : volatiles)
+		for (Pos& p2 : volatiles) {
 			if (p1 == p2) return "Bot actions interfere";
-	volatiles.insert(volatiles.end(), v.begin(), v.end());
+		}
+	if (save) volatiles.insert(volatiles.end(), v.begin(), v.end());
 	return "";
 }
 
@@ -221,24 +224,34 @@ State Emulator::get_state() {
 }
 
 
-bool Emulator::step_is_complete() {
+bool Emulator::steptrace_is_complete() {
     return (unsigned)S.count_active() <= (trace.size() - tracepointer);
 }
 
 
-string Emulator::check_command(std::shared_ptr<Command> cmd) {
-	if (step_is_complete()) 
+string Emulator::check_command_inner(std::shared_ptr<Command> cmd, bool save) {
+	if (steptrace_is_complete()) 
 		return "Cannot validate before perfoming current step";
 
 	// if there are unchecked previous commands
 	while (unchecked < trace.size()) {
-		string msg = S.validate_command(nextbot(), trace[unchecked]);
-		if (!msg.empty()) 
+		string msg = S.validate_command(nextbot(), trace[unchecked], true);
+		if (!msg.empty()) {
+			debug(msg);
+			for (auto p : S.volatiles) debug(p.__repr__());
+				debug(' ');
+			for (auto b : S.bots) if (b.active) debug(b.position.__repr__());
 			return "Trace already contains invalid commands";
+		}
 		unchecked++;
+		botindex++;
 	}
+	return S.validate_command(nextbot(), cmd, save);
+}
 
-	return S.validate_command(nextbot(), cmd);
+
+string Emulator::check_command(std::shared_ptr<Command> cmd) {
+	return check_command_inner(cmd, false);
 }
 
 
@@ -248,10 +261,11 @@ void Emulator::add_command(shared_ptr<Command> cmd) {
 
 
 string Emulator::check_add_command(std::shared_ptr<Command> cmd) {
-    string msg = check_command(cmd);
+    string msg = check_command_inner(cmd, true);
     if (msg.empty()) {
     	add_command(cmd);
     	unchecked++;
+    	botindex++;
     	assert (unchecked == trace.size());
     }
     return msg;
@@ -259,6 +273,7 @@ string Emulator::check_add_command(std::shared_ptr<Command> cmd) {
 
 
 void Emulator::validate_one_step() {
+	reset_assumptions();
 	unsigned temppointer = tracepointer;
 	for (Bot& b : S.bots) {
 		if (!b.active) continue;
@@ -270,7 +285,7 @@ void Emulator::validate_one_step() {
         shared_ptr<Command> cmd = trace[temppointer++];
         // std::cout << (*(b.command)).__repr__() << "\n";
 
-        string msg = S.validate_command(&b, cmd);
+        string msg = S.validate_command(&b, cmd, true);
         if (!msg.empty()) {
         	// TODO log
         	std::cout << msg << "\n";
@@ -285,11 +300,17 @@ void Emulator::run_one_step() {
 	time_step++;
 	validate_one_step();
 
+	S.fissioned = vector<unsigned>();
+
 	S.add_passive_energy();
 	for (Bot& b : S.bots) {
 		if (!b.active) continue;
 		shared_ptr<Command> cmd = trace[tracepointer++];
 		cmd->execute(&b, &S);
+	}
+
+	for (unsigned bid : S.fissioned) {
+		S.bots[bid].active = true;
 	}
 
 	// S.validate_state()
@@ -321,16 +342,18 @@ int64_t Emulator::energy() {
 
 
 void Emulator::reset_assumptions() {
-	unchecked = 0;
+	unchecked = tracepointer;
 	botindex = 0;
 	S.volatiles = vector<Pos>();
+	//for (Bot& b : S.bots) 
+	//	if (b.active()) volatiles.push_back(b.position);
 }
 
 
 Bot* Emulator::nextbot() {
 	while (botindex < S.bots.size())
 		if (S.bots[botindex++].active)
-			return &S.bots[botindex - 1];
+			return &S.bots[--botindex];
 	botindex = 0;
 	return nullptr;
 }

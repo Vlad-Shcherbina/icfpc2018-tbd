@@ -19,10 +19,10 @@ public:
 	std::vector<uint8_t> seeds;
 	bool active;
 
-	Bot();
+	Bot(uint8_t bid);
+	Bot(uint8_t bid, Pos position, std::vector<uint8_t> seeds, bool active);
 	Bot(const Bot&);
 	Bot& operator=(const Bot&);
-	Bot(uint8_t bid, Pos position, std::vector<uint8_t> seeds, bool active);
 };
 
 
@@ -52,7 +52,7 @@ public:
 	bool assert_well_formed();
 
 	int count_active();
-	std::string validate_command(Bot* b, std::shared_ptr<Command> cmd);
+	std::string validate_command(Bot* b, std::shared_ptr<Command> cmd, bool save);
 	// void validate_state();
 	// void validate_floating();
 	void add_passive_energy();
@@ -65,6 +65,7 @@ public:
 	// auxiliaries for move validations
 	std::vector<Pos> volatiles;
 	std::vector<Pos> filled;
+	std::vector<unsigned> fissioned;
 
 };
 
@@ -85,7 +86,7 @@ public:
 	void set_state(State S);
 	State get_state();
 
-    bool step_is_complete();
+    bool steptrace_is_complete();
     std::string check_command(std::shared_ptr<Command>);
     void add_command(std::shared_ptr<Command>);
     std::string check_add_command(std::shared_ptr<Command>);
@@ -109,6 +110,7 @@ private:
 
 	void reset_assumptions();
 	void validate_one_step();
+	std::string check_command_inner(std::shared_ptr<Command>, bool save);
 
 };
 

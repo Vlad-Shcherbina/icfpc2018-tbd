@@ -32,19 +32,9 @@ def bot_from_cpp(b):
     return Cpp.Bot(b.bid, pos_to_cpp(b.pos), b.seeds, True)
 
 
-# forget it
-# def state_from_cpp(cs):
-#     s = State(cs.R)
-#     s.harmonics = HIGH if cs.high_harmonics else LOW
-#     s.energy = cs.energy
-#     s.matrix = Model(cs.R, bytes(cs.matrix))
-#     s.bots = list(bot_from_cpp(cb) for cb in cs.bots if cb.active)
-#     return s
-
-
 def state_to_cpp(s):
     rawdata = bytes([s.R]) + s.matrix._data.tobytes()
-    cbots = list(Cpp.Bot() for i in range(MAXBOTNUMBER + 1))
+    cbots = list(Cpp.Bot(i) for i in range(MAXBOTNUMBER + 1))
     for b in s.bots:
         cb = Cpp.Bot(b.bid, pos_to_cpp(b.pos), b.seeds, True)
         cbots[b.bid] = cb
@@ -132,13 +122,13 @@ def main_run_interactive():
 
     # assuming we have left state and expecting right state
     #   x->
-    # z ...  ...  ...  |  b..  ...  ...
-    # | bo.  ...  ...  |  .o.  .o.  ...
-    # v ...  ...  ...  |  ...  ...  ...
+    # z ...  ...  ...  |  2..  ...  ...
+    # | 2o.  ...  ...  |  .o.  .o.  ...
+    # v ...  ...  ...  |  3..  ...  ...
     #   y ---------->
 
     m = Model(3)
-    m._data = bitarray('000100000000000000000000000')
+    m[Pos(1, 0, 1)] = 1
 
     s = State(3)
     s.matrix = m
@@ -146,41 +136,79 @@ def main_run_interactive():
     s.energy = 30
     s.bots = [Bot(bid = 2, pos = Pos(0, 0, 1), seeds = [3, 4, 5])]
 
-    cmds = [commands.Fill(Diff(1, 1, 0)), commands.SMove(Diff(0, 0, -1))]
+    cmds = [commands.Fill(Diff(1, 1, 0)), 
+            commands.Fission(Diff(0, 0, 1), 2),
+            commands.SMove(Diff(0, 0, -1)),
+            commands.Wait()]
 
-    # we can run steps in cpp emulator and get new state
+    # pass state to emulator (step count set to 0)
 
     em = Cpp.Emulator(state_to_cpp(s))
 
+    # LOGGING -- temporary out of service
     # if no logfile name given, emulator doesn't log
-    # problemname and solutionname are optional
+    # problemname & solutionname are optional
 
     from production import utils
     em.setlogfile(str(utils.project_root() / 'outputs' / 'cpp_emulator.log'))
     em.setproblemname("some handmade problem")
     em.setsolutionname("John Doe's ingenious alg")
 
-    for c in map(cmd_to_cpp, cmds):
-        em.add_command(c)
+    # OPTION 1: Run set of commands
 
-    # emulator runs bunch of commands and throws exceptions
-    # if some are invalid or illegal
-
-    try:
-        em.run_step()
-    except Cpp.SimulatorException as e:
-        print(e)
-
-
-    # current state;
-    # previous state if exception was raised
-
-    print("\nSuccessful run: ", not em.aborted)
+    cpp_cmds = list(map(cmd_to_cpp, cmds))
+    em.run_commands(cpp_cmds)
 
     cs = em.get_state()
     print("Energy: ", cs.energy)
     print("Central cell: ", cs[Cpp.Pos(1, 1, 1)])
-    print("Bot position: ", s.bots[0].pos)
+    print("Active bots: ", sum(b.active for b in cs.bots))
+
+    # OPTION 2: Command by command
+
+    #    x->
+    # z  2..  ...  ...
+    # |  .o.  .o.  ...
+    # v  3..  ...  ...
+    #    y ---------->
+
+    ccmd = cmd_to_cpp(commands.LMove(Diff(1, 0, 0), Diff(0, 0, 1)))
+    msg = em.check_command(ccmd)
+    print(msg == '', 'Error: ', msg)
+
+    # void string if command is valid 
+
+    ccmd = cmd_to_cpp(commands.Fill(Diff(0, 0, 1)))
+    msg = em.check_command(ccmd)
+    print(msg == '', 'Error: ', msg)
+
+    em.add_command(ccmd)
+
+    ccmd = cmd_to_cpp(commands.SMove(Diff(0, 0, -1)))
+    msg = em.check_command(ccmd)
+    print(msg == '', 'Error: ', msg)
+
+    # to check command and add iff it's valid
+
+    ccmd = cmd_to_cpp(commands.Wait())
+    msg = em.check_add_command(ccmd)
+    print(msg == '', 'Error: ', msg)
+
+    # if there are enough commands for next step, new commands cannot 
+    # be checked until change of state, and every check will fail
+
+    ccmd = cmd_to_cpp(commands.Wait())
+    msg = em.check_add_command(ccmd)
+    print(msg == '', 'Error: ', msg)
+
+    # you can still add command without checks
+
+    print('Trace is full: ', em.steptrace_is_complete())
+    print('Energy: ', em.energy())
+    em.add_command(ccmd)
+    em.run_step()
+    print('Trace is full: ', em.steptrace_is_complete())
+    print('Energy: ', em.energy())
 
 
 def main_run_file():

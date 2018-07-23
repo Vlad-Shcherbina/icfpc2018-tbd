@@ -5,6 +5,7 @@
 #include "commands.h"
 #include "emulator.h"
 #include "logger.h"
+#include "debug.h"
 
 using std::unique_ptr;
 using std::make_unique;
@@ -326,8 +327,8 @@ string Fission::check_preconditions(Bot* b, State* S) {
 		return "Fission is out of bounds";
 	if (!is_void_voxel(S, b->position + nd))
 		return "Fission to a full voxel";
-	if (m+1 >= b->seeds.size())
-		return "Fission asks more seeds that it has";
+	if (m+1 > b->seeds.size())
+		return "Fission: not enough seeds";
 	return "";
 }
 
@@ -340,12 +341,12 @@ vector<Pos> Fission::get_volatiles(Bot* b, State* S) {
 void Fission::execute(Bot* b, State* S) {
 	Bot* b2 = &(S->bots[b->seeds[0]]);
 	assert (!(b2->active));
-	b2->active = true;
 	b2->position = (b->position + nd);
 	b2->seeds = std::move(vector<uint8_t>(b->seeds.begin(),
 												b->seeds.begin() + m + 1));
 	b->seeds = std::move(vector<uint8_t>(b->seeds.begin() + m + 1,
 											   b->seeds.end()));
+	S->fissioned.push_back(b2->bid);
 	S->energy += 24;
 }
 

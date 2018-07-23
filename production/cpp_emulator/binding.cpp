@@ -150,8 +150,8 @@ PYBIND11_MODULE(emulator, m) {
 
 	py::class_<Bot> BotClass(m, "Bot");
 	BotClass
-		.def(py::init<>())
-		.def(py::init<unsigned char, Pos, std::vector<unsigned char>, bool>())
+		.def(py::init<uint8_t>())
+		.def(py::init<uint8_t, Pos, std::vector<uint8_t>, bool>())
 		.def_readonly("bid", &Bot::bid)
 		.def_readonly("pos", &Bot::position)
 		.def_readonly("seeds", &Bot::seeds)
@@ -194,9 +194,10 @@ PYBIND11_MODULE(emulator, m) {
 		.def("energy", &Emulator::energy)
 		.def_readonly("aborted", &Emulator::aborted)
 
-		.def("step_is_complete", &Emulator::step_is_complete)
+		.def("steptrace_is_complete", &Emulator::steptrace_is_complete)
 	    .def("check_command", &Emulator::check_command)
     	.def("add_command", &Emulator::add_command)
+    	.def("check_add_command", &Emulator::check_add_command)
 
 		.def("setproblemname", &Emulator::setproblemname)
 		.def("setsolutionname", &Emulator::setsolutionname)
