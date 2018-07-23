@@ -208,6 +208,7 @@ PYBIND11_MODULE(emulator, m) {
 	m.def("enum_near_diffs", &enum_near_diffs);
 	m.def("near_neighbors", &near_neighbors);
 	m.def("path_to_nearest_of", &path_to_nearest_of);
+	m.def("safe_to_change", &safe_to_change);
 
 	static py::exception<base_error> base_exc(m, "SimulatorException");
 	py::register_exception_translator([](std::exception_ptr p) {

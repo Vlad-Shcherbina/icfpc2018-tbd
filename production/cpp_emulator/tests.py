@@ -79,3 +79,41 @@ def test_pathfinding():
         print(cmd_from_cpp(cmd))
 
     assert cpp.path_to_nearest_of(m, Pos(0, 0, 1), [Pos(100, 0, 0)]) is None
+
+
+def test_safe_to_change():
+    matrix = [
+        #   z
+        #  ---->
+        [[1, 0, 0],   # |
+         [1, 1, 0],   # | y
+         [0, 0, 0]],  # v
+        # x = 0
+
+        [[0, 0, 0],
+         [0, 0, 0],
+         [0, 0, 0]],
+        # x = 1
+
+        [[0, 0, 0],
+         [0, 0, 0],
+         [0, 0, 0]],
+        # x = 2
+    ]
+    m = Matrix(3)
+    for x, slice in enumerate(matrix):
+        for y, row in enumerate(slice):
+            for z, cell in enumerate(row):
+                m[Pos(x, y, z)] = bool(cell)
+    m0 = Matrix(m)
+
+    assert cpp.safe_to_change(m, Pos(0, 0, 1))
+    assert m == m0
+    assert cpp.safe_to_change(m, Pos(0, 1, 1))
+    assert m == m0
+    assert not cpp.safe_to_change(m, Pos(0, 1, 0))
+    assert m == m0
+    assert cpp.safe_to_change(m, Pos(0, 2, 1))
+    assert m == m0
+    assert not cpp.safe_to_change(m, Pos(2, 2, 2))
+    assert m == m0

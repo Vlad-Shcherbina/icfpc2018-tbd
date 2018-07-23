@@ -142,6 +142,22 @@ optional<pair<Pos, vector<shared_ptr<Command>>>> path_to_nearest_of(
     return result;
 }
 
-bool safe_to_change(Matrix &matrix, Pos pos) {
-    
+bool safe_to_change(Matrix &m, Pos pos) {
+    if (!m.get(pos)) {
+        for (Diff d : DIRS) {
+            Pos p = pos + d;
+            if (p.is_inside(m.R) && m.get(p)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    m.set(pos, false);
+    if (m.num_full == m.num_grounded_voxels()) {
+        m.set(pos, true);
+        return true;
+    } else {
+        m.set(pos, true);
+        return false;
+    }
 }
