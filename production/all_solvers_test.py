@@ -6,7 +6,7 @@ from production import data_files
 def test_all_successful_solvers():
     for solver_class in ALL_SOLVERS.values():
         # Wall of shame in code form
-        if solver_class.__name__ in ['SwarmSolver', 'Combiner', 'DefaultSolver2']: continue
+        if solver_class.__name__ in ['SwarmSolver', 'Combiner', 'DefaultSolver2', 'DefaultSolver2Dec']: continue
         solver = solver_class([])
         for c in 'ADR':
             name = f'F{c}011'
