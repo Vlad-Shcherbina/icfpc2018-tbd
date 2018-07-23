@@ -37,6 +37,25 @@ public:
         }
     }
 
+    bool operator==(const Matrix &other) const {
+        assert(R == other.R);
+        int q = R * R * R / 8;
+        for (int i = 0; i < q; i++) {
+            if (data[i] != other.data[i]) {
+                return false;
+            }
+        }
+        int garbage = data.size() * 8 - R * R * R;
+        if (garbage) {
+            int tail = 8 - garbage;
+            uint8_t mask = (1 << tail) - 1;
+            if ((data.back() & mask) != (other.data.back() & mask)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     std::vector<Pos> grounded_voxels() const {
         Matrix visited(R);
         std::vector<Pos> result;

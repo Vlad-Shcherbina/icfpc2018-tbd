@@ -20,7 +20,10 @@ def test_matrix():
     print('and a hole in the middle')
     x = m.R // 2
 
+    m0 = Matrix(m)
+    assert m0 == m
     m[Pos(m.R // 2, 1, 1)] = True
+    assert m0 != m
     m[Pos(m.R // 2, 4, 8)] = False
 
     for y in reversed(range(m.R)):
