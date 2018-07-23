@@ -339,23 +339,24 @@ class State():
 
         self.grid = all_rows
 
-
+# This is potential source of bugs since floating point number aren't good when
+# you are tired
 def partition_space(a, b, x_cnt, z_cnt):
-    x_step = (b.x - a.x + 1) // x_cnt
-    z_step = (b.z - a.z + 1) // z_cnt
+    x_step = (b.x - a.x + 1) / x_cnt
+    z_step = (b.z - a.z + 1) / z_cnt
 
     res = []
     for z in range(z_cnt):
         row = []
-        z1 = a.z + z_step*z
+        z1 = round(a.z + z_step*z)
         if z != z_cnt - 1:
-            z2 = a.z + z_step*(z + 1) - 1
+            z2 = round(a.z + z_step*(z + 1) - 1)
         else:
             z2 = b.z
         for x in range(x_cnt):
-            x1 = a.x + x_step*x
+            x1 = round(a.x + x_step*x)
             if x != x_cnt - 1:
-                x2 = a.x + x_step*(x + 1) - 1
+                x2 = round(a.x + x_step*(x + 1) - 1)
             else:
                 x2 = b.x
             row.append((Pos(x1, 0, z1), Pos(x2, b.y + 1, z2)))
@@ -427,8 +428,8 @@ def solve_gen(m: 'Model', x_cnt: 'int', z_cnt: 'int'):
     (bb_a, bb_b) = bounding_box(m)
 
     # For narrow models
-    x_cnt = min(x_cnt, bb_b.x - bb_a.x + 1)
-    z_cnt = min(z_cnt, bb_b.z - bb_a.z + 1)
+    x_cnt = min(x_cnt, (bb_b.x - bb_a.x + 1) // 2)
+    z_cnt = min(z_cnt, (bb_b.z - bb_a.z + 1) // 2)
 
     yield Cmd.Flip()
 
@@ -490,7 +491,7 @@ class DefaultSolver2(Solver):
         assert not args
 
     def scent(self) -> str:
-        return 'Default 2.4-6x6'
+        return 'Default 2.4.1-6x6'
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Assemble
