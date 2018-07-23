@@ -1,13 +1,21 @@
 from typing import List, Set, Callable, Tuple
 from dataclasses import dataclass
 
-from production.basics import Pos, Diff, enum_region_cells
+from production.cpp_emulator.emulator import Pos, Diff
 from production.commands import *
 from production.model import Model
 
 
 LOW = "LOW"
 HIGH = "HIGH"
+
+
+def enum_region_cells(c1: Pos, c2: Pos):
+    for x in range(min(c1.x, c2.x), max(c1.x, c2.x) + 1):
+        for y in range(min(c1.y, c2.y), max(c1.y, c2.y) + 1):
+            for z in range(min(c1.z, c2.z), max(c1.z, c2.z) + 1):
+                yield Pos(x, y, z)
+
 
 
 @dataclass
