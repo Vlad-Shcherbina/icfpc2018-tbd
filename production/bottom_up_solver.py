@@ -16,11 +16,11 @@ from production.solver_interface import ProblemType, Solver, SolverResult, Fail
 from production.data_files import *
 from production.pyjs_emulator.run import run
 
-def up_pass(model):
+def up_pass(model, high=False):
     prog = single()
 
-    # TODO: REMOVE ME
-    prog += single(Flip())
+    if high:
+        prog += single(Flip())
 
     # Up 1 and forward 1
     prog += single(LMove(Diff(0,1,0), Diff(0,0,1)))
@@ -44,8 +44,8 @@ def up_pass(model):
     prog += fusion_unfill_right(strips)
     prog += move_y(-1 * height)
 
-    # TODO: REMOVE ME
-    prog += single(Flip())
+    if high:
+        prog += single(Flip())
 
     prog += single(Halt())
 
@@ -54,10 +54,10 @@ def up_pass(model):
 
 class BottomUpSolver(Solver):
     def __init__(self, args):
-        assert not args
+        self.high = len(args) > 0 and args[0] == 'high'
 
     def scent(self) -> str:
-        return 'Bottom Up 1.2'
+        return 'Bottom Up 2.0' + (' (high)' if self.high else '')
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Assemble
@@ -68,7 +68,7 @@ class BottomUpSolver(Solver):
             tgt_model: Optional[bytes]) -> SolverResult:
         assert src_model is None
         m = Model.parse(tgt_model)
-        trace = up_pass(m)
+        trace = up_pass(m, high=self.high)
         trace_data = compose_commands(trace)
         return SolverResult(trace_data, extra={})
 
