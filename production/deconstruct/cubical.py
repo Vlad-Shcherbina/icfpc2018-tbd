@@ -16,7 +16,7 @@ from production.deconstruct.lib import clear_all
 from production.group_programs import move_x, move_y, move_z, single
 from production.solver_utils import bounding_box
 
-def cubical(model):
+def cubical(model, high=False):
     (pos1, pos2) = bounding_box(model)
 
     width  = pos2.x - pos1.x + 1
@@ -30,7 +30,13 @@ def cubical(model):
     prog  = move_x(pos1.x)
     prog += move_z(pos1.z - 1)
 
+    if high:
+        prog += single(Flip())
+
     prog += clear_all(model, pos1.x, 0, pos1.z - 1, width, height, depth)
+
+    if high:
+        prog += single(Flip())
 
     prog += move_x(-pos1.x)
     prog += move_z(-pos1.z + 1)
@@ -40,10 +46,10 @@ def cubical(model):
 
 class CubicalDeconstructor(Solver):
     def __init__(self, args):
-        assert not args
+        self.high = len(args) > 0 and args[0] == 'high'
 
     def scent(self) -> str:
-        return 'Cubical 0.1'
+        return 'Cubical 0.1' + (' (high)' if self.high else '')
 
     def supports(self, problem_type: ProblemType) -> bool:
         return problem_type == ProblemType.Disassemble
@@ -54,7 +60,7 @@ class CubicalDeconstructor(Solver):
             tgt_model: Optional[bytes]) -> SolverResult:
         assert tgt_model is None
         m = Model.parse(src_model)
-        trace = cubical(m)
+        trace = cubical(m, high=self.high)
         trace_data = compose_commands(trace)
         return SolverResult(trace_data, extra={})
 
