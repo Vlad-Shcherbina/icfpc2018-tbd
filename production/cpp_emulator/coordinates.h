@@ -81,6 +81,7 @@ public:
 	}
 };
 
+
 inline std::ostream& operator<<(std::ostream &out, Pos d) {
 	return out << d.__repr__().c_str();
 }

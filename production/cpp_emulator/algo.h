@@ -22,3 +22,5 @@ std::optional<std::pair<Pos, std::vector<std::shared_ptr<Command>>>> path_to_nea
         const Matrix &obstacles, Pos start, const Matrix &src, const Matrix &dst);
 
 bool safe_to_change(const Matrix &matrix, Pos pos);
+
+bool can_safely_remove_center(bool[27]);
