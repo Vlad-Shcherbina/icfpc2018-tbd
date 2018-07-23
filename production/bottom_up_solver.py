@@ -8,25 +8,26 @@ import traceback
 from production.model import Model
 from production.commands import *
 from production.basics import Pos, Diff
-from production.orchestrate import sequential
-from production.solver_utils import *
+from production.orchestrate2 import GroupProgram, single
+from production.group_programs import *
+from production.solver_utils import bounding_box
 from production.solver_interface import ProblemType, Solver, SolverResult, Fail
 
 from production.data_files import *
 from production.pyjs_emulator.run import run
 
 def up_pass(model):
-    steps = []
+    prog = single()
 
     # TODO: REMOVE ME
-    steps.append([Flip()])
+    prog += single(Flip())
 
     # Up 1 and forward 1
-    steps.append([LMove(Diff(0,1,0), Diff(0,0,1))])
+    prog += single(LMove(Diff(0,1,0), Diff(0,0,1)))
 
     # Fission into a line
     (steps_distr, strips) = fission_fill_right(list(range(2, 21)), model.R)
-    steps.extend(steps_distr)
+    prog += steps_distr
 
     (_, pos_high) = bounding_box(model)
     maxy = pos_high.y
@@ -34,19 +35,18 @@ def up_pass(model):
     # Print layer by layer
     for layer in range(0, maxy + 1):
         last = (layer == pos_high.y)
-        steps.extend(print_layer_below(model, layer, strips, last))
-        steps.extend([[SMove(Diff(0,1,0))]] * len(strips))
+        prog += print_layer_below(model, layer, strips, last)
+        prog += single(SMove(Diff(0,1,0))) ** 20
 
-    steps.extend(fusion_unfill_right(strips))
-    steps.extend(sequential(move_y(-1 * (maxy + 2))))
+    prog += fusion_unfill_right(strips)
+    prog += move_y(-1 * (maxy + 2))
 
     # TODO: REMOVE ME
-    steps.append([Flip()])
+    prog += single(Flip())
 
-    steps.append([Halt()])
+    prog += single(Halt())
 
-
-    return steps
+    return prog
 
 
 class BottomUpSolver(Solver):
@@ -82,7 +82,7 @@ def write_solution(bytetrace, number): # -> IO ()
         f.write(bytetrace)
 
 def solve(strategy, model, number): # -> IO ()
-    commands = [cmd for step in strategy(model) for cmd in step]
+    commands = strategy(model)
     trace = compose_commands(commands)
     logger.info(run(lightning_problem_by_id(number), trace))
     write_solution(trace, number)
