@@ -8,7 +8,7 @@ import traceback
 from production.model import Model
 from production.commands import *
 from production.basics import Pos, Diff
-from production.orchestrate2 import GroupProgram, single
+from production.orchestrate2 import GroupProgram, single, empty
 from production.group_programs import *
 from production.solver_utils import bounding_box
 from production.solver_interface import ProblemType, Solver, SolverResult, Fail
@@ -30,16 +30,19 @@ def up_pass(model):
     prog += steps_distr
 
     (_, pos_high) = bounding_box(model)
-    maxy = pos_high.y
+    height = pos_high.y + 1
 
     # Print layer by layer
-    for layer in range(0, maxy + 1):
-        last = (layer == pos_high.y)
-        prog += print_layer_below(model, layer, strips, last)
-        prog += single(SMove(Diff(0,1,0))) ** 20
+    print_prog = empty()
+    x = 0
+    for strip in strips:
+        print_prog //= print_hyperrectangle(model, x, strip, height)
+        x += strip
+
+    prog += print_prog
 
     prog += fusion_unfill_right(strips)
-    prog += move_y(-1 * (maxy + 2))
+    prog += move_y(-1 * height)
 
     # TODO: REMOVE ME
     prog += single(Flip())
@@ -78,7 +81,7 @@ class BottomUpSolver(Solver):
 
 
 def write_solution(bytetrace, number): # -> IO ()
-    with open('./LA{0:03d}.nbt'.format(number), 'wb') as f:
+    with open('./problemsL/LA{0:03d}.nbt'.format(number), 'wb') as f:
         f.write(bytetrace)
 
 def solve(strategy, model, number): # -> IO ()

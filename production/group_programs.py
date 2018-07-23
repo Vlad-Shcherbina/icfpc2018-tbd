@@ -106,6 +106,7 @@ def fusion_unfill_right(strips):
 ####
 
 # Prints a 2D layer with y = i.
+# Each strip is printed by its own bot.
 # Assumption: all bots are at y = i + 1.
 # Assumption: all bots are at z = 1. # TODO: relax this
 # Assumption: first bot it at x = 0.
@@ -120,6 +121,7 @@ def print_layer_below(model, i, strips, last):
     return prog
 
 # Prints part of the model layer with y = i which lies at
+# Single-bot program.
 # lbound <= x < rbound
 def print_strip_below(model, i, lbound, rbound, last_layer):
     prog = single()
@@ -133,4 +135,17 @@ def print_strip_below(model, i, lbound, rbound, last_layer):
         prog += move_x(-1 * (rbound - lbound - 1))
         prog += single(SMove(Diff(0,0,1))) # TODO: optimise this part, make an L move
     prog += move_z(-1 * (model.R - 2 + last_layer))
+    return prog
+
+
+# Prints an orthotope (right rectangular prism), i.e. a part of the model
+# starting from where the bot stands currentlty and extending right and up.
+# Assumption: bot is at y = 1, z = 1
+def print_hyperrectangle(model, x, width, height):
+    prog = single()
+    for i in range(height):
+        last = i == height - 1
+        prog += print_strip_below(model, i, x, x + width, last)
+        if not last:
+            prog += single(SMove(Diff(0,1,0)))
     return prog
