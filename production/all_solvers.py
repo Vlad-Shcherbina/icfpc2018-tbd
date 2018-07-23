@@ -6,6 +6,7 @@ from production.default_solver2 import DefaultSolver2
 from production.swarm import SwarmSolver
 from production.bfs_solver import BFSSolver
 from production.deconstruct.cubical import CubicalDeconstructor
+from production.combiner import Combiner
 
 ALL_SOLVERS = {
     'their_default': TheirDefaultSolver,
@@ -16,4 +17,5 @@ ALL_SOLVERS = {
     'swarm': SwarmSolver,
     'bfs': BFSSolver,
     'cubical': CubicalDeconstructor,
+    'combiner': Combiner,
 }
