@@ -40,20 +40,20 @@ LIST_PROBLEMS_TEMPLATE = '''\
 {% block body %}
 <h3>All problems</h3>
 <div id='desc'></div>
-<table id='t'>
+<table id='t' style="display: none">
 {% for problem_id, problem_name, has_src, has_tgt, problem_stats, problem_inv_id,
        trace_id, trace_scent, trace_status, trace_energy, trace_inv_id,
        trace_has_data, trace_extra in rows %}
     <tr>
-        <td>{{ url_for('view_invocation', id=problem_inv_id) | linkify }}</td>
+        <td>{{ ('/inv/%s' % problem_inv_id) | linkify }}</td>
         <td>
-            {{ url_for('view_problem', id=problem_id) | linkify }}
+            {{ ('/problem/%s' % problem_id) | linkify }}
             {% if has_src %}
-                (<a href="{{ url_for('visualize_model', id=problem_id, which='src')}}"
+                (<a href="{{ ('/vis_model/%s?which=src' % problem_id) }}"
                  >vis src</a>)
             {% endif %}
             {% if has_tgt %}
-                (<a href="{{ url_for('visualize_model', id=problem_id, which='tgt')}}"
+                (<a href="{{ ('/vis_model/%s?which=tgt' % problem_id) }}"
                  >vis tgt</a>)
             {% endif %}
         </td>
@@ -61,9 +61,9 @@ LIST_PROBLEMS_TEMPLATE = '''\
         <td>{{ problem_stats }}</td>
         {% if trace_id is not none %}
             <td>
-                {{ url_for('view_trace', id=trace_id) | linkify }}
+                {{ ('/trace/%s' % trace_id) | linkify }}
                 {% if trace_has_data %}
-                    (<a href="{{ url_for('visualize_trace', id=trace_id)}}">vis</a>)
+                    (<a href="{{ ('/vis_trace/%s' % trace_id) }}">vis</a>)
                 {% endif %}
             </td>
             <td>{{ trace_status }}</td>
@@ -81,7 +81,7 @@ LIST_PROBLEMS_TEMPLATE = '''\
                     {{ trace_scent }}
                 {% endif %}
             </td>
-            <td>{{ url_for('view_invocation', id=trace_inv_id) | linkify }}</td>
+            <td>{{ ('/inv/%s' % trace_inv_id) | linkify }}</td>
             <td>
                 {{ trace_extra.get('solver_time', 0) | int }}s+{{
                     trace_extra.get('pyjs_time', 0) | int }}s
@@ -93,7 +93,9 @@ LIST_PROBLEMS_TEMPLATE = '''\
 
 <script src='/static/merge_equal_td.js'></script>
 <script>
-    mergeEqualTd(document.getElementById('t'), [[0], [1, 2, 3], [4]]);
+    let t = document.getElementById('t');
+    mergeEqualTd(t, [[0], [1, 2, 3], [4]]);
+    t.style.display = "";
 </script>
 {% endblock %}
 '''

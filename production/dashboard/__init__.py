@@ -1,4 +1,5 @@
 import datetime
+import html
 
 import flask
 import jinja2
@@ -34,9 +35,7 @@ def get_conn():
 
 @app.template_filter('linkify')
 def linkify(url):
-    return flask.Markup(memoized_render_template_string(
-        '<a href="{{ url }}">{{ url }}</a>',
-        url=url))
+    return flask.Markup(f'<a href="{html.escape(url)}">{url}</a>')
 
 
 @app.template_filter('render_timestamp')
