@@ -20,7 +20,8 @@ def list_problems():
             problems.src_data IS NOT NULL, problems.tgt_data IS NOT NULL,
             problems.stats, problems.invocation_id,
             traces.id, traces.scent, traces.status, traces.energy, traces.invocation_id,
-            traces.data IS NOT NULL
+            traces.data IS NOT NULL,
+            traces.extra
         FROM problems
         LEFT OUTER JOIN traces ON traces.problem_id = problems.id
         WHERE problems.name LIKE %s
@@ -28,7 +29,7 @@ def list_problems():
     ''', [prefix + '%'])
     rows = cur.fetchall()
     best_by_problem = defaultdict(lambda: float('+inf'))
-    for [problem_id, _, _, _, _, _, _, _, _,  energy, _, _] in rows:
+    for [problem_id, _, _, _, _, _, _, _, _,  energy, _, _, _] in rows:
         if energy is not None:
             best_by_problem[problem_id] = min(best_by_problem[problem_id], energy)
 
@@ -42,7 +43,7 @@ LIST_PROBLEMS_TEMPLATE = '''\
 <table id='t'>
 {% for problem_id, problem_name, has_src, has_tgt, problem_stats, problem_inv_id,
        trace_id, trace_scent, trace_status, trace_energy, trace_inv_id,
-       trace_has_data in rows %}
+       trace_has_data, trace_extra in rows %}
     <tr>
         <td>{{ url_for('view_invocation', id=problem_inv_id) | linkify }}</td>
         <td>
@@ -81,6 +82,10 @@ LIST_PROBLEMS_TEMPLATE = '''\
                 {% endif %}
             </td>
             <td>{{ url_for('view_invocation', id=trace_inv_id) | linkify }}</td>
+            <td>
+                {{ trace_extra.get('solver_time', 0) | int }}s+{{
+                    trace_extra.get('pyjs_time', 0) | int }}s
+            </td>
         {% endif %}
     </tr>
 {% endfor %}
