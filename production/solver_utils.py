@@ -10,10 +10,14 @@ from production.commands import *
 from production.model import Model
 from production.orchestrate import parallel, sequential, wait_for
 
-def bounding_box(model) -> Tuple[Pos, Pos]:
+def bounding_box(model) -> Tuple[Optional[Pos], Optional[Pos]]:
     return bounding_box_region(model)
 
-def bounding_box_region(model, fx : Optional[int] = None, fy : Optional[int] = None, fz : Optional[int] = None) -> Tuple[Pos, Pos]:
+def bounding_box_region(
+        model,
+        fx: Optional[int] = None,
+        fy: Optional[int] = None,
+        fz: Optional[int] = None) -> Tuple[Optional[Pos], Optional[Pos]]:
     def rangify(R, fv = None):
         if fv is None:
             fv = range(R)

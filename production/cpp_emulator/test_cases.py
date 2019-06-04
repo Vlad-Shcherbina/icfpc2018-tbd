@@ -11,10 +11,10 @@ from production import utils
 
 def set_cpp_state():
     m = Model(5)
-    m[Pos(2, 0, 2)] = 1
-    m[Pos(2, 1, 2)] = 1
-    m[Pos(2, 2, 2)] = 1
-    m[Pos(2, 3, 2)] = 1
+    m[Pos(2, 0, 2)] = True
+    m[Pos(2, 1, 2)] = True
+    m[Pos(2, 2, 2)] = True
+    m[Pos(2, 3, 2)] = True
 
     s = State(5)
     s.matrix = m

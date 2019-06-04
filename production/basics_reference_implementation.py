@@ -56,7 +56,7 @@ class Diff:
     dy: int
     dz: int
 
-    def __add__(self, d: 'Diff') -> 'Pos':
+    def __add__(self, d: 'Diff') -> 'Diff':
         return Diff(self.dx + d.dx, self.dy + d.dy, self.dz + d.dz)
 
     def __neg__(self) -> 'Diff':

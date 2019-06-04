@@ -63,12 +63,12 @@ class GroupProgram:
 
     # Turn a sequence of moves of a single bot into a group program.
     @staticmethod
-    def singleton(*moves: Command, endSize=1) -> "GroupProgram":
+    def singleton(*moves: Iterable[Command], endSize=1) -> "GroupProgram":
         return GroupProgram(1, endSize, map(lambda move: [move], moves))
 
     # Turn a sequence of moves of an empty group into a group program.
     @staticmethod
-    def empty(*moves: Command) -> "GroupProgram":
+    def empty(*moves: Iterable[Command]) -> "GroupProgram":
         return GroupProgram(0, 0, [])
 
 

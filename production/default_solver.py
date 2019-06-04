@@ -187,7 +187,7 @@ def apply_default_strategy(model_src, model_tgt, speeds : Tuple[int,int,int], st
 
     return commands
 
-def choose_action(m_src, m_tgt, pt, reassemble_behind = False) -> Command:
+def choose_action(m_src, m_tgt, pt, reassemble_behind = False):
     if not reassemble_behind and m_src[pt] and not m_tgt[pt]:
         return Void
     if not m_src[pt] and m_tgt[pt]:

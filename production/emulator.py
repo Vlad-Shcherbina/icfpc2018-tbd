@@ -37,7 +37,7 @@ class State:
 
     def __setitem__(self, pos: Pos, value):
         assert value == 0 or value == 1
-        self.matrix[pos] = value
+        self.matrix[pos] = bool(value)
 
     def __getitem__(self, pos: Pos):
         return self.matrix[pos]
