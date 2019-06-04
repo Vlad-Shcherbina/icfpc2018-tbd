@@ -115,7 +115,7 @@ def process_command(state, bot, cmd) -> Tuple[Set[Pos], Callable[..., None]]:
                 state.harmonics = HIGH
             else:
                 assert state.harmonics
-        return {c}
+        return {c}, effect
 
     elif isinstance(cmd, SMove):
         assert cmd.lld.is_long_linear()
@@ -129,7 +129,7 @@ def process_command(state, bot, cmd) -> Tuple[Set[Pos], Callable[..., None]]:
         def effect():
             bot.pos = c1
             state.energy += 2 * cmd.lld.mlen()
-        return vol, effect()
+        return vol, effect
 
     elif isinstance(cmd, LMove):
         assert cmd.sld1.is_short_linear()

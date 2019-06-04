@@ -45,8 +45,9 @@ class BFSSolver(Solver):
     def add_commands(self, new_commands):
         for command in new_commands:
             self.commands = chain(self.commands, [command])
-            process_command(self.state, self.state.bots[0], command)            
-        
+            volatile_set, effect = process_command(self.state, self.state.bots[0], command)
+            effect()
+
     def finish(self):
         for x in navigate(self.state.bots[0].pos, Pos(0, 0, 0)): yield x
         yield Cmd.Halt()
