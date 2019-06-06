@@ -1,25 +1,13 @@
 import os
-import sys
 import json
-import inspect
 import platform
-import contextlib
 import distutils.core
 import distutils.util
 
 import pybind11
 
 
-def magic_extension(*, name, sources, headers):
-    '''See examples/cpp_demo/__init__.py.'''
-    caller_file = inspect.stack()[1].filename
-    assert os.path.basename(caller_file) == '__init__.py', caller_file
-    with contextlib.redirect_stdout(sys.stderr):
-        build_extension(caller_file, name, sources, headers)
-
-
-def build_extension(caller_file, name, sources, headers):
-    release = distutils.util.strtobool(os.getenv('TBD_RELEASE', '0'))
+def build_extension(caller_file, name, sources, headers, release):
     if platform.system() == 'Windows':
         extra_compile_args = ['/std:c++latest']
         if release:
