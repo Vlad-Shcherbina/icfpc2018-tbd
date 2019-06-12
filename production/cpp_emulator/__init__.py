@@ -5,6 +5,7 @@ magic_extension(
     sources=[
         'algo.cpp',
         'binding.cpp',
+        'binding2.cpp',
         'emulator.cpp',
         'coordinates.cpp',
         'commands.cpp',
