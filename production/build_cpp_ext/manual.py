@@ -3,14 +3,17 @@ import hashlib
 import importlib.machinery
 import json
 import logging
+import multiprocessing
 import os
 import platform
+import queue
 import subprocess
 import sys
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import pybind11
 
@@ -86,6 +89,7 @@ def msvc_build_steps(*, name, sources, headers, release, build_dir, include_dirs
         '/EHsc',
         '/diagnostics:caret',
         '/Zi',  # generate complete debugging information
+        '/FS',  # serialize writes to PDB through MSPDBSRV.EXE
     ]
     for d in include_dirs:
         cmd.append('-I' + d)
@@ -202,16 +206,7 @@ def build_extension(caller_file, name, sources, headers, release):
                 release=release, build_dir=build_dir, include_dirs=include_dirs,
                 extension=extension)
 
-        # TODO: Run compile steps in parallel. What to do with error messages?
-        for step in compile_steps:
-            step.compute_input_hashes()
-            if not step.need_rebuild():
-                logger.info(f'{step.output} is already up-to-date')
-                continue
-            start = time.time()
-            subprocess.check_call(step.command)
-            logger.info(f'compiling {step.output} took {time.time() - start:.2f} s')
-            step.create_meta()
+        compile_in_parallel(compile_steps)
 
         step = link_step
         step.compute_input_hashes()
@@ -242,3 +237,72 @@ def build_extension(caller_file, name, sources, headers, release):
         '_compiler_config.json')
     if os.path.exists(config_path):
         os.remove(config_path)
+
+
+def compile_in_parallel(compile_steps):
+    input_q = queue.SimpleQueue()
+    output_q = queue.SimpleQueue()
+
+    threads = [
+        threading.Thread(target=worker, args=(input_q, output_q))
+        for _ in range(multiprocessing.cpu_count())]
+    for t in threads:
+        t.start()
+
+    compile_steps = compile_steps[::-1]
+    in_flight = 0
+    ok = True
+    while True:
+        while compile_steps and in_flight < len(threads):
+            step = compile_steps.pop()
+            step.compute_input_hashes()
+            if step.need_rebuild():
+                input_q.put(step)
+                in_flight += 1
+            else:
+                logger.info(f'{step.output} is already up-to-date')
+        if in_flight:
+            res = output_q.get()
+            in_flight -= 1
+            print(res.stderr.rstrip(), file=sys.stderr)
+            if res.success:
+                logger.info(f'building {res.output} took {res.time:.2f} s')
+            else:
+                logger.error(f'failed to build {res.output}')
+                ok = False
+                compile_steps = []
+
+        if in_flight == 0 and not compile_steps:
+            break
+
+    for _ in threads:
+        input_q.put(None)
+    for t in threads:
+        t.join()
+
+    if not ok:
+        sys.exit(1)
+
+
+@dataclass
+class BuildResult:
+    output: str
+    success: bool
+    time: float
+    stderr: str
+
+
+def worker(input_q, output_q):
+    while True:
+        step = input_q.get()
+        if step is None:
+            break
+        start = time.time()
+        p = subprocess.run(step.command, capture_output=True, text=True)
+        if p.returncode == 0:
+            step.create_meta()
+        output_q.put(BuildResult(
+            output=step.output,
+            success=p.returncode == 0,
+            time=time.time() - start,
+            stderr=p.stdout + p.stderr))  # because cl.exe writes to stdout
